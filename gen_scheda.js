@@ -3,291 +3,284 @@ const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
-  C, FONT, CLIENTE, docStyles, A4_P, A4_L, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, logoBytes,
   vuoto, cella, salvaDoc,
 } = h;
 
 const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
 
-const BRD = {
-  top:    { style: BorderStyle.SINGLE, size: 1, color: 'BBBBBB' },
-  bottom: { style: BorderStyle.SINGLE, size: 1, color: 'BBBBBB' },
-  left:   { style: BorderStyle.SINGLE, size: 1, color: 'BBBBBB' },
-  right:  { style: BorderStyle.SINGLE, size: 1, color: 'BBBBBB' },
-};
-const NO_BRD = {
-  top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE },
-  left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
-};
+const BD = {top:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},bottom:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},left:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},right:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'}};
+const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
 
-// ─── SCHEDA MANSIONE ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SCHEDA MANSIONE
+// Landscape A4, margini 1.27cm (720 DXA), NO header, NO footer
+// Struttura dal modello:
+//   [top bar: logo (no fill) | fill=1F3864 titolo | fill=1F4E79 info]
+//   [rischi table: header fill=1F4E79, righe alt FFFFFF/F2F2F2, 4 colonne]
+//   [DPI bar: fill=1F3864 label | fill=D5E8F0 content]
+//   [revisione: no fill]
+// ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaMansione(mansione) {
-  const MARGIN = { top: 737, right: 737, bottom: 737, left: 737 };
-  const W = 15364; // 16838 - 737*2
+  const MARGIN = { top: 720, right: 720, bottom: 720, left: 720 };
+  // Content width: 16838 - 2*720 = 15398 DXA
+  const W = 15398;
 
-  const livColor = { ALTO: C.ROSSO, MEDIO: C.ARANCIO, BASSO: C.VERDE }[mansione.livello] || C.GRIGIO;
+  const livColor = {ALTO:C.ROSSO,MEDIO:C.ARANCIO,BASSO:C.VERDE}[mansione.livello]||C.GRIGIO;
 
-  // TOP BAR: logo | titolo mansione | info
-  const wLogo = 1400; const wTitle = 8000; const wInfo = W - wLogo - wTitle;
+  // Misure colonne da modello (pt → DXA): RISCHIO=169pt=3380, MISURE=293pt=5860, DPI_REQ=169pt=3380, DPI_AZ=W-resto
+  const wRis=3380; const wMis=5860; const wDpi=3380; const wAz=W-wRis-wMis-wDpi;
+
+  // TOP BAR 1x3
+  const wLogo=1400; const wTit=Math.floor(W*0.53); const wInf=W-wLogo-wTit;
   const topBar = new Table({
-    width: { size: W, type: WidthType.DXA },
-    columnWidths: [wLogo, wTitle, wInfo],
-    borders: { top: { style: BorderStyle.SINGLE, size: 6, color: C.BLU_HEADER },
-               bottom: { style: BorderStyle.SINGLE, size: 6, color: C.BLU_HEADER },
-               left: NO_BRD.left, right: NO_BRD.right,
-               insideH: NO_BRD.top, insideV: NO_BRD.top },
-    rows: [new TableRow({ children: [
-      new TableCell({ width: { size: wLogo, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER,
-        borders: NO_BRD, margins: { top: 80, bottom: 80, left: 80, right: 120 },
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
-          new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } }),
-        ]})],
+    width:{size:W,type:WidthType.DXA}, columnWidths:[wLogo,wTit,wInf],
+    borders:{top:{style:BorderStyle.SINGLE,size:4,color:C.BLU_DARK},bottom:{style:BorderStyle.SINGLE,size:4,color:C.BLU_DARK},left:NO.left,right:NO.right,insideH:NO.top,insideV:NO.top},
+    rows:[new TableRow({children:[
+      // Logo cell: no fill
+      new TableCell({width:{size:wLogo,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,borders:NO,margins:{top:80,bottom:80,left:80,right:120},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:logoBytes,type:'jpg',transformation:{width:60,height:60}})]})],
       }),
-      new TableCell({ width: { size: wTitle, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER,
-        borders: { top: NO_BRD.top, bottom: NO_BRD.bottom,
-                   left: { style: BorderStyle.SINGLE, size: 2, color: 'CCCCCC' },
-                   right: { style: BorderStyle.SINGLE, size: 2, color: 'CCCCCC' } },
-        margins: { top: 80, bottom: 80, left: 160, right: 160 },
-        children: [
-          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: [
-            new TextRun({ text: 'SCHEDA MANSIONE', bold: true, font: FONT, size: 20, color: C.BLU_HEADER }),
-          ]}),
-          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 0 }, children: [
-            new TextRun({ text: mansione.nome.toUpperCase(), bold: true, font: FONT, size: 26, color: C.BLU_DARK }),
-          ]}),
+      // Title cell: fill=1F3864
+      new TableCell({width:{size:wTit,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,
+        shading:{fill:C.BLU_DARK,type:ShadingType.CLEAR},
+        borders:{top:NO.top,bottom:NO.bottom,left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}},
+        margins:{top:80,bottom:80,left:160,right:160},
+        children:[
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:20},children:[new TextRun({text:'SCHEDA MANSIONE',bold:true,font:FONT,size:20,color:C.BIANCO})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:mansione.nome.toUpperCase(),bold:true,font:FONT,size:26,color:C.BIANCO})]}),
         ],
       }),
-      new TableCell({ width: { size: wInfo, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER,
-        borders: NO_BRD, margins: { top: 80, bottom: 80, left: 160, right: 80 },
-        children: [
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 20 }, children: [
-            new TextRun({ text: `Reparto: ${mansione.reparto}`, font: FONT, size: 18, color: C.GRIGIO }),
-          ]}),
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 20 }, children: [
-            new TextRun({ text: 'Rischio: ', font: FONT, size: 18 }),
-            new TextRun({ text: mansione.livello, bold: true, font: FONT, size: 18, color: livColor }),
-          ]}),
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 0 }, children: [
-            new TextRun({ text: 'D.Lgs. 81/08 – Art. 36-37', font: FONT, size: 16, color: C.GRIGIO }),
-          ]}),
+      // Info cell: fill=1F4E79
+      new TableCell({width:{size:wInf,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,
+        shading:{fill:C.BLU_HEADER,type:ShadingType.CLEAR},
+        borders:NO,margins:{top:80,bottom:80,left:160,right:80},
+        children:[
+          new Paragraph({alignment:AlignmentType.RIGHT,spacing:{after:20},children:[new TextRun({text:`Reparto: ${mansione.reparto}`,font:FONT,size:18,color:C.BIANCO})]}),
+          new Paragraph({alignment:AlignmentType.RIGHT,spacing:{after:20},children:[new TextRun({text:'Rischio: ',font:FONT,size:18,color:C.BIANCO}),new TextRun({text:mansione.livello,bold:true,font:FONT,size:18,color:C.BIANCO})]}),
+          new Paragraph({alignment:AlignmentType.RIGHT,spacing:{after:0},children:[new TextRun({text:'D.Lgs. 81/08 – Art. 36-37',font:FONT,size:16,color:C.BIANCO})]}),
         ],
       }),
     ]})]
   });
 
-  // RISCHI TABLE: 4 colonne
-  const wR = 3200; const wM = 6000; const wD1 = 3164; const wD2 = W - wR - wM - wD1;
+  // RISCHI TABLE (header fill=1F4E79, righe alt FFFFFF/F2F2F2)
   function hdCell(txt, w) {
-    return new TableCell({ width: { size: w, type: WidthType.DXA },
-      shading: { fill: C.BLU_LIGHT, type: ShadingType.CLEAR },
-      margins: { top: 80, bottom: 80, left: 120, right: 80 }, borders: BRD,
-      children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
-        new TextRun({ text: txt, bold: true, font: FONT, size: 18, color: C.BLU_DARK }),
-      ]})],
+    return new TableCell({width:{size:w,type:WidthType.DXA},shading:{fill:C.BLU_HEADER,type:ShadingType.CLEAR},
+      margins:{top:80,bottom:80,left:100,right:80},borders:BD,
+      children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:txt,bold:true,font:FONT,size:18,color:C.BIANCO})]})],
     });
   }
-  function blt(txt, col) {
-    return new Paragraph({ spacing: { before: 0, after: 24 }, children: [
-      new TextRun({ text: '• ', font: FONT, size: 18, color: col || C.BLU_MED }),
-      new TextRun({ text: txt, font: FONT, size: 18 }),
+  function blt(txt,col) {
+    return new Paragraph({spacing:{before:0,after:24},children:[
+      new TextRun({text:'• ',font:FONT,size:18,color:col||C.BLU_MED}),
+      new TextRun({text:txt,font:FONT,size:18}),
     ]});
   }
-  function dc(w, fill, children) {
-    return new TableCell({ width: { size: w, type: WidthType.DXA },
-      shading: { fill, type: ShadingType.CLEAR },
-      margins: { top: 60, bottom: 60, left: 100, right: 80 },
-      verticalAlign: VerticalAlign.TOP, borders: BRD, children });
+  function dc(w,fill,children) {
+    return new TableCell({width:{size:w,type:WidthType.DXA},shading:{fill,type:ShadingType.CLEAR},
+      margins:{top:60,bottom:60,left:100,right:80},verticalAlign:VerticalAlign.TOP,borders:BD,children});
   }
 
   const rischioTable = new Table({
-    width: { size: W, type: WidthType.DXA }, columnWidths: [wR, wM, wD1, wD2],
-    borders: { top: BRD.top, bottom: BRD.bottom, left: BRD.left, right: BRD.right, insideH: BRD.top, insideV: BRD.top },
-    rows: [
-      new TableRow({ tableHeader: true, children: [hdCell('RISCHIO', wR), hdCell('MISURE DI PREVENZIONE', wM), hdCell('DPI RICHIESTI', wD1), hdCell('DPI AZIENDA', wD2)] }),
-      ...mansione.rischi.map((r, i) => {
-        const fill = i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT;
-        return new TableRow({ children: [
-          dc(wR, fill, [new Paragraph({ children: [new TextRun({ text: r.nome, bold: true, font: FONT, size: 18, color: C.BLU_DARK })] })]),
-          dc(wM, fill, r.misure.map(m => blt(m, C.BLU_MED))),
-          dc(wD1, fill, r.dpi.length ? r.dpi.map(d => blt(d, C.ARANCIO)) : [new Paragraph({ children: [new TextRun({ text: '—', font: FONT, size: 18, color: C.GRIGIO })] })]),
-          dc(wD2, fill, [new Paragraph({ children: [new TextRun({ text: '', font: FONT, size: 18 })] })]),
+    width:{size:W,type:WidthType.DXA},columnWidths:[wRis,wMis,wDpi,wAz],
+    borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+    rows:[
+      new TableRow({tableHeader:true,children:[hdCell('RISCHIO',wRis),hdCell('MISURE DI PREVENZIONE',wMis),hdCell('DPI RICHIESTI',wDpi),hdCell('DPI AZIENDA',wAz)]}),
+      ...mansione.rischi.map((r,i) => {
+        const fill = i%2===0 ? C.BIANCO : C.GRIGIO_ALT;
+        return new TableRow({children:[
+          dc(wRis,fill,[new Paragraph({children:[new TextRun({text:r.nome,bold:true,font:FONT,size:18,color:C.BLU_DARK})]})]),
+          dc(wMis,fill,r.misure.map(m=>blt(m,C.BLU_MED))),
+          dc(wDpi,fill,r.dpi.length?r.dpi.map(d=>blt(d,C.ARANCIO)):[new Paragraph({children:[new TextRun({text:'—',font:FONT,size:18,color:C.GRIGIO})]})]),
+          dc(wAz,fill,[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]),
         ]});
       }),
     ],
   });
 
-  // DPI OBBLIGATORI BAR
-  const wDL = 2600;
+  // DPI BAR: fill=1F3864 label, fill=D5E8F0 content
+  const wDpiL=3380;
   const dpiBar = new Table({
-    width: { size: W, type: WidthType.DXA }, columnWidths: [wDL, W - wDL],
-    borders: { top: BRD.top, bottom: BRD.bottom, left: BRD.left, right: BRD.right, insideH: NO_BRD.top, insideV: BRD.top },
-    rows: [new TableRow({ children: [
-      new TableCell({ width: { size: wDL, type: WidthType.DXA },
-        shading: { fill: C.BLU_HEADER, type: ShadingType.CLEAR },
-        margins: { top: 80, bottom: 80, left: 120, right: 120 }, borders: BRD,
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
-          new TextRun({ text: 'DPI OBBLIGATORI', bold: true, font: FONT, size: 20, color: C.BIANCO }),
-        ]})],
+    width:{size:W,type:WidthType.DXA},columnWidths:[wDpiL,W-wDpiL],
+    borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:BD.top},
+    rows:[new TableRow({children:[
+      new TableCell({width:{size:wDpiL,type:WidthType.DXA},shading:{fill:C.BLU_DARK,type:ShadingType.CLEAR},borders:BD,margins:{top:80,bottom:80,left:120,right:120},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'DPI OBBLIGATORI',bold:true,font:FONT,size:20,color:C.BIANCO})]})],
       }),
-      new TableCell({ width: { size: W - wDL, type: WidthType.DXA },
-        shading: { fill: C.BLU_ALT, type: ShadingType.CLEAR },
-        margins: { top: 80, bottom: 80, left: 120, right: 120 }, borders: BRD,
-        children: [new Paragraph({ children: [
-          new TextRun({ text: mansione.dpi.join('   |   '), font: FONT, size: 18 }),
-        ]})],
+      new TableCell({width:{size:W-wDpiL,type:WidthType.DXA},shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},borders:BD,margins:{top:80,bottom:80,left:120,right:120},
+        children:[new Paragraph({children:[new TextRun({text:mansione.dpi.join('   |   '),font:FONT,size:18})]})],
       }),
     ]})]
   });
 
-  // REVISIONE BAR
-  const wRev = Math.floor(W * 0.7);
+  // REVISIONE BAR (no fill)
+  const wRev=Math.floor(W*0.7);
   const reviBar = new Table({
-    width: { size: W, type: WidthType.DXA }, columnWidths: [wRev, W - wRev],
-    borders: { top: NO_BRD.top, bottom: NO_BRD.bottom, left: NO_BRD.left, right: NO_BRD.right, insideH: NO_BRD.top, insideV: NO_BRD.top },
-    rows: [new TableRow({ children: [
-      new TableCell({ width: { size: wRev, type: WidthType.DXA }, borders: NO_BRD,
-        margins: { top: 60, bottom: 40, left: 0, right: 80 },
-        children: [new Paragraph({ children: [
-          new TextRun({ text: 'Revisione, aggiornamento e consegna al lavoratore: il presente documento è soggetto a revisione periodica o in seguito a variazioni delle mansioni, dell\'organizzazione del lavoro o dei rischi presenti.', font: FONT, size: 16, color: C.GRIGIO }),
-        ]})],
+    width:{size:W,type:WidthType.DXA},columnWidths:[wRev,W-wRev],
+    borders:{top:NO.top,bottom:NO.bottom,left:NO.left,right:NO.right,insideH:NO.top,insideV:NO.top},
+    rows:[new TableRow({children:[
+      new TableCell({width:{size:wRev,type:WidthType.DXA},borders:NO,margins:{top:60,bottom:40,left:0,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'Revisione, aggiornamento e consegna al lavoratore: il presente documento è soggetto a revisione periodica o in seguito a variazioni delle mansioni, dell\'organizzazione del lavoro o dei rischi presenti.',font:FONT,size:16,color:C.GRIGIO})]})],
       }),
-      new TableCell({ width: { size: W - wRev, type: WidthType.DXA }, borders: NO_BRD, verticalAlign: VerticalAlign.CENTER,
-        margins: { top: 60, bottom: 40, left: 80, right: 0 },
-        children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
-          new TextRun({ text: `${CLIENTE.ragioneSocialeBreve} – Rev. ${CLIENTE.anno}`, bold: true, font: FONT, size: 16, color: C.BLU_HEADER }),
-        ]})],
+      new TableCell({width:{size:W-wRev,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,margins:{top:60,bottom:40,left:80,right:0},
+        children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:`${CLIENTE.ragioneSocialeBreve} – Rev. ${CLIENTE.anno}`,bold:true,font:FONT,size:16,color:C.BLU_HEADER})]})],
       }),
     ]})]
   });
 
-  const doc = new Document({
-    styles: docStyles,
-    sections: [{
-      properties: { page: { size: A4_L, margin: MARGIN } },
-      children: [topBar, vuoto(40), rischioTable, vuoto(40), dpiBar, vuoto(20), reviBar],
-    }],
-  });
+  const doc = new Document({styles:docStyles,sections:[{
+    properties:{page:{size:A4_L,margin:MARGIN}},
+    children:[topBar,vuoto(40),rischioTable,vuoto(40),dpiBar,vuoto(20),reviBar],
+  }]});
   await salvaDoc(doc, `${OUT}/01 - SCHEDE MANSIONI/${mansione.id}.docx`);
 }
 
-// ─── SCHEDA ADDESTRATIVA ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SCHEDA ADDESTRATIVA
+// Portrait A4, margini T1.04 R2.0 B0.98 L2.0 (DXA: T590 R1134 B554 L1134)
+// NO header, NO footer
+// Title stile "Title" (sz=11pt)
+// Main table: header fill=F7CAAC, righe con contenuto specifico
+// Firma table: header fill=F7CAAC, 4 colonne, 11 righe
+// ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaAddestrativa(mansione) {
-  const MARGIN = { top: 567, right: 1134, bottom: 567, left: 1134 };
-  const W = 9638;
-  const H2 = Math.floor(W / 2);
-  const Q = Math.floor(H2 / 2);
+  const MARGIN = { top: 590, right: 1134, bottom: 554, left: 1134 };
+  const W = 9638; // portrait content width
+  const Q = Math.floor(W/4); // quarter width
 
-  const BD = BRD;
+  const BD_A = {top:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'}};
+  const SALMON = 'F7CAAC';
+  const PURPLE = 'CCC0D9';
 
-  function fullSpan(content, fill) {
-    return new TableRow({ children: [
-      new TableCell({ columnSpan: 4, width: { size: W, type: WidthType.DXA },
-        shading: fill ? { fill, type: ShadingType.CLEAR } : undefined,
-        margins: { top: 60, bottom: 60, left: 120, right: 120 }, borders: BD,
-        children: content,
-      }),
-    ]});
-  }
-
-  function span2(txt, w, fill) {
-    return new TableCell({ columnSpan: 2, width: { size: w, type: WidthType.DXA },
-      shading: fill ? { fill, type: ShadingType.CLEAR } : undefined,
-      margins: { top: 60, bottom: 60, left: 120, right: 120 }, borders: BD,
-      children: [new Paragraph({ children: [new TextRun({ text: txt, font: FONT, size: 19 })] })],
+  function hdrCell(txt, fill, span) {
+    return new TableCell({
+      ...(span?{columnSpan:span}:{}),
+      width:{size:span?W:Math.floor(W/4)*span||W,type:WidthType.DXA},
+      shading:{fill,type:ShadingType.CLEAR},
+      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+      children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:txt,bold:true,font:FONT,size:22,color:'000000'})]})],
     });
   }
 
-  const attivita = [
-    'Utilizzo corretto delle attrezzature di lavoro',
-    'Uso e manutenzione dei DPI in dotazione',
-    'Procedure di emergenza e primo soccorso',
-    'Gestione rischi specifici della mansione',
-    'Segnaletica di sicurezza e comportamenti corretti',
-    'Prevenzione infortuni e segnalazione near miss',
-  ];
-
-  function emptyCell(w, fill) {
-    return new TableCell({ width: { size: w, type: WidthType.DXA },
-      shading: fill ? { fill, type: ShadingType.CLEAR } : undefined,
-      margins: { top: 60, bottom: 60, left: 120, right: 120 }, borders: BD,
-      children: [new Paragraph({ children: [new TextRun({ text: '', font: FONT, size: 19 })] })],
+  function fullCell(children, fill) {
+    return new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},
+      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
+      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+      children,
     });
   }
+
+  function halfCell(txt, fill) {
+    return new TableCell({columnSpan:2,width:{size:Math.floor(W/2),type:WidthType.DXA},
+      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
+      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+      children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:19})]})],
+    });
+  }
+
+  function emptyCell(fill) {
+    return new TableCell({width:{size:Q,type:WidthType.DXA},
+      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
+      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+      children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:19})]})],
+    });
+  }
+
+  // Attività principale della mansione (primo rischio)
+  const attPrincipale = mansione.rischi.length > 0
+    ? `UTILIZZO CORRETTO ED IN SICUREZZA DELLE ATTREZZATURE – ${mansione.rischi[0].nome.toUpperCase()}`
+    : 'UTILIZZO CORRETTO ED IN SICUREZZA DELLE ATTREZZATURE DI LAVORO';
 
   const mainRows = [
-    fullSpan([new Paragraph({ alignment: AlignmentType.CENTER, children: [
-      new TextRun({ text: 'MANSIONE COINVOLTA', bold: true, font: FONT, size: 20, color: C.BIANCO }),
-    ]})], C.BLU_HEADER),
-    new TableRow({ children: [span2(mansione.nome, H2, C.BLU_ALT), span2('___________________________________________', H2)] }),
-    fullSpan([new Paragraph({ children: [
-      new TextRun({ text: `Reparto/Area:  ${mansione.reparto}`, font: FONT, size: 19 }),
-      new TextRun({ text: '    ___________________________    -    ___/___/______', font: FONT, size: 19 }),
-    ]})]),
-    fullSpan([new Paragraph({ children: [
-      new TextRun({ text: 'Motivazioni addestramento:  ', bold: true, font: FONT, size: 19 }),
-      new TextRun({ text: '☐ Nuova assunzione   ☐ Cambio mansione   ☐ Interinale   ☐ Altra: _________________', font: FONT, size: 19 }),
-    ]})]),
-    fullSpan([new Paragraph({ alignment: AlignmentType.CENTER, children: [
-      new TextRun({ text: 'ATTIVITÀ DI ADDESTRAMENTO DEI LAVORATORI', bold: true, font: FONT, size: 19, color: C.BIANCO }),
-    ]})], C.BLU_MED),
-    ...attivita.map((att, i) => {
-      const fill = i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT;
-      return new TableRow({ children: [span2(att, H2, fill), span2('', H2, fill)] });
-    }),
-    fullSpan([
-      new Paragraph({ spacing: { after: 20 }, children: [new TextRun({ text: 'Note del Tutor:', bold: true, font: FONT, size: 19 })] }),
-      new Paragraph({ children: [new TextRun({ text: '_________________________________________________________________________________', font: FONT, size: 19 })] }),
-    ]),
+    // Row 0: Header MANSIONE COINVOLTA
+    new TableRow({children:[fullCell([new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'MANSIONE COINVOLTA',bold:true,font:FONT,size:20})]})],SALMON)]}),
+    // Row 1: Mansione (left) | blank (right)
+    new TableRow({children:[halfCell(mansione.nome), halfCell('___________________________________________')]}),
+    // Row 2: Reparto
+    new TableRow({children:[fullCell([new Paragraph({children:[new TextRun({text:`Reparto/Area:  ${mansione.reparto} ___________________________ - _____________________`,font:FONT,size:19})]})]),]}),
+    // Row 3: Motivazioni
+    new TableRow({children:[fullCell([
+      new Paragraph({children:[new TextRun({text:'Motivazioni addestramento:',bold:true,font:FONT,size:19})]}),
+      new Paragraph({children:[new TextRun({text:' Nuova assunzione\t Cambio mansione\tInterinale\tAltra attività di addestramento',font:FONT,size:19})]}),
+    ])]}),
+    // Row 4: Header ATTIVITÀ
+    new TableRow({children:[fullCell([new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'ATTIVITÀ DI ADDESTRAMENTO DEI LAVORATORI',bold:true,font:FONT,size:20})]})],SALMON)]}),
+    // Row 5: Affiancamento
+    new TableRow({children:[fullCell([
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:`Affiancamento avvenuto con (Cognome/Nome): ${CLIENTE.datoreLavoro}`,font:FONT,size:19})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:`Ruolo: ( Datore di Lavoro /   Preposto /  Lavoratore /  Resp. Produz. /  RSPP /  Altro____________________), il quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all\'operatore di cui sopra, rispetto a all\'attività specifica di:`,font:FONT,size:19})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:attPrincipale,bold:true,font:FONT,size:19})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Utilizzo della   macchina /  attrezzatura /  impianto /  procedura di lavoro /  altro _______________',font:FONT,size:19})]}),
+      new Paragraph({children:[new TextRun({text:'Durata addestramento _____ mesi -  _____settimana/e -  _____giorno/i – per un totale di ________ore – 10 min',font:FONT,size:19})]}),
+      new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:19})]}),
+    ])]}),
+    // Row 6: Header istruzioni
+    new TableRow({children:[
+      emptyCell(),
+      new TableCell({columnSpan:3,width:{size:W-Q,type:WidthType.DXA},shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni operative con presa visione ed eventuale addestramento pratico:',bold:true,font:FONT,size:19})]})],
+      }),
+    ]}),
+    // Rows 7-11: Items con fill PURPLE
+    ...[
+      'Istruzioni di lavoro in sicurezza',
+      'DPI da utilizzare',
+      'Istruttori e Preposto',
+      'Istruttori e Preposto',
+      'Istruttori e Preposto',
+    ].map(txt => new TableRow({children:[
+      emptyCell(),
+      new TableCell({columnSpan:3,width:{size:W-Q,type:WidthType.DXA},shading:{fill:PURPLE,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:19})]})],
+      }),
+    ]})),
+    // Row 12: Note
+    new TableRow({children:[fullCell([
+      new Paragraph({spacing:{after:20},children:[new TextRun({text:'Note:',font:FONT,size:19})]}),
+      new Paragraph({children:[new TextRun({text:'__________________________________________________________________',font:FONT,size:19})]}),
+    ])]}),
   ];
 
   const mainTable = new Table({
-    width: { size: W, type: WidthType.DXA }, columnWidths: [Q, Q, Q, Q],
-    borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
-    rows: mainRows,
+    width:{size:W,type:WidthType.DXA},columnWidths:[Q,Q,Q,W-3*Q],
+    borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
+    rows:mainRows,
   });
 
+  // FIRMA TABLE 11x4
   function qCell(txt, fill) {
-    return new TableCell({ width: { size: Q, type: WidthType.DXA },
-      shading: fill ? { fill, type: ShadingType.CLEAR } : undefined,
-      margins: { top: 40, bottom: 40, left: 120, right: 80 }, borders: BD,
-      children: [new Paragraph({ children: [new TextRun({ text: txt, font: FONT, size: 18 })] })],
+    return new TableCell({width:{size:Q,type:WidthType.DXA},
+      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
+      borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+      children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:18})]})],
     });
   }
 
+  const firmaRows = [
+    new TableRow({children:[fullCell([new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'FIRME ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:20})]})],SALMON)]}),
+    new TableRow({children:[qCell('Nome lavoratore:','FFFFFF'),qCell('Nome lavoratore:','FFFFFF'),qCell('Firma lavoratore:','FFFFFF'),qCell('Firma lavoratore:','FFFFFF')]}),
+    ...[...Array(7)].map(() => new TableRow({height:{value:500,rule:'atLeast'},children:[qCell('','FFFFFF'),qCell('','FFFFFF'),qCell('','FFFFFF'),qCell('','FFFFFF')]})),
+    new TableRow({children:[qCell('Istruttore:'),qCell('Firma Istruttore:'),qCell('Firma Istruttore:'),qCell('Data:')]}),
+    new TableRow({children:[qCell(`DDL/RSPP: ${CLIENTE.datoreLavoro}`),qCell('Firma DDL/RSPP:'),qCell('Firma DDL/RSPP:'),qCell('Data:')]}),
+  ];
+
   const firmaTable = new Table({
-    width: { size: W, type: WidthType.DXA }, columnWidths: [Q, Q, Q, Q],
-    borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
-    rows: [
-      fullSpan([new Paragraph({ alignment: AlignmentType.CENTER, children: [
-        new TextRun({ text: 'FIRME ADDESTRAMENTO SUL CAMPO', bold: true, font: FONT, size: 19, color: C.BIANCO }),
-      ]})], C.BLU_HEADER),
-      new TableRow({ children: [qCell('Nome lavoratore:'), qCell('Nome lavoratore:'), qCell('Firma lavoratore:'), qCell('Firma lavoratore:')] }),
-      ...[...Array(4)].map(() => new TableRow({ children: [qCell(''), qCell(''), qCell(''), qCell('')] })),
-      new TableRow({ children: [
-        new TableCell({ columnSpan: 2, width: { size: H2, type: WidthType.DXA }, borders: BD, margins: { top: 60, bottom: 60, left: 120, right: 80 }, children: [
-          new Paragraph({ children: [new TextRun({ text: `Tutor / Addestratore: ${CLIENTE.datoreLavoro}`, font: FONT, size: 18 })] }),
-          new Paragraph({ children: [new TextRun({ text: 'Firma: _________________________', font: FONT, size: 18 })] }),
-        ]}),
-        new TableCell({ columnSpan: 2, width: { size: H2, type: WidthType.DXA }, borders: BD, margins: { top: 60, bottom: 60, left: 120, right: 80 }, children: [
-          new Paragraph({ children: [new TextRun({ text: 'Data addestramento: ___/___/______', font: FONT, size: 18 })] }),
-        ]}),
-      ]}),
-    ],
+    width:{size:W,type:WidthType.DXA},columnWidths:[Q,Q,Q,W-3*Q],
+    borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
+    rows:firmaRows,
   });
 
-  const doc = new Document({
-    styles: docStyles,
-    sections: [{
-      properties: { page: { size: A4_P, margin: MARGIN } },
-      children: [
-        new Paragraph({ children: [new TextRun({ text: 'SCHEDA ADDESTRAMENTO SUL CAMPO', bold: true, font: FONT, size: 22, color: C.BLU_DARK })] }),
-        vuoto(40),
-        mainTable,
-        vuoto(40),
-        firmaTable,
-      ],
-    }],
-  });
+  const doc = new Document({styles:docStyles,sections:[{
+    properties:{page:{size:A4_P,margin:MARGIN}},
+    children:[
+      new Paragraph({children:[new TextRun({text:'SCHEDA ADDESTRAMENTO SUL CAMPO',font:FONT,size:22})]}),
+      vuoto(20),
+      mainTable,
+      vuoto(20),
+      firmaTable,
+    ],
+  }]});
   await salvaDoc(doc, `${OUT}/BONUS - SCHEDA ADDESTRATIVA/Scheda_Addestramento_${mansione.id}.docx`);
 }
 
