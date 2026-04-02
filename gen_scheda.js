@@ -145,143 +145,171 @@ async function genSchedaMansione(mansione) {
 // Firma table: header fill=F7CAAC, 4 colonne, 11 righe
 // ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaAddestrativa(mansione) {
-  const MARGIN = { top: 590, right: 1134, bottom: 554, left: 1134 };
-  const W = 9638; // portrait content width
-  const Q = Math.floor(W/4); // quarter width
+  // Margini esatti dal master: top=587, right=1134, bottom=556, left=1134
+  const MARGIN = { top: 587, right: 1134, bottom: 556, left: 1134 };
+  const W = 9638;
 
   const BD_A = {top:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'}};
   const SALMON = 'F7CAAC';
   const PURPLE = 'CCC0D9';
 
-  function hdrCell(txt, fill, span) {
-    return new TableCell({
-      ...(span?{columnSpan:span}:{}),
-      width:{size:span?W:Math.floor(W/4)*span||W,type:WidthType.DXA},
-      shading:{fill,type:ShadingType.CLEAR},
-      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-      children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:txt,bold:true,font:FONT,size:22,color:'000000'})]})],
-    });
+  // Colonne dal master: [1413, 3347, 1883, 2985]
+  const COLS = [1413, 3347, 1883, 2985];
+
+  function hdrFull(txt, fill) {
+    return new TableRow({children:[
+      new TableCell({columnSpan:4, width:{size:W,type:WidthType.DXA},
+        shading:{fill,type:ShadingType.CLEAR}, borders:BD_A,
+        margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[
+          new TextRun({text:txt,bold:true,font:FONT,size:20,color:'000000'})
+        ]})],
+      }),
+    ]});
   }
 
-  function fullCell(children, fill) {
-    return new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},
-      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
-      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-      children,
-    });
+  function twoCell(txt1, txt2) {
+    return new TableRow({children:[
+      new TableCell({columnSpan:2,width:{size:COLS[0]+COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:txt1,font:FONT,size:20})]})]
+      }),
+      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:txt2,font:FONT,size:20})]})]
+      }),
+    ]});
   }
 
-  function halfCell(txt, fill) {
-    return new TableCell({columnSpan:2,width:{size:Math.floor(W/2),type:WidthType.DXA},
-      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
-      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-      children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:19})]})],
-    });
+  function fullRow(children, fill) {
+    return new TableRow({children:[
+      new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},
+        shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
+        borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children,
+      }),
+    ]});
   }
 
-  function emptyCell(fill) {
-    return new TableCell({width:{size:Q,type:WidthType.DXA},
-      shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
-      borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-      children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:19})]})],
-    });
+  function istrRow(txt, fill) {
+    return new TableRow({children:[
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:20})]})]
+      }),
+      new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
+        shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
+        borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:20})]})]
+      }),
+    ]});
   }
 
-  // Attività principale della mansione (primo rischio)
   const attPrincipale = mansione.rischi.length > 0
     ? `UTILIZZO CORRETTO ED IN SICUREZZA DELLE ATTREZZATURE – ${mansione.rischi[0].nome.toUpperCase()}`
     : 'UTILIZZO CORRETTO ED IN SICUREZZA DELLE ATTREZZATURE DI LAVORO';
 
+  const dpiTxt = mansione.dpi.slice(0,5).join(', ');
+
   const mainRows = [
-    // Row 0: Header MANSIONE COINVOLTA
-    new TableRow({children:[fullCell([new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'MANSIONE COINVOLTA',bold:true,font:FONT,size:20})]})],SALMON)]}),
-    // Row 1: Mansione (left) | blank (right)
-    new TableRow({children:[halfCell(mansione.nome), halfCell('___________________________________________')]}),
-    // Row 2: Reparto
-    new TableRow({children:[fullCell([new Paragraph({children:[new TextRun({text:`Reparto/Area:  ${mansione.reparto} ___________________________ - _____________________`,font:FONT,size:19})]})]),]}),
-    // Row 3: Motivazioni
-    new TableRow({children:[fullCell([
-      new Paragraph({children:[new TextRun({text:'Motivazioni addestramento:',bold:true,font:FONT,size:19})]}),
-      new Paragraph({children:[new TextRun({text:' Nuova assunzione\t Cambio mansione\tInterinale\tAltra attività di addestramento',font:FONT,size:19})]}),
-    ])]}),
-    // Row 4: Header ATTIVITÀ
-    new TableRow({children:[fullCell([new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'ATTIVITÀ DI ADDESTRAMENTO DEI LAVORATORI',bold:true,font:FONT,size:20})]})],SALMON)]}),
-    // Row 5: Affiancamento
-    new TableRow({children:[fullCell([
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:`Affiancamento avvenuto con (Cognome/Nome): ${CLIENTE.datoreLavoro}`,font:FONT,size:19})]}),
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:`Ruolo: ( Datore di Lavoro /   Preposto /  Lavoratore /  Resp. Produz. /  RSPP /  Altro____________________), il quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all\'operatore di cui sopra, rispetto a all\'attività specifica di:`,font:FONT,size:19})]}),
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:attPrincipale,bold:true,font:FONT,size:19})]}),
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Utilizzo della   macchina /  attrezzatura /  impianto /  procedura di lavoro /  altro _______________',font:FONT,size:19})]}),
-      new Paragraph({children:[new TextRun({text:'Durata addestramento _____ mesi -  _____settimana/e -  _____giorno/i – per un totale di ________ore – 10 min',font:FONT,size:19})]}),
-      new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:19})]}),
-    ])]}),
-    // Row 6: Header istruzioni
+    hdrFull('MANSIONE COINVOLTA', SALMON),
+    twoCell(mansione.nome, '___________________________________________'),
+    fullRow([new Paragraph({children:[
+      new TextRun({text:'Reparto/Area: ',bold:true,font:FONT,size:20}),
+      new TextRun({text:`${mansione.reparto} ___________________________ - _____________________`,font:FONT,size:20}),
+    ]})]),
+    fullRow([
+      new Paragraph({children:[new TextRun({text:'Motivazioni addestramento:',bold:true,font:FONT,size:20})]}),
+      new Paragraph({children:[new TextRun({text:'☐ Nuova assunzione   ☐ Cambio mansione   ☐ Interinale   ☐ Altra attività di addestramento',font:FONT,size:20})]}),
+    ]),
+    hdrFull('ATTIVITÀ DI ADDESTRAMENTO DEI LAVORATORI', SALMON),
+    fullRow([
+      new Paragraph({spacing:{after:6},children:[
+        new TextRun({text:'Affiancamento avvenuto con (Cognome/Nome): ',bold:true,font:FONT,size:20}),
+        new TextRun({text:CLIENTE.datoreLavoro,font:FONT,size:20}),
+      ]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({
+        text:`Ruolo: ( Datore di Lavoro /  Preposto /  Lavoratore /  Resp. Produz. /  RSPP /  Altro____________________), il quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto a all'attività specifica di:`,
+        font:FONT,size:20,
+      })]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:attPrincipale,bold:true,font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Utilizzo della   macchina /  attrezzatura /  impianto /  procedura di lavoro /  altro _______________',font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Durata addestramento _____ mesi -  _____settimana/e -  _____giorno/i – per un totale di ________ore – 10 min',font:FONT,size:20})]}),
+      new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:20})]}),
+    ]),
+    istrRow('Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni di lavoro:', SALMON),
+    istrRow('Istruzioni di lavoro in sicurezza', PURPLE),
+    istrRow('Utilizzo corretto ed in sicurezza delle attrezzature in dotazione', PURPLE),
+    istrRow('Sicurezze presenti sulle attrezzature in uso (emergenze, microinterruttori, allarmi)', PURPLE),
+    istrRow('Segnaletica di sicurezza, salute ed emergenza in reparto.', PURPLE),
+    istrRow('Istruzioni specifiche di reparto (specificare di seguito se presenti)', PURPLE),
+    fullRow([
+      new Paragraph({spacing:{after:4},children:[new TextRun({text:'DPI necessari alla lavorazione (specificare di seguito se necessari):',bold:true,font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:4},children:[new TextRun({text:dpiTxt,font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:4},children:[new TextRun({text:'Rischi per i quali sono necessari i DPI.',font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:4},children:[new TextRun({text:"Utilizzo dei DPI (modalità d'impiego, verifica della necessità di utilizzo).",font:FONT,size:20})]}),
+      new Paragraph({children:[new TextRun({text:'Modalità di conservazione e richiesta di sostituzione/integrazione dei DPI.',font:FONT,size:20})]}),
+    ]),
     new TableRow({children:[
-      emptyCell(),
-      new TableCell({columnSpan:3,width:{size:W-Q,type:WidthType.DXA},shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni operative con presa visione ed eventuale addestramento pratico:',bold:true,font:FONT,size:19})]})],
+      new TableCell({columnSpan:2,width:{size:COLS[0]+COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[
+          new Paragraph({spacing:{after:4},children:[new TextRun({text:"Al termine dell'addestramento, effettuato secondo quanto sopra esposto, l'Istruttore e il Preposto valutando in campo le modalità operative e le conoscenze ricevute, ritengono il lavoratore:",font:FONT,size:18})]}),
+        ]
+      }),
+      new TableCell({width:{size:COLS[2],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:20})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Adeguato',font:FONT,size:20})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:20})]}),
+        ]
+      }),
+      new TableCell({width:{size:COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[
+          new Paragraph({children:[new TextRun({text:'Note:',bold:true,font:FONT,size:20})]}),
+          new Paragraph({children:[new TextRun({text:'',font:FONT,size:20})]}),
+        ]
       }),
     ]}),
-    // Rows 7-11: Items con fill PURPLE
-    ...[
-      'Istruzioni di lavoro in sicurezza',
-      'DPI da utilizzare',
-      'Istruttori e Preposto',
-      'Istruttori e Preposto',
-      'Istruttori e Preposto',
-    ].map(txt => new TableRow({children:[
-      emptyCell(),
-      new TableCell({columnSpan:3,width:{size:W-Q,type:WidthType.DXA},shading:{fill:PURPLE,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:19})]})],
-      }),
-    ]})),
-    // Row 12: Note
-    new TableRow({children:[fullCell([
-      new Paragraph({spacing:{after:20},children:[new TextRun({text:'Note:',font:FONT,size:19})]}),
-      new Paragraph({children:[new TextRun({text:'__________________________________________________________________',font:FONT,size:19})]}),
-    ])]}),
   ];
 
   const mainTable = new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[Q,Q,Q,W-3*Q],
+    width:{size:W,type:WidthType.DXA}, columnWidths:COLS,
     borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
     rows:mainRows,
   });
 
-  // FIRMA TABLE 11x4
-  function qCell(txt, fill) {
-    return new TableCell({width:{size:Q,type:WidthType.DXA},
+  // FIRMA TABLE – colonne dal master: [3399, 1632, 2482, 2126]
+  const FCOLS = [3399, 1632, 2482, 2126];
+  function fCell(txt, fill, span) {
+    return new TableCell({
+      ...(span?{columnSpan:span}:{}),
+      width:{size:span?FCOLS.slice(0,span).reduce((a,b)=>a+b,0):FCOLS[0],type:WidthType.DXA},
       shading:fill?{fill,type:ShadingType.CLEAR}:undefined,
-      borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-      children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:18})]})],
+      borders:BD_A, margins:{top:40,bottom:40,left:80,right:80},
+      children:[new Paragraph({children:[new TextRun({text:txt,font:FONT,size:18,bold:!!fill&&fill===SALMON})]})],
     });
   }
 
-  const firmaRows = [
-    new TableRow({children:[fullCell([new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'FIRME ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:20})]})],SALMON)]}),
-    new TableRow({children:[qCell('Nome lavoratore:','FFFFFF'),qCell('Nome lavoratore:','FFFFFF'),qCell('Firma lavoratore:','FFFFFF'),qCell('Firma lavoratore:','FFFFFF')]}),
-    ...[...Array(7)].map(() => new TableRow({height:{value:500,rule:'atLeast'},children:[qCell('','FFFFFF'),qCell('','FFFFFF'),qCell('','FFFFFF'),qCell('','FFFFFF')]})),
-    new TableRow({children:[qCell('Istruttore:'),qCell('Firma Istruttore:'),qCell('Firma Istruttore:'),qCell('Data:')]}),
-    new TableRow({children:[qCell(`DDL/RSPP: ${CLIENTE.datoreLavoro}`),qCell('Firma DDL/RSPP:'),qCell('Firma DDL/RSPP:'),qCell('Data:')]}),
-  ];
-
   const firmaTable = new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[Q,Q,Q,W-3*Q],
+    width:{size:W,type:WidthType.DXA}, columnWidths:FCOLS,
     borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
-    rows:firmaRows,
+    rows:[
+      new TableRow({children:[new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'FIRME ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:20,color:'000000'})]})]})]},),
+      new TableRow({children:[fCell('Nome lavoratore:'),fCell('Firma lavoratore:'),fCell('Istruttore:'),fCell('Firma Istruttore:')]}),
+      ...[...Array(4)].map(()=>new TableRow({height:{value:500,rule:'atLeast'},children:[fCell(''),fCell(''),fCell(''),fCell('')]})),
+      new TableRow({children:[fCell(`DDL/RSPP: ${CLIENTE.datoreLavoro}`),fCell('Firma DDL/RSPP:'),fCell('Data:'),fCell('')]}),
+    ],
   });
 
   const doc = new Document({styles:docStyles,sections:[{
     properties:{page:{size:A4_P,margin:MARGIN}},
     children:[
-      new Paragraph({children:[new TextRun({text:'SCHEDA ADDESTRAMENTO SUL CAMPO',font:FONT,size:22})]}),
-      vuoto(20),
+      new Paragraph({spacing:{after:60},children:[new TextRun({text:'SCHEDA ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:22})]}),
       mainTable,
-      vuoto(20),
+      new Paragraph({spacing:{after:40},children:[]}),
       firmaTable,
     ],
   }]});
   await salvaDoc(doc, `${OUT}/BONUS - SCHEDA ADDESTRATIVA/Scheda_Addestramento_${mansione.id}.docx`);
 }
+
 
 module.exports = { genSchedaMansione, genSchedaAddestrativa };
