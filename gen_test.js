@@ -2,7 +2,7 @@
 const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
-  Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
+  Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   SimpleField,
   C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, logoBytes,
   vuoto, cella, salvaDoc,
@@ -12,9 +12,23 @@ const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
 
 // W = 9638 DXA portrait content width
 
-// Footer: "AZIENDA – indirizzo   |   Pag. X"
+// Header con logo inline (in alto a sinistra)
+function makeHeaderTest() {
+  return new Header({
+    children: [new Paragraph({
+      children: [new ImageRun({
+        data: logoBytes,
+        type: 'jpg',
+        transformation: { width: 70, height: 70 },
+      })],
+    })],
+  });
+}
+
+// Footer con bordo superiore blu + azienda + pag
 function makeFooterTest() {
   return new Footer({ children: [new Paragraph({
+    border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
     children: [
       new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
       new SimpleField('PAGE'),
@@ -22,20 +36,22 @@ function makeFooterTest() {
   })]});
 }
 
-// Top table 1x2: [empty] [fill=1F3864 azienda name]
-// Col widths dal modello: col0=169pt=3380dxa, col1=313pt=6258dxa → total=9638
+// Top table: [vuoto] [fill=1F3864, ragione sociale, sz=18, right]
+// Col widths dal master: 3373 + 6265 = 9638
 function makeTopTable() {
-  const wL = 3380; const wR = 9638 - wL;
+  const wL = 3373; const wR = 9638 - wL;
   const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
   return new Table({
     width:{size:9638,type:WidthType.DXA}, columnWidths:[wL,wR],
     borders:{top:NO.top,bottom:NO.bottom,left:NO.left,right:NO.right,insideH:NO.top,insideV:NO.top},
     rows:[new TableRow({children:[
-      new TableCell({width:{size:wL,type:WidthType.DXA},borders:NO,children:[new Paragraph({children:[]})]}),
+      new TableCell({width:{size:wL,type:WidthType.DXA},borders:NO,
+        margins:{top:80,bottom:80,left:120,right:120},
+        children:[new Paragraph({children:[]})]}),
       new TableCell({width:{size:wR,type:WidthType.DXA},borders:NO,
         shading:{fill:C.BLU_DARK,type:ShadingType.CLEAR},
-        margins:{top:60,bottom:60,left:120,right:120},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:20,color:C.BIANCO})]})],
+        margins:{top:80,bottom:80,left:120,right:120},
+        children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:18,color:C.BIANCO})]})],
       }),
     ]})]
   });
@@ -56,44 +72,42 @@ function makeDiscente() {
 }
 
 // Tabella domanda: riga 0 = cella merged (colspan=2), righe 1-4 = lettera + risposta
-// Struttura esatta dal modello:
-//   [0, merged]: fill=D5E8F0, testo domanda (full width 9638 DXA)
-//   [1-4]: col0=420dxa (lettera), col1=9218dxa (risposta)
+// Col widths dal master: col0=415dxa (lettera), col1=9223dxa (risposta)
 function makeQuestion(domanda, risposte, isDocente) {
   const W = 9638;
-  const wL = 420;   // larghezza colonna lettera (~21pt)
-  const wR = W - wL; // larghezza colonna risposta (~461pt)
-  const BD = {top:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'}};
+  const wL = 415;   // colonna lettera – dal master
+  const wR = W - wL; // 9223
+  const BD = {top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}};
 
   const rows = [
-    // Riga 0: cella merged full width con la domanda
+    // Riga 0: domanda full-width, fill D5E8F0, bold=true, sz=20, color=000000, margins 80/120
     new TableRow({children:[
       new TableCell({
         columnSpan: 2,
         width:{size:W,type:WidthType.DXA},
         shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},
-        margins:{top:40,bottom:40,left:80,right:80},
+        margins:{top:80,bottom:80,left:120,right:120},
         borders:BD,
-        children:[new Paragraph({children:[new TextRun({text:domanda,font:FONT,size:19,bold:false})]})]
+        children:[new Paragraph({children:[new TextRun({text:domanda,font:FONT,size:20,bold:true,color:'000000'})]})]
       }),
     ]}),
-    // Righe risposte
+    // Righe risposte: lettera sz=18 center color=000000, testo sz=18 color=000000, margins 80/120
     ...risposte.map(r => {
       const corrFill = isDocente && r.corretta ? C.VERDE : undefined;
       return new TableRow({children:[
         new TableCell({
           width:{size:wL,type:WidthType.DXA},
           shading:corrFill?{fill:corrFill,type:ShadingType.CLEAR}:undefined,
-          margins:{top:40,bottom:40,left:60,right:40},
+          margins:{top:80,bottom:80,left:120,right:120},
           borders:BD,
-          children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:`${r.lettera}.`,font:FONT,size:19,bold:isDocente&&r.corretta})]})]
+          children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:`${r.lettera}.`,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
         }),
         new TableCell({
           width:{size:wR,type:WidthType.DXA},
           shading:corrFill?{fill:corrFill,type:ShadingType.CLEAR}:undefined,
-          margins:{top:40,bottom:40,left:80,right:80},
+          margins:{top:80,bottom:80,left:120,right:120},
           borders:BD,
-          children:[new Paragraph({children:[new TextRun({text:isDocente&&r.corretta?`${r.testo}  ✓`:r.testo,font:FONT,size:19,bold:isDocente&&r.corretta})]})]
+          children:[new Paragraph({children:[new TextRun({text:isDocente&&r.corretta?`${r.testo}  ✓`:r.testo,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
         }),
       ]});
     }),
@@ -184,7 +198,8 @@ function domandeSpecifiche(mansione) {
 }
 
 async function genTestGenerale() {
-  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
+  const header = makeHeaderTest();
   const footer = makeFooterTest();
   const domande = domandeGenerali();
 
@@ -192,25 +207,26 @@ async function genTestGenerale() {
     return [
       makeTopTable(),
       vuoto(20),
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:4},children:[new TextRun({text:'TEST DI APPRENDIMENTO – FORMAZIONE GENERALE',bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
-      ...(isDocente?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:4},children:[new TextRun({text:'– VERSIONE DOCENTE – CON RISPOSTE EVIDENZIATE –',bold:true,font:FONT,size:20,color:C.ROSSO})]})]:[]),
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:20},children:[new TextRun({text:'Formazione obbligatoria – D.Lgs. 81/08 e Accordo Stato-Regioni 17/04/2025',font:FONT,size:18,color:C.GRIGIO})]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'TEST DI APPRENDIMENTO – FORMAZIONE GENERALE',bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
+      ...(isDocente?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'– VERSIONE DOCENTE – CON RISPOSTE EVIDENZIATE –',bold:true,font:FONT,size:20,color:C.ROSSO})]})]:[]),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:200},children:[new TextRun({text:'Formazione obbligatoria – D.Lgs. 81/08 e Accordo Stato-Regioni 17/04/2025',italic:true,font:FONT,size:18,color:C.GRIGIO})]}),
       makeDiscente(),
       vuoto(20),
-      ...(!isDocente?[new Paragraph({spacing:{after:20},children:[new TextRun({text:'ISTRUZIONI: Per ogni domanda, barrare la risposta che si ritiene corretta (A, B, C oppure D). È ammessa una sola risposta per domanda. Il test si considera superato con almeno il 70% di risposte corrette.',font:FONT,size:18})]})]:[]),
+      ...(!isDocente?[new Paragraph({spacing:{after:200},children:[new TextRun({text:'ISTRUZIONI: Per ogni domanda, barrare la risposta che si ritiene corretta (A, B, C oppure D). È ammessa una sola risposta per domanda. Durata: 30 minuti. Punteggio minimo per il superamento: 21/30 (70%).',italic:true,font:FONT,size:18})]})]:[]),
       ...domande.flatMap(({d,r}) => [makeQuestion(d,r,isDocente), vuoto(10)]),
       ...firme(),
     ];
   }
 
-  const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},footers:{default:footer},children:buildChildren(false)}]});
+  const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(false)}]});
   await salvaDoc(doc, `${OUT}/03 - TEST DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_Generale.docx`);
-  const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},footers:{default:footer},children:buildChildren(true)}]});
+  const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(true)}]});
   await salvaDoc(docD, `${OUT}/03 - TEST DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_Generale_Docente.docx`);
 }
 
 async function genTestMansione(mansione) {
-  const MARGIN = { top: 710, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
+  const header = makeHeaderTest();
   const footer = makeFooterTest();
   const domande = domandeSpecifiche(mansione);
 
@@ -218,21 +234,21 @@ async function genTestMansione(mansione) {
     return [
       makeTopTable(),
       vuoto(20),
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:4},children:[new TextRun({text:'TEST SPECIFICO –',bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:isDocente?4:20},children:[new TextRun({text:mansione.nome.toUpperCase(),bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
-      ...(isDocente?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:20},children:[new TextRun({text:'– VERSIONE DOCENTE – CON RISPOSTE EVIDENZIATE –',bold:true,font:FONT,size:20,color:C.ROSSO})]})]:[]),
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:20},children:[new TextRun({text:'Formazione obbligatoria – D.Lgs. 81/08 e Accordo Stato-Regioni 17/04/2025',font:FONT,size:18,color:C.GRIGIO})]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'TEST SPECIFICO –',bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:isDocente?40:40},children:[new TextRun({text:mansione.nome.toUpperCase(),bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
+      ...(isDocente?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'– VERSIONE DOCENTE – CON RISPOSTE EVIDENZIATE –',bold:true,font:FONT,size:20,color:C.ROSSO})]})]:[]),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:200},children:[new TextRun({text:'Formazione obbligatoria – D.Lgs. 81/08 e Accordo Stato-Regioni 17/04/2025',italic:true,font:FONT,size:18,color:C.GRIGIO})]}),
       makeDiscente(),
       vuoto(20),
-      ...(!isDocente?[new Paragraph({spacing:{after:20},children:[new TextRun({text:'ISTRUZIONI: Per ogni domanda, barrare la risposta che si ritiene corretta (A, B, C oppure D). È ammessa una sola risposta per domanda. Il test si considera superato con almeno il 70% di risposte corrette.',font:FONT,size:18})]})]:[]),
+      ...(!isDocente?[new Paragraph({spacing:{after:200},children:[new TextRun({text:'ISTRUZIONI: Per ogni domanda, barrare la risposta che si ritiene corretta (A, B, C oppure D). È ammessa una sola risposta per domanda. Durata: 30 minuti. Punteggio minimo per il superamento: 21/30 (70%).',italic:true,font:FONT,size:18})]})]:[]),
       ...domande.flatMap(({d,r}) => [makeQuestion(d,r,isDocente), vuoto(10)]),
       ...firme(),
     ];
   }
 
-  const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},footers:{default:footer},children:buildChildren(false)}]});
+  const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(false)}]});
   await salvaDoc(doc, `${OUT}/03 - TEST DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_${mansione.id}.docx`);
-  const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},footers:{default:footer},children:buildChildren(true)}]});
+  const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(true)}]});
   await salvaDoc(docD, `${OUT}/03 - TEST DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_${mansione.id}_Docente.docx`);
 }
 
