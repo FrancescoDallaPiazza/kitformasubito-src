@@ -59,7 +59,7 @@ function makeHeader(ragioneSociale, titoloDoc, atecoCodice, atecoDesc) {
             children: [new Paragraph({
               alignment: AlignmentType.LEFT,
               children: [new ImageRun({
-                data: logoBytes, type: 'jpg',
+                data: logoBytes, type: 'png',
                 transformation: { width: 70, height: 70 },
               })],
             })],
@@ -183,226 +183,35 @@ const MARGIN_REG = { top: 876, right: 1134, bottom: 1134, left: 1134 }; // regis
 
 // ─── DATI CLIENTE ────────────────────────────────────────────────────────────
 const CLIENTE = {
-  ragioneSociale : 'Calor Energy Verona Società Cooperativa',
-  ragioneSocialeBreve : 'Calor Energy Verona Soc. Coop.',
-  indirizzo      : 'Via M.G. Deledda, 6 - 37059 Campagnola di Zevio (VR)',
-  piva           : '04905340230',
-  atecoCodice    : '43.22.07',
-  atecoDesc      : 'Installazione impianti riscaldamento e condizionamento aria',
-  datoreLavoro   : 'Giulia Furlani',
-  anno           : '2026',
+  ragioneSociale      : 'RAGIONE SOCIALE CLIENTE',
+  ragioneSocialeBreve : 'NOME BREVE CLIENTE',
+  indirizzo           : 'VIA, CAP CITTÀ (PROV)',
+  piva                : '00000000000',
+  atecoCodice         : '00.00.00',
+  atecoDesc           : 'DESCRIZIONE ATTIVITÀ',
+  datoreLavoro        : 'NOME COGNOME',
+  anno                : '2026',
 };
 
 // ─── MANSIONI ────────────────────────────────────────────────────────────────
-const MANSIONI = [
-  {
-    id: 'ImpiegataAmm',
-    nome: 'Impiegata/o Amministrativa/o',
-    reparto: 'Amministrazione',
-    livello: 'BASSO',
-    oreSpec: 4,
-    rischi: [
-      {
-        nome: 'Utilizzo di videoterminali (VDT)',
-        misure: [
-          'Corretto posizionamento del monitor per evitare riflessi e abbagliamenti',
-          'Pause regolari di 15 minuti ogni 2 ore di lavoro continuativo al VDT',
-          'Regolazione di luminosità e contrasto dello schermo',
-          'Uso di seduta ergonomica con schienale regolabile',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-      {
-        nome: 'Posture incongrue / sovraccarico muscolo-scheletrico',
-        misure: [
-          'Strutturazione ergonomica della postazione di lavoro (seduta, schermo, tastiera)',
-          'Alternanza tra posizione seduta e movimenti durante la giornata',
-          'Esercizi di stretching e rilassamento muscolare',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-      {
-        nome: 'Stress lavoro-correlato',
-        misure: [
-          'Organizzazione dei carichi di lavoro con scadenze realistiche',
-          'Comunicazione trasparente tra colleghi e responsabili',
-          'Gestione dei conflitti interpersonali e supporto psicologico',
-          'Pause regolari e rispetto degli orari di lavoro',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-      {
-        nome: 'Scivolamenti e inciampi in ambiente domestico/smart working',
-        misure: [
-          'Mantenimento dell\'ordine e pulizia della postazione di lavoro',
-          'Cavi elettrici ordinati e protetti per evitare inciampi',
-          'Chiusura dei cassetti dopo l\'uso',
-          'Uso di scalette idonee per accedere a ripiani alti',
-        ],
-        dpi: ['Calzature con suola antiscivolo'],
-      },
-      {
-        nome: 'Rischio incendio (ambiente domestico)',
-        misure: [
-          'Disponibilità di estintore e piano di evacuazione',
-          'Non utilizzare fiamme libere in prossimità di materiale infiammabile',
-          'Segnalazione immediata di guasti agli impianti elettrici',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-    ],
-    dpi: ['Calzature con suola antiscivolo'],
-  },
-  {
-    id: 'Commerciale',
-    nome: 'Commerciale',
-    reparto: 'Commerciale',
-    livello: 'BASSO',
-    oreSpec: 4,
-    rischi: [
-      {
-        nome: 'Guida di autoveicolo (rischio stradale)',
-        misure: [
-          'Divieto assoluto di utilizzo del telefono durante la guida (salvo vivavoce)',
-          'Rispetto dei limiti di velocità e del codice della strada',
-          'Verifica preliminare del funzionamento del mezzo (freni, pneumatici, luci)',
-          'Divieto di guida in condizioni di stanchezza estrema o dopo assunzione di alcol',
-          'Manutenzione programmata del veicolo con revisioni periodiche',
-        ],
-        dpi: ['Gilet alta visibilità (in caso di emergenza su strada)'],
-      },
-      {
-        nome: 'Stress lavoro-correlato',
-        misure: [
-          'Pianificazione realistica delle visite e degli spostamenti',
-          'Limitazione delle ore di guida consecutive con pause regolari',
-          'Supporto da parte del responsabile in caso di difficoltà relazionali con clienti',
-          'Gestione assertiva dei conflitti con clienti',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-      {
-        nome: 'Utilizzo di videoterminali (VDT)',
-        misure: [
-          'Corretto posizionamento del monitor/laptop per evitare riflessi',
-          'Pause regolari di 15 minuti ogni 2 ore di utilizzo del VDT',
-          'Uso di seduta ergonomica nelle postazioni fisse',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-      {
-        nome: 'Posture incongrue durante guida e lavoro',
-        misure: [
-          'Corretta regolazione del sedile e degli specchietti dell\'auto',
-          'Pause di deambulazione durante i trasferimenti lunghi',
-          'Esercizi di stretching durante le soste',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-      {
-        nome: 'Aggressioni / comportamenti ostili da parte di clienti',
-        misure: [
-          'Formazione sulle tecniche di comunicazione assertiva e de-escalation',
-          'Non recarsi mai da soli in contesti percepiti come rischiosi',
-          'Segnalazione immediata al datore di lavoro di episodi critici',
-        ],
-        dpi: ['Nessun DPI specifico richiesto'],
-      },
-    ],
-    dpi: ['Calzature con suola antiscivolo', 'Gilet alta visibilità'],
-  },
-  {
-    id: 'Manutentore',
-    nome: 'Manutentore',
-    reparto: 'Manutenzione / Installazione',
-    livello: 'ALTO',
-    oreSpec: 12,
-    rischi: [
-      {
-        nome: 'Cadute dall\'alto (uso scale portatili e lavori in quota)',
-        misure: [
-          'Utilizzo esclusivo di scale portatili conformi alla norma EN 131',
-          'Ispezione della scala prima dell\'uso (pioli, piedini antiscivolo, vincoli)',
-          'Posizionamento della scala su superficie stabile e piana',
-          'Mantenimento del centro di gravità all\'interno degli stili durante la salita',
-          'Divieto di lavori in quota per tirocinanti non formati',
-          'Uso di imbragatura anticaduta per lavori su tetti o dislivelli > 2 m',
-        ],
-        dpi: ['Calzature antinfortunistiche', 'Imbragatura anticaduta (per quota > 2 m)'],
-      },
-      {
-        nome: 'Tagli e lesioni meccaniche',
-        misure: [
-          'Uso di attrezzature da taglio con protezioni attive (carter, schermi)',
-          'Verifica dello stato di usura degli utensili prima dell\'uso',
-          'Divieto di rimuovere le protezioni fisse dalle attrezzature',
-          'Riporre gli utensili taglienti in apposite custodie dopo l\'uso',
-        ],
-        dpi: ['Guanti antitaglio', 'Guanti in cuoio', 'Occhiali di sicurezza'],
-      },
-      {
-        nome: 'Agenti chimici – gas refrigeranti e combustibili',
-        misure: [
-          'Verifica della disponibilità e lettura delle Schede Dati di Sicurezza (SDS)',
-          'Aerazione del locale prima e durante interventi su impianti a gas',
-          'Utilizzo di rilevatore di perdite gas (analizzatore) certificato',
-          'Divieto di accensione di fiamme libere in locali con sospetta presenza di gas',
-          'Smaltimento dei refrigeranti secondo normativa F-Gas (Reg. UE 517/2014)',
-        ],
-        dpi: ['Guanti in gomma/PVC resistenti agli agenti chimici', 'Mascherina facciale filtrante (FFP2)', 'Occhiali di sicurezza'],
-      },
-      {
-        nome: 'Rischio elettrico',
-        misure: [
-          'Verifica assenza di tensione prima di interventi su impianti elettrici (multimetro)',
-          'Sezionamento e blocco dell\'impianto prima di ogni intervento (LOTO)',
-          'Utilizzo di attrezzature con doppio isolamento (Classe II)',
-          'Verifica periodica del collegamento a terra degli impianti',
-        ],
-        dpi: ['Guanti isolanti per lavori elettrici (quando necessari)', 'Calzature antinfortunistiche con suola isolante'],
-      },
-      {
-        nome: 'Esposizione a rumore',
-        misure: [
-          'Preferire attrezzature con minore emissione sonora',
-          'Limitazione dei tempi di esposizione alle fasi più rumorose',
-          'Manutenzione periodica delle attrezzature per ridurre le emissioni',
-        ],
-        dpi: ['Otoprotettori (inserti o cuffie) nelle fasi con livello > 80 dB(A)'],
-      },
-      {
-        nome: 'Esposizione a calore (caldaie, bruciatori, impianti termici)',
-        misure: [
-          'Attesa del raffreddamento dell\'impianto prima di interventi su parti calde',
-          'Segnalazione delle superfici calde con apposita segnaletica',
-          'Ventilazione adeguata dei locali caldaia durante l\'intervento',
-        ],
-        dpi: ['Guanti in cuoio resistenti al calore'],
-      },
-      {
-        nome: 'Ambienti confinati / rischio asfissia (locali tecnici)',
-        misure: [
-          'Verifica della qualità dell\'aria con idoneo strumento prima dell\'ingresso',
-          'Presenza obbligatoria di un addetto esterno durante il lavoro in confinato',
-          'Divieto di lavorare da soli in spazi confinati',
-          'Piano di emergenza e procedure di evacuazione predisposte prima dell\'intervento',
-        ],
-        dpi: ['Maschera con filtro adeguato (ABEK) se necessario'],
-      },
-    ],
-    dpi: [
-      'Calzature antinfortunistiche',
-      'Occhiali di sicurezza',
-      'Guanti antitaglio',
-      'Guanti in cuoio',
-      'Guanti in gomma/PVC',
-      'Imbragatura anticaduta',
-      'Elmetto (in cantieri edili)',
-      'Mascherina facciale filtrante FFP2',
-      'Gilet alta visibilità',
-    ],
-  },
-];
+// Compilato da Claude ad ogni generazione in base al DVR del cliente.
+// Struttura di ogni mansione:
+// {
+//   id: 'NomeBreve',          // es. 'ImpiegataAmm' – senza spazi
+//   nome: 'Nome esteso',
+//   reparto: 'Reparto',
+//   livello: 'BASSO',         // BASSO / MEDIO / ALTO
+//   oreSpec: 4,               // 4 / 8 / 12
+//   rischi: [
+//     {
+//       nome: 'Nome rischio',
+//       misure: ['Misura 1', 'Misura 2'],
+//       dpi: ['DPI specifico'],
+//     },
+//   ],
+//   dpi: ['DPI completi della mansione'],
+// }
+const MANSIONI = [];
 
 module.exports = {
   C, FONT, CLIENTE, MANSIONI, logoBytes,
