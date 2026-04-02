@@ -315,8 +315,8 @@ const MANSIONI = [
     id: 'Manutentore',
     nome: 'Manutentore',
     reparto: 'Manutenzione / Installazione',
-    livello: 'MEDIO',
-    oreSpec: 8,
+    livello: 'ALTO',
+    oreSpec: 12,
     rischi: [
       {
         nome: 'Cadute dall\'alto (uso scale portatili e lavori in quota)',
