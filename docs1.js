@@ -1,11 +1,11 @@
 'use strict';
 const h = require('./helpers');
 const {
-  Document, Paragraph, TextRun, Table, TableRow, TableCell,
+  Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField, LevelFormat,
   C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, MARGIN_STD,
-  makeHeader, makeFooter, vuoto, cella, salvaDoc,
+  makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes,
 } = h;
 
 // PageBreak va importato separatamente
@@ -508,69 +508,179 @@ async function genProgettoFormativo() {
 async function genRegistroFormIniziale(mansione) {
   const MARGIN = { top: 878, right: 1134, bottom: 1134, left: 1134 };
   const W = 14570;
-  const footer = new Footer({ children: [new Paragraph({
-    children: [
-      new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
-      new SimpleField('PAGE'),
-    ],
-  })]});
+
+  // ── Bordi AAAAAA (come nel master) ────────────────────────────────────────
+  const BAA = {
+    top:    { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+    bottom: { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+    left:   { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+    right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+  };
+  // Bordi intestazione presenze (1F4E79)
+  const BHDR = {
+    top:    { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+    bottom: { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+    left:   { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+    right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+  };
+
+  // ── Header con logo (in alto a sinistra) ──────────────────────────────────
+  const header = new Header({
+    children: [new Paragraph({
+      children: [new ImageRun({
+        data: logoBytes,
+        type: 'jpg',
+        transformation: { width: 90, height: 90 },
+      })],
+    })],
+  });
+
+  // ── Footer con bordo superiore blu ────────────────────────────────────────
+  const footer = new Footer({
+    children: [new Paragraph({
+      border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
+      children: [
+        new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
+        new SimpleField('PAGE'),
+      ],
+    })],
+  });
+
+  // ── Helper cella con bordi AAAAAA e margini precisi ───────────────────────
+  function cellaAA(children, opts = {}) {
+    return new TableCell({
+      width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+      borders: BAA,
+      margins: { top: opts.mTB || 100, bottom: opts.mTB || 100, left: opts.mLR || 150, right: opts.mLR || 150 },
+      verticalAlign: VerticalAlign.CENTER,
+      children: Array.isArray(children) ? children : [children],
+    });
+  }
+
+  // ── Helper cella dati presenze (bordi AAAAAA, margini ridotti) ────────────
+  function cellaDato(w) {
+    return new TableCell({
+      width: { size: w, type: WidthType.DXA },
+      borders: BAA,
+      margins: { top: 60, bottom: 60, left: 80, right: 80 },
+      children: [new Paragraph({ children: [new TextRun({ text: ' ' })] })],
+    });
+  }
+
+  // ── Helper cella intestazione presenze (fill 1F4E79, testo bianco) ────────
+  function cellaHdr(w, testo) {
+    return new TableCell({
+      width: { size: w, type: WidthType.DXA },
+      borders: BHDR,
+      shading: { fill: '1F4E79', type: ShadingType.CLEAR },
+      margins: { top: 80, bottom: 80, left: 100, right: 100 },
+      verticalAlign: VerticalAlign.CENTER,
+      children: [new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: testo, bold: true, font: FONT, size: 18, color: 'FFFFFF' })],
+      })],
+    });
+  }
+
   const colW = [2025, 2004, 3196, 708, 3402, 709, 2526];
+  const wL = 6964; const wR = 7606;
+
+  // ── Paragrafo spacer (come nel master: sz=8, after=100) ───────────────────
+  const spacer = new Paragraph({
+    spacing: { after: 100 },
+    children: [new TextRun({ text: ' ', font: FONT, size: 8 })],
+  });
 
   const children = [
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 6*20 },
+    // Titolo
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 60 },
       children: [new TextRun({ text: 'REGISTRO PRESENZE', bold: true, font: FONT, size: 34, color: C.BLU_DARK })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 2*20 },
+    // Ragione sociale
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 20 },
       children: [new TextRun({ text: CLIENTE.ragioneSociale, bold: true, font: FONT, size: 24 })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 8*20 },
+    // Indirizzo
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 160 },
       children: [new TextRun({ text: CLIENTE.indirizzo, font: FONT, size: 20 })],
     }),
+
+    // ── Tabella info corso (bordi AAAAAA, label bold + valore normale) ────
     new Table({
-      width:{size:W,type:WidthType.DXA}, columnWidths:[Math.floor(W/2), W-Math.floor(W/2)],
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
-      rows:[
-        new TableRow({children:[
-          cella(`Corso: Formazione Generale + Specifica (D.Lgs. 81/08 – ASR 17/04/2025)  |  ${mansione.oreSpec+4} ore totali`,{width:Math.floor(W/2)}),
-          cella(`Mansione: ${mansione.nome}`,{width:W-Math.floor(W/2)}),
+      width: { size: W, type: WidthType.DXA },
+      columnWidths: [wL, wR],
+      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
+      rows: [
+        new TableRow({ children: [
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Corso: ', bold: true, font: FONT, size: 20 }),
+            new TextRun({ text: `Formazione Generale + Specifica (D.Lgs. 81/08 – ASR 17/04/2025)`, font: FONT, size: 20 }),
+          ]}), { width: wL }),
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Mansione: ', bold: true, font: FONT, size: 20 }),
+            new TextRun({ text: mansione.nome, font: FONT, size: 20 }),
+          ]}), { width: wR }),
         ]}),
-        new TableRow({children:[
-          cella(`Relatore / Docente: ${CLIENTE.datoreLavoro}`,{width:Math.floor(W/2)}),
-          cella('',{width:W-Math.floor(W/2)}),
+        new TableRow({ children: [
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Relatore / Docente: ', bold: true, font: FONT, size: 20 }),
+            new TextRun({ text: CLIENTE.datoreLavoro, font: FONT, size: 20 }),
+          ]}), { width: wL }),
+          cellaAA(new Paragraph({ children: [new TextRun({ text: ' ', font: FONT, size: 20 })] }), { width: wR }),
         ]}),
       ],
     }),
-    vuoto(30),
+
+    spacer,
+
+    // ── Tabella presenze (intestazione 1F4E79, celle dati AAAAAA) ──────────
     new Table({
-      width:{size:W,type:WidthType.DXA}, columnWidths:colW,
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
-      rows:[
-        new TableRow({tableHeader:true, children:[
-          cella('COGNOME',{width:colW[0],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
-          cella('NOME',{width:colW[1],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
-          cella('FIRMA ENTRATA',{width:colW[2],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('ORA',{width:colW[3],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('FIRMA USCITA',{width:colW[4],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('ORA',{width:colW[5],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('DATA INTERVENTO',{width:colW[6],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+      width: { size: W, type: WidthType.DXA },
+      columnWidths: colW,
+      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
+      rows: [
+        new TableRow({ tableHeader: true, children: [
+          cellaHdr(colW[0], 'COGNOME'),
+          cellaHdr(colW[1], 'NOME'),
+          cellaHdr(colW[2], 'FIRMA ENTRATA'),
+          cellaHdr(colW[3], 'ORA'),
+          cellaHdr(colW[4], 'FIRMA USCITA'),
+          cellaHdr(colW[5], 'ORA'),
+          cellaHdr(colW[6], 'DATA INTERVENTO'),
         ]}),
-        ...Array.from({length:15},(_,i) => new TableRow({
-          height:{value:500,rule:'atLeast'},
-          children: colW.map(w => cella('',{width:w,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT})),
+        ...Array.from({ length: 15 }, () => new TableRow({
+          height: { value: 500, rule: 'atLeast' },
+          children: colW.map(w => cellaDato(w)),
         })),
       ],
     }),
-    vuoto(30),
+
+    spacer,
+
+    // ── Tabella argomenti (bordi AAAAAA, label bold + valore normale) ──────
     new Table({
-      width:{size:W,type:WidthType.DXA}, columnWidths:[W],
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:NO.top},
-      rows:[new TableRow({children:[cella('Argomenti trattati:  Vedasi progetto formativo',{width:W})]})]
+      width: { size: W, type: WidthType.DXA },
+      columnWidths: [W],
+      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
+      rows: [new TableRow({ children: [
+        cellaAA(new Paragraph({ children: [
+          new TextRun({ text: 'Argomenti trattati:  ', bold: true, font: FONT, size: 20 }),
+          new TextRun({ text: 'Vedasi progetto formativo', font: FONT, size: 20 }),
+        ]}), { width: W }),
+      ]})],
     }),
   ];
 
-  const doc = new Document({styles:docStyles, sections:[{
-    properties:{page:{size:{width:16838,height:11906},margin:MARGIN}},
-    footers:{default:footer},
+  const doc = new Document({ styles: docStyles, sections: [{ 
+    properties: { page: { size: { width: 16838, height: 11906 }, margin: MARGIN } },
+    headers: { default: header },
+    footers: { default: footer },
     children,
   }]});
   await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/Registro_FormIniziale_${mansione.id}.docx`);
@@ -580,70 +690,149 @@ async function genRegistroFormIniziale(mansione) {
 // REGISTRO AGGIORNAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroAggiornamento() {
-  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 878, right: 1134, bottom: 1134, left: 1134 };
   const W = 14570;
-  const footer = new Footer({ children: [new Paragraph({
-    children: [
-      new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
-      new SimpleField('PAGE'),
-    ],
-  })]});
+
+  const BAA = {
+    top:    { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+    bottom: { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+    left:   { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+    right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: 'AAAAAA' },
+  };
+  const BHDR = {
+    top:    { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+    bottom: { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+    left:   { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+    right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
+  };
+
+  const header = new Header({
+    children: [new Paragraph({
+      children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 90, height: 90 } })],
+    })],
+  });
+
+  const footer = new Footer({
+    children: [new Paragraph({
+      border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
+      children: [
+        new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
+        new SimpleField('PAGE'),
+      ],
+    })],
+  });
+
+  function cellaAA(children, opts = {}) {
+    return new TableCell({
+      width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+      borders: BAA,
+      margins: { top: opts.mTB || 100, bottom: opts.mTB || 100, left: opts.mLR || 150, right: opts.mLR || 150 },
+      verticalAlign: VerticalAlign.CENTER,
+      children: Array.isArray(children) ? children : [children],
+    });
+  }
+  function cellaDato(w) {
+    return new TableCell({
+      width: { size: w, type: WidthType.DXA },
+      borders: BAA,
+      margins: { top: 60, bottom: 60, left: 80, right: 80 },
+      children: [new Paragraph({ children: [new TextRun({ text: ' ' })] })],
+    });
+  }
+  function cellaHdr(w, testo) {
+    return new TableCell({
+      width: { size: w, type: WidthType.DXA },
+      borders: BHDR,
+      shading: { fill: '1F4E79', type: ShadingType.CLEAR },
+      margins: { top: 80, bottom: 80, left: 100, right: 100 },
+      verticalAlign: VerticalAlign.CENTER,
+      children: [new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: testo, bold: true, font: FONT, size: 18, color: 'FFFFFF' })],
+      })],
+    });
+  }
+
   const colW = [2025, 2004, 3196, 708, 3402, 709, 2526];
+  const wL = 6964; const wR = 7606;
+  const spacer = new Paragraph({
+    spacing: { after: 100 },
+    children: [new TextRun({ text: ' ', font: FONT, size: 8 })],
+  });
 
   const children = [
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 6*20 },
+    new Paragraph({
+      alignment: AlignmentType.CENTER, spacing: { before: 0, after: 60 },
       children: [new TextRun({ text: 'REGISTRO PRESENZE', bold: true, font: FONT, size: 34, color: C.BLU_DARK })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 2*20 },
+    new Paragraph({
+      alignment: AlignmentType.CENTER, spacing: { before: 0, after: 20 },
       children: [new TextRun({ text: CLIENTE.ragioneSociale, bold: true, font: FONT, size: 24 })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 8*20 },
+    new Paragraph({
+      alignment: AlignmentType.CENTER, spacing: { before: 0, after: 160 },
       children: [new TextRun({ text: CLIENTE.indirizzo, font: FONT, size: 20 })],
     }),
     new Table({
-      width:{size:W,type:WidthType.DXA}, columnWidths:[Math.floor(W/2), W-Math.floor(W/2)],
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
-      rows:[
-        new TableRow({children:[
-          cella('Corso: Aggiornamento della formazione specifica (6 ore)',{width:Math.floor(W/2)}),
-          cella('Mansione: _________________________________',{width:W-Math.floor(W/2)}),
+      width: { size: W, type: WidthType.DXA }, columnWidths: [wL, wR],
+      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
+      rows: [
+        new TableRow({ children: [
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Corso: ', bold: true, font: FONT, size: 20 }),
+            new TextRun({ text: 'Aggiornamento della formazione specifica (6 ore)', font: FONT, size: 20 }),
+          ]}), { width: wL }),
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Mansione: ', bold: true, font: FONT, size: 20 }),
+            new TextRun({ text: '_________________________________', font: FONT, size: 20 }),
+          ]}), { width: wR }),
         ]}),
-        new TableRow({children:[
-          cella(`Relatore / Docente: ${CLIENTE.datoreLavoro}`,{width:Math.floor(W/2)}),
-          cella('',{width:W-Math.floor(W/2)}),
+        new TableRow({ children: [
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Relatore / Docente: ', bold: true, font: FONT, size: 20 }),
+            new TextRun({ text: CLIENTE.datoreLavoro, font: FONT, size: 20 }),
+          ]}), { width: wL }),
+          cellaAA(new Paragraph({ children: [new TextRun({ text: ' ', font: FONT, size: 20 })] }), { width: wR }),
         ]}),
       ],
     }),
-    vuoto(30),
+    spacer,
     new Table({
-      width:{size:W,type:WidthType.DXA}, columnWidths:colW,
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
-      rows:[
-        new TableRow({tableHeader:true, children:[
-          cella('COGNOME',{width:colW[0],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
-          cella('NOME',{width:colW[1],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
-          cella('FIRMA ENTRATA',{width:colW[2],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('ORA',{width:colW[3],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('FIRMA USCITA',{width:colW[4],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('ORA',{width:colW[5],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-          cella('DATA INTERVENTO',{width:colW[6],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+      width: { size: W, type: WidthType.DXA }, columnWidths: colW,
+      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
+      rows: [
+        new TableRow({ tableHeader: true, children: [
+          cellaHdr(colW[0], 'COGNOME'),
+          cellaHdr(colW[1], 'NOME'),
+          cellaHdr(colW[2], 'FIRMA ENTRATA'),
+          cellaHdr(colW[3], 'ORA'),
+          cellaHdr(colW[4], 'FIRMA USCITA'),
+          cellaHdr(colW[5], 'ORA'),
+          cellaHdr(colW[6], 'DATA INTERVENTO'),
         ]}),
-        ...Array.from({length:14},(_,i) => new TableRow({
-          height:{value:500,rule:'atLeast'},
-          children: colW.map(w => cella('',{width:w,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT})),
+        ...Array.from({ length: 14 }, () => new TableRow({
+          height: { value: 500, rule: 'atLeast' },
+          children: colW.map(w => cellaDato(w)),
         })),
       ],
     }),
-    vuoto(30),
-    new Paragraph({spacing:{after:6*20},children:[new TextRun({text:'Argomenti trattati:',bold:true,font:FONT,size:20})]}),
-    new Paragraph({spacing:{after:4},children:[new TextRun({text:'____________________________________________________________________________________________________',font:FONT,size:20})]}),
-    new Paragraph({spacing:{after:4},children:[new TextRun({text:'____________________________________________________________________________________________________',font:FONT,size:20})]}),
-    new Paragraph({spacing:{after:4},children:[new TextRun({text:'____________________________________________________________________________________________________',font:FONT,size:20})]}),
+    spacer,
+    new Table({
+      width: { size: W, type: WidthType.DXA }, columnWidths: [W],
+      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
+      rows: [new TableRow({ children: [
+        cellaAA(new Paragraph({ children: [
+          new TextRun({ text: 'Argomenti trattati:  ', bold: true, font: FONT, size: 20 }),
+          new TextRun({ text: 'Vedasi progetto formativo', font: FONT, size: 20 }),
+        ]}), { width: W }),
+      ]})],
+    }),
   ];
 
-  const doc = new Document({styles:docStyles, sections:[{
-    properties:{page:{size:{width:16838,height:11906},margin:MARGIN}},
-    footers:{default:footer},
+  const doc = new Document({ styles: docStyles, sections: [{
+    properties: { page: { size: { width: 16838, height: 11906 }, margin: MARGIN } },
+    headers: { default: header },
+    footers: { default: footer },
     children,
   }]});
   await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/Registro_Aggiornamento.docx`);
