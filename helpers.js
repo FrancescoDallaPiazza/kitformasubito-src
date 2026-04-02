@@ -102,7 +102,7 @@ function makeFooter(docTitle = '') {
         new TextRun({ text: docTitle, size: 18, font: FONT, color: C.GRIGIO }),
         new TextRun({ text: '\tPag. ', size: 18, font: FONT }),
         new SimpleField('PAGE'),
-        new TextRun({ text: ' di ', size: 18, font: FONT }),
+        new TextRun({ text: ' a ', size: 18, font: FONT }),
         new SimpleField('NUMPAGES'),
       ],
     })],
