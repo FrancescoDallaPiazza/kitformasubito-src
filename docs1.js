@@ -3,7 +3,7 @@ const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
-  TabStopType, SimpleField,
+  TabStopType, SimpleField, LevelFormat,
   C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, MARGIN_STD,
   makeHeader, makeFooter, vuoto, cella, salvaDoc,
 } = h;
@@ -50,12 +50,12 @@ function NBrk(testo, opts = {}) {
   });
 }
 
-// paragrafo lista (List Paragraph, spB=2 spA=2)
+// paragrafo lista con bullet vero (numbering)
 function LP(testo, opts = {}) {
   const runs = [new TextRun({ text: testo, font: FONT, size: 20 })];
   if (opts.pageBreak) runs.push(new PageBreak());
   return new Paragraph({
-    style: 'List Paragraph',
+    numbering: { reference: 'bullets', level: 0 },
     alignment: AlignmentType.JUSTIFIED,
     spacing: { before: 4, after: 4 },
     children: runs,
@@ -350,11 +350,37 @@ async function genProgettoFormativo() {
     N('2. RIFERIMENTO NORMATIVO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
     SUB('Accordo Stato-Regioni del 17 aprile 2025 – Parte II, Punto 2 e Parte IV, Punto 1'),
     new Paragraph({ children: [] }),
-    N('Parte II dell\'Accordo – Punto 2: i datori di lavoro possono organizzare direttamente i corsi di formazione ex art. 37, comma 2, del D.Lgs. n. 81/2008 nei confronti dei propri lavoratori, preposti e dirigenti, a condizione che venga rispettato quanto previsto dal presente Accordo. In questo caso il datore di lavoro riveste il ruolo di soggetto formatore cui spettano gli adempimenti del presente accordo.', { sz: 10 }),
+    // Paragrafo 1: "Parte II dell'Accordo – Punto 2" sottolineato + testo in corsivo
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 0, after: 0 },
+      children: [
+        new TextRun({ text: 'Parte II dell\'Accordo – Punto 2', font: FONT, size: 20, color: '000000', underline: { type: 'single' } }),
+        new TextRun({ text: ': ', font: FONT, size: 20, color: '000000' }),
+        new TextRun({ text: 'i datori di lavoro possono organizzare direttamente i corsi di formazione ex art. 37, comma 2, del D.Lgs. n. 81/2008 nei confronti dei propri lavoratori, preposti e dirigenti, a condizione che venga rispettato quanto previsto dal presente Accordo. In questo caso il datore di lavoro riveste il ruolo di soggetto formatore cui spettano gli adempimenti del presente accordo', font: FONT, size: 20, color: '000000', italics: true }),
+        new TextRun({ text: '.', font: FONT, size: 20, color: '000000' }),
+      ],
+    }),
     new Paragraph({ children: [] }),
-    N('Il datore di lavoro in possesso dei requisiti per lo svolgimento diretto dei compiti del servizio di prevenzione e protezione di cui all\'articolo 34 del D.Lgs. n. 81/2008, può svolgere anche in qualità di docente, esclusivamente nei riguardi dei propri lavoratori, preposti e dirigenti, la formazione di cui ai paragrafi: 2.1, 2.2 e 2.3.', { sz: 10 }),
+    // Paragrafo 2: tutto in corsivo
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 0, after: 0 },
+      children: [
+        new TextRun({ text: 'Il datore di lavoro in possesso dei requisiti per lo svolgimento diretto dei compiti del servizio di prevenzione e protezione di cui all\'articolo 34 del D.Lgs. n. 81/2008, può svolgere anche in qualità di docente, esclusivamente nei riguardi dei propri lavoratori, preposti e dirigenti, la formazione di cui ai paragrafi: 2.1, 2.2 e 2.3.', font: FONT, size: 20, color: '000000', italics: true }),
+      ],
+    }),
     new Paragraph({ children: [] }),
-    N('Parte IV dell\'Accordo – Punto 1: le indicazioni metodologiche per l\'organizzazione e la gestione dei corsi, fatta eccezione dei punti 3.2, 3.3, 3.4, 3.5, 6.3 e 7, non si applicano ai Datori di Lavoro che organizzano ed erogano autonomamente, all\'interno delle proprie aziende, la formazione sulla salute e sicurezza sul lavoro, ma esse possono trovare indicazioni utili per la gestione dei percorsi formativi di cui al presente accordo.', { sz: 10 }),
+    // Paragrafo 3: "Parte IV dell'Accordo" sottolineato + " – " normale + testo in corsivo
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 0, after: 0 },
+      children: [
+        new TextRun({ text: 'Parte IV dell\'Accordo', font: FONT, size: 20, color: '000000', underline: { type: 'single' } }),
+        new TextRun({ text: ' – ', font: FONT, size: 20, color: '000000' }),
+        new TextRun({ text: 'Punto 1: le indicazioni metodologiche per l\'organizzazione e la gestione dei corsi, fatta eccezione dei punti 3.2, 3.3, 3.4, 3.5, 6.3 e 7, non si applicano ai Datori di Lavoro che organizzano ed erogano autonomamente, all\'interno delle proprie aziende, la formazione sulla salute e sicurezza sul lavoro, ma esse possono trovare indicazioni utili per la gestione dei percorsi formativi di cui al presente accordo.', font: FONT, size: 20, color: '000000', italics: true }),
+      ],
+    }),
     new Paragraph({ children: [] }),
 
     // ── SEZIONE 3 ─────────────────────────────────────────────────────────
@@ -422,7 +448,7 @@ async function genProgettoFormativo() {
     LP('nuove normative'),
     // PAGE BREAK [97] — nell'ultimo elemento della lista 4.3
     new Paragraph({
-      style: 'List Paragraph',
+      numbering: { reference: 'bullets', level: 0 },
       alignment: AlignmentType.JUSTIFIED,
       spacing: { before: 4, after: 4 },
       children: [
@@ -453,6 +479,18 @@ async function genProgettoFormativo() {
   ];
 
   const doc = new Document({
+    numbering: {
+      config: [{
+        reference: 'bullets',
+        levels: [{
+          level: 0,
+          format: LevelFormat.BULLET,
+          text: '●',
+          alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } } },
+        }],
+      }],
+    },
     styles: docStyles,
     sections: [{
       properties: { page: { size: { width: 11906, height: 16838 }, margin: MARGIN } },
