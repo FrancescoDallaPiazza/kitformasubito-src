@@ -360,8 +360,41 @@ async function genGradimento() {
 // ─────────────────────────────────────────────────────────────────────────────
 async function genAttestato(mansione) {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
-  const footer = footerAziendaNoPag();
-  const wL = 2700; const wR = W - wL;
+  // Master: NO header, NO footer
+  const wL = 2698; const wR = W - wL; // 6940
+  const BD_A = {top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}};
+  const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
+  const wFirma = 4819;
+
+  function firmaCol(label) {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[
+        new Paragraph({children:[]}), new Paragraph({children:[]}),
+        new Paragraph({children:[]}), new Paragraph({children:[]}),
+        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
+      ],
+    });
+  }
+  function firmaLinea() {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[
+        new Paragraph({spacing:{before:200},children:[]}),
+        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
+      ],
+    });
+  }
+  const tableFirme = new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
+    borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+    rows:[
+      new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol('Firma del Relatore / Datore di Lavoro / RSPP')]}),
+      new TableRow({children:[firmaLinea(), firmaLinea()]}),
+    ],
+  });
+
+  const REF_NORM = `ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)\nRiferimento normativo e contenuti minimi secondo l'Accordo Stato-Regioni del 17 aprile 2025\nParte II dell'Accordo - Punto 2 e Parte IV dell'Accordo - Punto 1`;
 
   function buildAttest(tipoLabel, durata, nota) {
     return [
@@ -377,18 +410,18 @@ async function genAttestato(mansione) {
       PAR('Codice Fiscale: ___________________________________________',{spA:3}),
       PAR('ha frequentato il corso di formazione in materia di Salute e Sicurezza sul Lavoro:',{sz:10,spA:5}),
       new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wL,wR],
-        borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+        borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
         rows:[
           ['Tipologia corso:',tipoLabel],
-          ['Riferimento normativo:','ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)\nRiferimento normativo e contenuti minimi – Parte II'],
+          ['Riferimento normativo:', REF_NORM],
           ['Durata:',durata],
           ['Modalità:','Presenza sul campo'],
           ['Data inizio:','___/___/_____'],
           ['Data fine:','___/___/_____'],
           ['Sede:',CLIENTE.indirizzo],
-        ].map(([k,v],i) => new TableRow({children:[
-          cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT}),
-          cella(v,{width:wR}),
+        ].map(([k,v]) => new TableRow({children:[
+          cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
+          cella(v,{width:wR,color:'000000'}),
         ]})),
       }),
       vuoto(20),
@@ -397,7 +430,7 @@ async function genAttestato(mansione) {
       PAR(nota,{bold:true,sz:9.5,col:C.GRIGIO,spA:5}),
       new Paragraph({spacing:{after:20},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
       vuoto(30),
-      tabellaFirme('Firma del Soggetto Formatore / Datore di Lavoro','Firma del Relatore / Datore di Lavoro / RSPP'),
+      tableFirme,
     ];
   }
 
@@ -405,8 +438,8 @@ async function genAttestato(mansione) {
   const sec2 = buildAttest(`FORMAZIONE SPECIFICA RISCHIO ${mansione.livello}`,`${mansione.oreSpec} ore specifiche`,'Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.');
 
   const doc = new Document({styles:docStyles,sections:[
-    {properties:{page:{size:A4_P,margin:MARGIN}},footers:{default:footer},children:sec1},
-    {properties:{page:{size:A4_P,margin:MARGIN}},footers:{default:footer},children:sec2},
+    {properties:{page:{size:A4_P,margin:MARGIN}},children:sec1},
+    {properties:{page:{size:A4_P,margin:MARGIN}},children:sec2},
   ]});
   await salvaDoc(doc, `${OUT}/05 - ATTESTATI/Attestato_${mansione.id}.docx`);
 }
@@ -416,8 +449,35 @@ async function genAttestato(mansione) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function genAttestatiAggiornamento() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
-  const footer = footerAziendaNoPag();
-  const wL = 2700; const wR = W - wL;
+  const wL = 2698; const wR = W - wL;
+  const BD_A = {top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}};
+  const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
+  const wFirma = 4819;
+
+  function firmaCol(label) {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),
+        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
+      ],
+    });
+  }
+  function firmaLinea() {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[new Paragraph({spacing:{before:200},children:[]}),
+        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
+      ],
+    });
+  }
+  const tableFirme = new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
+    borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+    rows:[
+      new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol('Firma del Relatore / Datore di Lavoro / RSPP')]}),
+      new TableRow({children:[firmaLinea(), firmaLinea()]}),
+    ],
+  });
 
   const children = [
     PAR('ATTESTATO DI FORMAZIONE',{bold:true,sz:20,col:C.BLU_DARK,spA:4}),
@@ -432,15 +492,18 @@ async function genAttestatiAggiornamento() {
     PAR('Codice Fiscale: ___________________________________________',{spA:3}),
     PAR('ha frequentato il corso di formazione in materia di Salute e Sicurezza sul Lavoro:',{sz:10,spA:5}),
     new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wL,wR],
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+      borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
       rows:[
         ['Tipologia corso:','AGGIORNAMENTO FORMAZIONE LAVORATORI'],
-        ['Riferimento normativo:','ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)\nParte II dell\'Accordo - Punto 2 /2.1 e Parte III'],
+        ['Riferimento normativo:',`ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)\nRiferimento normativo e contenuti minimi secondo l'Accordo Stato-Regioni del 17 aprile 2025\nParte II dell'Accordo - Punto 2 /2.1 e Parte III`],
         ['Durata:','6 ore'],
         ['Modalità:','Presenza sul campo'],
         ['Data inizio:','___/___/_____'],
         ['Data fine:','___/___/_____'],
-      ].map(([k,v],i) => new TableRow({children:[cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT}),cella(v,{width:wR})]})),
+      ].map(([k,v]) => new TableRow({children:[
+        cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
+        cella(v,{width:wR,color:'000000'}),
+      ]})),
     }),
     vuoto(20),
     PAR('Superando con esito positivo la verifica finale dell\'apprendimento,',{sz:10,spA:2}),
@@ -449,11 +512,11 @@ async function genAttestatiAggiornamento() {
     PAR('Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.',{bold:true,sz:9.5,col:C.GRIGIO,spA:5}),
     new Paragraph({spacing:{after:20},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
     vuoto(30),
-    tabellaFirme('Firma del Soggetto Formatore / Datore di Lavoro','Firma del Relatore / Datore di Lavoro / RSPP'),
+    tableFirme,
   ];
 
   const doc = new Document({styles:docStyles,sections:[{
-    properties:{page:{size:A4_P,margin:MARGIN}},footers:{default:footer},children,
+    properties:{page:{size:A4_P,margin:MARGIN}},children,
   }]});
   await salvaDoc(doc, `${OUT}/05 - ATTESTATI/Attestato_Aggiorn.docx`);
 }
@@ -463,22 +526,25 @@ async function genAttestatiAggiornamento() {
 // NO header, footer azienda+pag, titolo CENTER, sezioni bold col=2E75B6 spB=10 spA=5
 // ─────────────────────────────────────────────────────────────────────────────
 async function genVerbaleVerifica() {
-  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 426 };
+  const header = new Header({ children: [new Paragraph({
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 70, height: 70 } })],
+  })]});
   const footer = footerAziendaPag();
-  const wL = 3540; const wR = W - wL;
+  const wL = 3539; const wR = W - wL; // 6099
 
   function SEZ(n, txt) {
-    return new Paragraph({spacing:{before:20,after:10},children:[new TextRun({text:`${n}. ${txt}`,bold:true,font:FONT,size:20,color:C.BLU_MED})]});
+    return new Paragraph({spacing:{before:200,after:100},children:[new TextRun({text:`${n}. ${txt}`,bold:true,font:FONT,color:C.BLU_MED})]});
   }
   function CHECK(txt) {
-    return new Paragraph({spacing:{before:0,after:6},children:[new TextRun({text:`☐  ${txt}`,font:FONT,size:20})]}); 
+    return new Paragraph({spacing:{before:0,after:6},children:[new TextRun({text:`☐  ${txt}`,font:FONT,size:20})]});
   }
   function RIGA(txt) {
     return new Paragraph({spacing:{before:0,after:8},children:[new TextRun({text:txt,font:FONT,size:20})]});
   }
 
-  // Elenco tabella 9x5
-  const wN=460;const wNome=2380;const wCF=1980;const wAm=2400;const wEs=W-wN-wNome-wCF-wAm;
+  // Elenco: col widths dal master [464, 2384, 1986, 2403, 2401]
+  const wN=464;const wNome=2384;const wCF=1986;const wAm=2403;const wEs=2401;
   const elencoTable = new Table({
     width:{size:W,type:WidthType.DXA}, columnWidths:[wN,wNome,wCF,wAm,wEs],
     borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
@@ -491,12 +557,22 @@ async function genVerbaleVerifica() {
         cella('Esito (Idoneo / Non idoneo)',{width:wEs,bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
       ]}),
       ...Array.from({length:8},(_,i) => new TableRow({height:{value:480,rule:'atLeast'},children:[
-        cella(`${i+1}`,{width:wN,align:'center',fill:i%2===0?C.BIANCO:C.GRIGIO_ALT}),
-        cella('',{width:wNome,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT}),
-        cella('',{width:wCF,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT}),
-        cella('',{width:wAm,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT}),
-        cella('',{width:wEs,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT}),
+        cella(`${i+1}`,{width:wN,align:'center'}),
+        cella('',{width:wNome}),
+        cella('',{width:wCF}),
+        cella('',{width:wAm}),
+        cella('',{width:wEs}),
       ]})),
+    ],
+  });
+
+  // Firma: single column 7132 DXA dal master
+  const wFirma = 7132;
+  const firmaTable = new Table({width:{size:wFirma,type:WidthType.DXA},columnWidths:[wFirma],
+    borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:NO.top},
+    rows:[
+      new TableRow({children:[cella('Responsabile del Progetto Formativo',{width:wFirma,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER})]}),
+      new TableRow({height:{value:600,rule:'atLeast'},children:[cella('',{width:wFirma})]}),
     ],
   });
 
@@ -512,7 +588,7 @@ async function genVerbaleVerifica() {
         ['Codice Fiscale / P.IVA',CLIENTE.piva],
         ['Responsabile progetto formativo',CLIENTE.datoreLavoro],
         ['Soggetto Formatore / Docente',`${CLIENTE.datoreLavoro} – Datore di Lavoro / RSPP`],
-      ].map(([k,v]) => new TableRow({children:[cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT}),cella(v,{width:wR})]})),
+      ].map(([k,v]) => new TableRow({children:[cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),cella(v,{width:wR,color:'000000'})]})),
     }),
     vuoto(30),
 
@@ -541,21 +617,15 @@ async function genVerbaleVerifica() {
     vuoto(30),
 
     SEZ(6,'DICHIARAZIONE FINALE'),
-    new Paragraph({alignment:AlignmentType.JUSTIFIED,spacing:{after:20},children:[new TextRun({text:'Il Responsabile del progetto formativo attesta che la verifica finale è stata svolta nel rispetto delle modalità e dei criteri previsti dall\'Accordo Stato-Regioni 17/04/2025 e che i risultati sono stati comunicati ai partecipanti.',font:FONT,size:20})]}),
+    new Paragraph({alignment:AlignmentType.JUSTIFIED,spacing:{after:20},children:[new TextRun({text:'Il Responsabile del progetto formativo attesta che la verifica finale è stata svolta nel rispetto dell\'Accordo Stato-Regioni 17/04/2025 e che gli esiti sono stati documentati e archiviati.',font:FONT,size:20})]}),
     RIGA('Data: ____ / ____ / ______'),
     vuoto(40),
-    new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],
-      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:NO.top},
-      rows:[
-        new TableRow({children:[cella('Responsabile del Progetto Formativo',{width:W})]}),
-        new TableRow({height:{value:600,rule:'atLeast'},children:[cella('',{width:W})]}),
-      ],
-    }),
+    firmaTable,
   ];
 
   const doc = new Document({styles:docStyles,sections:[{
     properties:{page:{size:A4_P,margin:MARGIN}},
-    footers:{default:footer},
+    headers:{default:header},footers:{default:footer},
     children,
   }]});
   await salvaDoc(doc, `${OUT}/06 - VERBALE VERIFICA/Verbale_Verifica_Finale.docx`);
@@ -568,18 +638,46 @@ async function genVerbaleVerifica() {
 // ─────────────────────────────────────────────────────────────────────────────
 async function genVerificaEfficacia() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
-  const footer = footerAziendaNoPag();
+  // Master: NO header, NO footer
+  const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
+  const wFirma = 4819;
 
-  function buildSezione(mansione, isFirst) {
-    const wDati = 3260; const wVal = W - wDati;
-    // col widths valutazione table (dal modello: Voce 2400, Criterio 4260, Esito 1740, Note 1240)
-    const wVoce=2400; const wCrit=4260; const wEs=1740; const wNote=W-wVoce-wCrit-wEs;
+  function firmaCol(label) {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),
+        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
+      ],
+    });
+  }
+  function firmaLinea() {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[new Paragraph({spacing:{before:200},children:[]}),
+        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
+      ],
+    });
+  }
+
+  function buildSezione(mansione) {
+    const wDati = 3256; const wVal = W - wDati; // 6382
+    // col widths valutazione: dal master [2405, 4253, 1742, 1238]
+    const wVoce=2405; const wCrit=4253; const wEs=1742; const wNote=1238;
 
     const voci = mansione.rischi.slice(0,4).map(r => ({
       voce: r.nome.length>25?r.nome.substring(0,25)+'…':r.nome,
       criterio: `Il lavoratore applica correttamente le misure di prevenzione per: ${r.nome.toLowerCase()}.`,
     }));
     if (voci.length < 4) voci.push({voce:'Uso DPI',criterio:`Il lavoratore indossa correttamente i DPI richiesti per la mansione di ${mansione.nome}.`});
+
+    const tableFirme = new Table({
+      width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
+      borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+      rows:[
+        new TableRow({children:[firmaCol('Firma Osservatore'), firmaCol('Firma Datore di Lavoro / RSPP')]}),
+        new TableRow({children:[firmaLinea(), firmaLinea()]}),
+      ],
+    });
 
     return [
       PAR('VERIFICA DELL\'EFFICACIA DELLA FORMAZIONE',{bold:true,sz:16,col:C.BLU_DARK,spA:3}),
@@ -592,7 +690,7 @@ async function genVerificaEfficacia() {
           ['Lavoratore verificato:',''],
           ['Reparto / Area:',mansione.reparto],
           ['Osservatore (nome e qualifica):',''],
-        ].map(([k,v]) => new TableRow({children:[cella(k,{width:wDati,bold:true,fill:C.BLU_LIGHT}),cella(v,{width:wVal})]})),
+        ].map(([k,v]) => new TableRow({children:[cella(k,{width:wDati,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),cella(v,{width:wVal,color:'000000'})]})),
       }),
       vuoto(20),
       new Paragraph({spacing:{before:16,after:8},children:[new TextRun({text:`VALUTAZIONE COMPORTAMENTALE – MANSIONE: ${mansione.nome.toUpperCase()}`,bold:true,font:FONT,size:20,color:C.BLU_DARK})]}),
@@ -621,15 +719,13 @@ async function genVerificaEfficacia() {
       new Paragraph({spacing:{after:10},children:[new TextRun({text:'☐ ADEGUATO     ☐ PARZIALMENTE ADEGUATO     ☐ NON ADEGUATO',bold:true,font:FONT,size:20})]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({text:'Azioni correttive proposte:',font:FONT,size:20})]}),
       new Paragraph({spacing:{after:20},children:[new TextRun({text:'____________________________________________________________',font:FONT,size:20})]}),
-      tabellaFirme('Firma Osservatore','Firma Datore di Lavoro / RSPP'),
+      tableFirme,
     ];
   }
 
-  // Tutte le mansioni nello stesso documento (sezioni separate)
-  const sections = MANSIONI.map((m, i) => ({
+  const sections = MANSIONI.map((m) => ({
     properties:{page:{size:A4_P,margin:MARGIN}},
-    footers:{default:footer},
-    children: buildSezione(m, i===0),
+    children: buildSezione(m),
   }));
 
   const doc = new Document({styles:docStyles, sections});
