@@ -2,7 +2,7 @@
 const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
-  Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
+  Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField,
   C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, MARGIN_STD, logoBytes,
   makeHeader, makeFooter, vuoto, cella, salvaDoc,
@@ -71,64 +71,167 @@ function tabellaFirme(lab1, lab2) {
 // Sezioni bold col=2E75B6 spB=14 spA=6, tabelle fill=D5E8F0 col0 169pt / 313pt col1
 // ─────────────────────────────────────────────────────────────────────────────
 async function genColloquio(mansione) {
-  const header = makeHeader(CLIENTE.ragioneSocialeBreve, 'Colloquio Individuale – Aggiornamento', CLIENTE.atecoCodice, CLIENTE.atecoDesc);
-  const footer = makeFooter('');
-  const wL = 3380; const wR = W - wL;
 
+  // ── Header: tabella testo 2 col (5301+4337) – NO logo ──────────────────
+  const NO_HDR = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
+  const header = new Header({ children: [
+    new Table({
+      width:{size:9638,type:WidthType.DXA}, columnWidths:[5301,4337],
+      borders:{top:NO_HDR.top,bottom:NO_HDR.bottom,left:NO_HDR.left,right:NO_HDR.right,insideH:NO_HDR.top,insideV:NO_HDR.top},
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:5301,type:WidthType.DXA},borders:NO_HDR,
+          margins:{top:80,bottom:80,left:120,right:120},
+          children:[new Paragraph({children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:22,color:C.BLU_DARK})]})],
+        }),
+        new TableCell({width:{size:4337,type:WidthType.DXA},borders:NO_HDR,
+          margins:{top:80,bottom:80,left:120,right:120},
+          children:[
+            new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Colloquio Individuale – Aggiornamento',bold:true,font:FONT,size:24,color:C.BLU_HEADER})]}),
+            new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:`ATECO: ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`,font:FONT,size:17,color:C.GRIGIO})]}),
+          ],
+        }),
+      ]})]
+    }),
+  ]});
+
+  // ── Footer: bordo blu top + "Pag. X a Y" ───────────────────────────────
+  const footer = new Footer({ children: [new Paragraph({
+    border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
+    spacing: { before: 80 },
+    tabStops: [{ type: TabStopType.RIGHT, position: 9638 }],
+    children: [
+      new TextRun({ text: 'Pag. ', font: FONT, size: 18 }),
+      new SimpleField('PAGE'),
+      new TextRun({ text: ' a ', font: FONT, size: 18 }),
+      new SimpleField('NUMPAGES'),
+    ],
+  })]});
+
+  const wL = 3373; const wR = W - wL; // 6265
+
+  // ── Sezione: titolo con bordo inferiore blu ─────────────────────────────
   function SEZ(n, txt) {
-    return new Paragraph({spacing:{before:28,after:12},children:[new TextRun({text:`${n}. ${txt}`,bold:true,font:FONT,size:22,color:C.BLU_MED})]});
+    return new Paragraph({
+      border: { bottom: { style: BorderStyle.SINGLE, size: 8, space: 2, color: '2E75B6' } },
+      spacing: { before: 280, after: 120 },
+      children: [new TextRun({ text: `${n}. ${txt}`, bold: true, font: FONT, size: 22, color: C.BLU_MED })],
+    });
   }
+
+  // ── Check item: spacing corretto ────────────────────────────────────────
   function CHECK(txt) {
-    return new Paragraph({spacing:{before:6,after:6},children:[new TextRun({text:`☐  ${txt}`,font:FONT,size:20})]});
+    return new Paragraph({ spacing: { before: 60, after: 60 },
+      children: [new TextRun({ text: `☐  ${txt}`, font: FONT, size: 20, color: '000000' })],
+    });
   }
+
+  // ── Paragrafo vuoto inter-sezione (after SEZ e after tabella) ──────────
+  const gapSez = new Paragraph({ spacing: { before: 60 }, children: [] });
+  const gapTbl = new Paragraph({ spacing: { before: 120 }, children: [] });
+
+  // ── Tabella KV con colori master: label=1F4E79, value=000000 ──────────
+  function kvTable(righe) {
+    const BD_KV = {top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}};
+    return new Table({
+      width:{size:wL+wR,type:WidthType.DXA}, columnWidths:[wL,wR],
+      borders:{top:BD_KV.top,bottom:BD_KV.bottom,left:BD_KV.left,right:BD_KV.right,insideH:BD_KV.top,insideV:BD_KV.top},
+      rows: righe.map(([k,v]) => new TableRow({ children: [
+        cella(k, { width:wL, bold:true, fill:C.BLU_LIGHT, color:C.BLU_HEADER }),
+        cella(v, { width:wR, color:'000000' }),
+      ]})),
+    });
+  }
+
+  // ── Firme: 2 col 4819+4819, NO borders, bordo inferiore CCCCCC ────────
+  const wF = 4819;
+  const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
+  function firmeCol(label) {
+    return new TableCell({ width:{size:wF,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[
+        new Paragraph({children:[]}),
+        new Paragraph({children:[]}),
+        new Paragraph({children:[]}),
+        new Paragraph({children:[]}),
+        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
+      ],
+    });
+  }
+  function firmeLinea() {
+    return new TableCell({ width:{size:wF,type:WidthType.DXA}, borders:NO_F,
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[
+        new Paragraph({spacing:{before:200},children:[]}),
+        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
+      ],
+    });
+  }
+  const tableFirme = new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[wF,wF],
+    borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+    rows:[
+      new TableRow({children:[firmeCol('Firma del Datore di Lavoro / RSPP'), firmeCol('Firma del Lavoratore')]}),
+      new TableRow({children:[firmeLinea(), firmeLinea()]}),
+    ],
+  });
 
   const children = [
     PAR('VERBALE DI COLLOQUIO INDIVIDUALE',{bold:true,sz:16,col:C.BLU_DARK,spA:4}),
     PAR('Accordo Stato-Regioni 17/04/2025 – Parte IV, Punto 6 e 6.3',{col:C.GRIGIO,sz:10,spA:10}),
 
     SEZ(1,'DATI DEL SOGGETTO FORMATORE'),
-    tabellaKV([
-      ['Denominazione',CLIENTE.ragioneSociale],
-      ['Docente',CLIENTE.datoreLavoro],
-      ['Qualifica','Datore di Lavoro / RSPP'],
-    ],wL,wR),
-    vuoto(40),
+    gapSez,
+    kvTable([
+      ['Denominazione', CLIENTE.ragioneSociale],
+      ['Docente', CLIENTE.datoreLavoro],
+      ['Qualifica', 'Datore di Lavoro / RSPP'],
+    ]),
+    gapTbl,
 
     SEZ(2,'DATI DEL CORSO DI AGGIORNAMENTO'),
-    tabellaKV([
-      ['Modalità','☐ In presenza    ☐ Videoconferenza sincrona'],
-      ['Durata','___ ore / minuti'],
-      ['Data/e svolgimento','___________________________'],
-    ],wL,wR),
-    vuoto(40),
+    gapSez,
+    kvTable([
+      ['Modalità', '☐ In presenza    ☐ Videoconferenza sincrona'],
+      ['Durata', '___ ore / minuti'],
+      ['Data/e svolgimento', '___________________________'],
+    ]),
+    gapTbl,
 
     SEZ(3,'DATI DEL PARTECIPANTE'),
-    tabellaKV([
-      ['Cognome e Nome','___________________________'],
-      ['Data di nascita','___________________________'],
-      ['Mansione',mansione.nome],
-      ['Reparto / Area',mansione.reparto],
-    ],wL,wR),
-    vuoto(40),
+    gapSez,
+    kvTable([
+      ['Cognome e Nome', '___________________________'],
+      ['Data di nascita', '___________________________'],
+      ['Mansione', mansione.nome],
+      ['Reparto / Area', mansione.reparto],
+    ]),
+    gapTbl,
 
     SEZ(4,'FINALITÀ E CONTENUTI'),
+    gapSez,
     CHECK(`Rischi specifici della mansione (${mansione.nome})`),
     CHECK('Procedure aziendali di sicurezza'),
     CHECK('Gestione emergenze e evacuazione'),
     CHECK('Uso corretto dei DPI'),
     CHECK('Segnalazione pericoli / near miss'),
     CHECK('Addestramento specifico'),
-    new Paragraph({spacing:{before:6,after:40},children:[new TextRun({text:'☐  Altro: _______________________________',font:FONT,size:20})]}),
+    new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'☐  Altro: _______________________________',font:FONT,size:20,color:'000000'})]}),
+    gapTbl,
 
     SEZ(5,'MODALITÀ DI VERIFICA'),
-    new Paragraph({spacing:{after:40},children:[new TextRun({text:'☐ Domande aperte\t\t☐ Caso pratico\t\t☐ Simulazione\t\t☐ Questionario scritto',font:FONT,size:20})]}),
+    gapSez,
+    new Paragraph({spacing:{after:0},children:[new TextRun({text:'☐ Domande aperte\t\t☐ Caso pratico\t\t☐ Simulazione\t\t☐ Questionario scritto',font:FONT,size:20,color:'000000'})]}),
+    gapTbl,
 
     SEZ(6,'ESITO'),
-    new Paragraph({spacing:{after:40},children:[new TextRun({text:'☐  IDONEO          ☐  NON IDONEO',bold:true,font:FONT,size:22})]}),
+    gapSez,
+    new Paragraph({spacing:{after:0},children:[new TextRun({text:'☐  IDONEO          ☐  NON IDONEO',bold:true,font:FONT,size:22,color:'000000'})]}),
+    gapTbl,
 
-    new Paragraph({spacing:{after:0},children:[new TextRun({text:`Luogo: ${CLIENTE.indirizzo}`,font:FONT,size:20})]}),
-    new Paragraph({spacing:{after:40},children:[new TextRun({text:'Data: ___/___/______',font:FONT,size:20})]}),
-    tabellaFirme('Firma del Datore di Lavoro / RSPP','Firma del Lavoratore'),
+    new Paragraph({spacing:{after:0},children:[new TextRun({text:`Luogo: ${CLIENTE.indirizzo}`,font:FONT,size:20,color:'000000'})]}),
+    new Paragraph({spacing:{after:0},children:[new TextRun({text:'Data: ___/___/______',font:FONT,size:20,color:'000000'})]}),
+    new Paragraph({children:[]}),
+    tableFirme,
   ];
 
   const doc = new Document({styles:docStyles,sections:[{
