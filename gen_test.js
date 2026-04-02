@@ -173,7 +173,14 @@ function domandeSpecifiche(mansione) {
   domande.push({d:`${n++}. In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`,r:[{lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},{lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},{lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},{lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false}]});
   domande.push({d:`${n++}. In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`,r:[{lettera:'A',testo:'Non segnalarlo perché non ha causato danni',corretta:false},{lettera:'B',testo:'Segnalarlo immediatamente al responsabile per prevenire futuri incidenti',corretta:true},{lettera:'C',testo:'Annotarlo solo se si verifica più di una volta',corretta:false},{lettera:'D',testo:'Segnalarlo solo se ci sono testimoni',corretta:false}]});
   domande.push({d:`${n++}. Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`,r:[{lettera:'A',testo:'La stanchezza fisica dopo una giornata di lavoro intensa',corretta:false},{lettera:'B',testo:'Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute',corretta:true},{lettera:'C',testo:'Un problema che riguarda solo i dirigenti',corretta:false},{lettera:'D',testo:'Un disturbo muscolare da sforzo eccessivo',corretta:false}]});
-  return domande.slice(0, 25);
+  // ── Quiz extra calibrati sulla mansione (da helpers.js → quizExtra) ──
+  const extra = (mansione.quizExtra || []).map((q, i) => ({
+    d: `${n + i} ${q.d.replace(/^\d+\.\s*/, '')}`,
+    r: q.r,
+  }));
+  const all = [...domande, ...extra];
+  // Rinumera in ordine progressivo
+  return all.map((q, idx) => ({...q, d: q.d.replace(/^\d+\./, `${idx + 1}.`)}));
 }
 
 async function genTestGenerale() {
