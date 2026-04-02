@@ -2,405 +2,539 @@
 const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell,
-  Header, Footer, AlignmentType, PageOrientation, LevelFormat,
-  TabStopType, BorderStyle, WidthType, ShadingType, VerticalAlign,
-  PageBreak, SimpleField, LineRuleType,
-  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, MARGIN_STD, MARGIN_REG,
-  makeHeader, makeFooter, titoloSezione, corpo, rigaDati, vuoto, cella, salvaDoc,
+  Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
+  TabStopType, SimpleField,
+  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, MARGIN_STD,
+  makeHeader, makeFooter, vuoto, cella, salvaDoc,
 } = h;
 
+// PageBreak va importato separatamente
+const { PageBreak } = require('docx');
+
 const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
+
+// ── helpers locali ─────────────────────────────────────────────────────────
+const BD = {
+  top:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},
+  left:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},
+};
+const NO = {
+  top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},
+  left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},
+};
+
+// paragrafo normale giustificato
+function N(testo, opts = {}) {
+  return new Paragraph({
+    alignment: opts.align !== undefined ? opts.align : AlignmentType.JUSTIFIED,
+    spacing: { before: opts.spB !== undefined ? opts.spB*20 : 0, after: opts.spA !== undefined ? opts.spA*20 : 0 },
+    children: [new TextRun({
+      text: testo, font: FONT,
+      size: opts.sz ? opts.sz*2 : undefined,
+      bold: opts.bold || false,
+      color: opts.col || undefined,
+    })],
+  });
+}
+
+// paragrafo con page break incorporato (come nel master)
+function NBrk(testo, opts = {}) {
+  const runs = [];
+  if (testo) runs.push(new TextRun({ text: testo, font: FONT, size: opts.sz ? opts.sz*2 : undefined, bold: opts.bold, color: opts.col }));
+  runs.push(new PageBreak());
+  return new Paragraph({
+    style: opts.style || 'Normal',
+    alignment: opts.align !== undefined ? opts.align : AlignmentType.JUSTIFIED,
+    spacing: { before: opts.spB !== undefined ? opts.spB*20 : 0, after: opts.spA !== undefined ? opts.spA*20 : 0 },
+    children: runs,
+  });
+}
+
+// paragrafo lista (List Paragraph, spB=2 spA=2)
+function LP(testo, opts = {}) {
+  const runs = [new TextRun({ text: testo, font: FONT, size: 20 })];
+  if (opts.pageBreak) runs.push(new PageBreak());
+  return new Paragraph({
+    style: 'List Paragraph',
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { before: 4, after: 4 },
+    children: runs,
+  });
+}
+
+// titolo sezione: bold sz=13 col=1F3864 spB=14 spA=6
+function SEC(n, testo, opts = {}) {
+  const runs = [new TextRun({ text: `${n}. ${testo}`, bold: true, font: FONT, size: 26, color: C.BLU_DARK })];
+  if (opts.pageBreak) runs.push(new PageBreak());
+  return new Paragraph({
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { before: 14*20, after: 6*20 },
+    children: runs,
+  });
+}
+
+// sottotitolo: bold col=1F4E79 sz=default
+function SUB(testo) {
+  return new Paragraph({
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { before: 0, after: 0 },
+    children: [new TextRun({ text: testo, bold: true, font: FONT, color: C.BLU_HEADER })],
+  });
+}
+
+// subsection 4.x: bold sz=12 col=1F4E79
+function SUBSEC(testo) {
+  return new Paragraph({
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { before: 0, after: 0 },
+    children: [new TextRun({ text: testo, bold: true, font: FONT, size: 24, color: C.BLU_HEADER })],
+  });
+}
+
+// "Durata:..." in rosso bold sz=10
+function DUR(testo) {
+  return new Paragraph({
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { before: 0, after: 0 },
+    children: [new TextRun({ text: testo, bold: true, font: FONT, size: 20, color: C.ROSSO })],
+  });
+}
+
+// "Modulo Specifico" bold sz=10.5 col=1F3864 spB=2 spA=2
+function MOD(testo) {
+  return new Paragraph({
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { before: 4, after: 4 },
+    children: [new TextRun({ text: testo, bold: true, font: FONT, size: 21, color: C.BLU_DARK })],
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROGETTO FORMATIVO
 // ─────────────────────────────────────────────────────────────────────────────
 async function genProgettoFormativo() {
-  const header = makeHeader(CLIENTE.ragioneSocialeBreve, 'PROGETTO FORMATIVO', CLIENTE.atecoCodice, CLIENTE.atecoDesc);
-  const footer = makeFooter('Progetto Formativo – D.Lgs. 81/2008 – ASR 17/04/2025');
+  // Margine T=3.75cm dal master
+  const MARGIN = { top: 2126, right: 1134, bottom: 1134, left: 1134 };
+  const W = 9638;
+  const header = makeHeader(CLIENTE.ragioneSocialeBreve, 'Progetto Formativo Aziendale', CLIENTE.atecoCodice, CLIENTE.atecoDesc);
+  const footer = makeFooter('');
 
-  const mansioniList = MANSIONI.map(m => `- ${m.nome} (Rischio ${m.livello} – ${m.oreSpec + 4} ore totali)`).join('\n');
+  // Livelli distinti tra le mansioni
+  const livelli = [...new Set(MANSIONI.map(m => m.livello))];
+  const livFill = { BASSO: C.VERDE, MEDIO: C.ARANCIO, ALTO: C.ROSSO };
 
-  const children = [
-    // Titolo
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 120 },
-      children: [new TextRun({ text: 'PROGETTO FORMATIVO', bold: true, font: FONT, size: 36, color: C.BLU_DARK })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 60 },
-      children: [new TextRun({ text: 'D.Lgs. 81/2008 – Accordo Stato-Regioni 17/04/2025', font: FONT, size: 24, color: C.BLU_HEADER })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 280 },
-      children: [new TextRun({ text: 'Formazione Generale e Specifica per i Lavoratori', font: FONT, size: 22, color: C.GRIGIO })],
-    }),
+  // ── SUMMARY TABLE 2×2 ───────────────────────────────────────────────────
+  // Cella [1,0]: "Livello di rischio:" (1F4E79) + livello(i) + ore (C00000)
+  function livelloCellChildren() {
+    const children = [
+      new Paragraph({ children: [new TextRun({ text: 'Livello di rischio:', bold: true, font: FONT, color: C.BLU_HEADER })] }),
+    ];
+    livelli.forEach(liv => {
+      const m = MANSIONI.find(m2 => m2.livello === liv);
+      children.push(new Paragraph({ children: [new TextRun({ text: liv, bold: true, font: FONT, color: C.ROSSO })] }));
+      children.push(new Paragraph({ children: [new TextRun({ text: `(4 ore formazione generale + ${m.oreSpec} ore formazione specifica)`, bold: true, font: FONT, size: 18, color: C.ROSSO })] }));
+    });
+    return children;
+  }
 
-    // 1. DATI AZIENDALI
-    titoloSezione('1. DATI AZIENDALI'),
-    new Table({
-      width: { size: 9638, type: WidthType.DXA },
-      columnWidths: [3200, 6438],
-      borders: {
-        top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        insideH: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        insideV: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-      },
-      rows: [
-        ['Ragione Sociale', CLIENTE.ragioneSociale],
-        ['Sede Operativa', CLIENTE.indirizzo],
-        ['Partita IVA', CLIENTE.piva],
-        ['Codice ATECO', `${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`],
-        ['Datore di Lavoro / RSPP', CLIENTE.datoreLavoro],
-        ['Medico Competente', 'Studio S.M.A.L – Dr. Lorenzo Adami'],
-        ['Consulenza esterna SPP', 'Overall Group Srl'],
-      ].map((r, i) => new TableRow({
+  function cellKV(label, value, fill) {
+    return new TableCell({
+      width: { size: Math.floor(W/2), type: WidthType.DXA },
+      shading: { fill, type: ShadingType.CLEAR },
+      margins: { top: 80, bottom: 80, left: 120, right: 120 },
+      borders: BD,
+      children: [
+        new Paragraph({ children: [new TextRun({ text: label, bold: true, font: FONT, color: C.BLU_HEADER })] }),
+        new Paragraph({ children: [new TextRun({ text: value, font: FONT, size: 20 })] }),
+      ],
+    });
+  }
+
+  const summaryTable = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [Math.floor(W/2), W - Math.floor(W/2)],
+    borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
+    rows: [
+      new TableRow({ children: [
+        cellKV('Datore di Lavoro / RSPP:', CLIENTE.datoreLavoro, C.BLU_LIGHT),
+        cellKV('Codice ATECO:', `${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`, C.BLU_LIGHT),
+      ]}),
+      new TableRow({ children: [
+        new TableCell({
+          width: { size: Math.floor(W/2), type: WidthType.DXA },
+          shading: { fill: C.BIANCO, type: ShadingType.CLEAR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          borders: BD,
+          children: livelloCellChildren(),
+        }),
+        cellKV('Anno:', CLIENTE.anno, C.BIANCO),
+      ]}),
+    ],
+  });
+
+  // ── CORSO INFO TABLE 11×2 ─────────────────────────────────────────────
+  // Righe alternate: key=D5E8F0/EBF3FB, value=FFFFFF/F2F2F2
+  const wKey = 3000; const wVal = W - wKey;
+  const corsoRows = [
+    ['Soggetto formatore', CLIENTE.ragioneSociale],
+    ['Codice ATECO', `${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`],
+    ['P.IVA / C.F.', CLIENTE.piva],
+    ['Sede', CLIENTE.indirizzo],
+    ['Datore di Lavoro / RSPP', CLIENTE.datoreLavoro],
+    ['Livello di rischio', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${l} (ATECO ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc})`; }).join(' / ')],
+    ['Ore formazione specifica', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${m.oreSpec} ore (Rischio ${l})`; }).join(' / ')],
+    ['Numero max partecipanti per sessione', '30'],
+    ['Soglia di presenza minima', '90% delle ore previste'],
+    ['Metodologia didattica', 'Lezioni frontali sul campo ed esempi pratici'],
+    ['Verifica finale', 'Test a risposta multipla – superamento con almeno 70% di risposte corrette'],
+  ];
+  const keyFills = ['D5E8F0','EBF3FB'];
+  const valFills = ['FFFFFF','F2F2F2'];
+  const corsoTable = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [wKey, wVal],
+    borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
+    rows: corsoRows.map(([k, v], i) => new TableRow({ children: [
+      new TableCell({
+        width: { size: wKey, type: WidthType.DXA },
+        shading: { fill: keyFills[i%2], type: ShadingType.CLEAR },
+        margins: { top: 60, bottom: 60, left: 80, right: 80 },
+        borders: BD,
+        children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, font: FONT, color: C.BLU_HEADER })] })],
+      }),
+      new TableCell({
+        width: { size: wVal, type: WidthType.DXA },
+        shading: { fill: valFills[i%2], type: ShadingType.CLEAR },
+        margins: { top: 60, bottom: 60, left: 80, right: 80 },
+        borders: BD,
+        children: [new Paragraph({ children: [new TextRun({ text: v, font: FONT, size: 20 })] })],
+      }),
+    ]})),
+  });
+
+  // ── MANSIONI TABLE 3×4 ───────────────────────────────────────────────
+  const wM = 3680; const wR = 2980; const wL2 = 1840; const wO = W - wM - wR - wL2;
+  const mansioniTable = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [wM, wR, wL2, wO],
+    borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        cella('MANSIONE', { width: wM, bold: true, fill: C.BLU_HEADER, color: C.BIANCO }),
+        cella('REPARTO', { width: wR, bold: true, fill: C.BLU_HEADER, color: C.BIANCO }),
+        cella('LIVELLO RISCHIO', { width: wL2, bold: true, fill: C.BLU_HEADER, color: C.BIANCO, align: 'center' }),
+        cella('ORE TOT.', { width: wO, bold: true, fill: C.BLU_HEADER, color: C.BIANCO, align: 'center' }),
+      ]}),
+      ...MANSIONI.map(m => new TableRow({ children: [
+        cella(m.nome, { width: wM }),
+        cella(m.reparto, { width: wR }),
+        cella(m.livello, { width: wL2, bold: true, fill: livFill[m.livello] || C.VERDE, color: C.BIANCO, align: 'center' }),
+        cella(`${m.oreSpec + 4}h`, { width: wO, align: 'center' }),
+      ]})),
+    ],
+  });
+
+  // ── SOGGETTI TABLES ─────────────────────────────────────────────────────
+  function tKV2(righe) {
+    return new Table({
+      width: { size: W, type: WidthType.DXA },
+      columnWidths: [wKey, wVal],
+      borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
+      rows: righe.map(([k, v], i) => new TableRow({ children: [
+        new TableCell({
+          width: { size: wKey, type: WidthType.DXA },
+          shading: { fill: C.BLU_LIGHT, type: ShadingType.CLEAR },
+          margins: { top: 60, bottom: 60, left: 80, right: 80 }, borders: BD,
+          children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, font: FONT, color: C.BLU_HEADER })] })],
+        }),
+        new TableCell({
+          width: { size: wVal, type: WidthType.DXA },
+          shading: { fill: C.BIANCO, type: ShadingType.CLEAR },
+          margins: { top: 60, bottom: 60, left: 80, right: 80 }, borders: BD,
+          children: [new Paragraph({ children: [new TextRun({ text: v, font: FONT, size: 20 })] })],
+        }),
+      ]})),
+    });
+  }
+
+  // ── NOTA BENE TABLE ──────────────────────────────────────────────────────
+  const notaBeneTable = new Table({
+    width: { size: W, type: WidthType.DXA }, columnWidths: [W],
+    borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: NO.top, insideV: NO.top },
+    rows: [new TableRow({ children: [
+      new TableCell({
+        width: { size: W, type: WidthType.DXA },
+        shading: { fill: C.BLU_LIGHT, type: ShadingType.CLEAR },
+        margins: { top: 80, bottom: 80, left: 120, right: 120 }, borders: BD,
         children: [
-          cella(r[0], { width: 3200, bold: true, fill: i % 2 === 0 ? C.GRIGIO_ALT : C.BIANCO }),
-          cella(r[1], { width: 6438, fill: i % 2 === 0 ? C.GRIGIO_ALT : C.BIANCO }),
-        ],
-      })),
-    }),
-    vuoto(120),
-
-    // 2. RIFERIMENTI NORMATIVI
-    titoloSezione('2. RIFERIMENTI NORMATIVI'),
-    corpo('Il presente Progetto Formativo è redatto ai sensi di:', { before: 60 }),
-    ...[
-      'D.Lgs. 9 aprile 2008, n. 81 – Testo Unico sulla Salute e Sicurezza sul Lavoro, artt. 36 e 37;',
-      'Accordo Stato-Regioni del 17/04/2025 (in sostituzione dell\'ASR 21/12/2011) – Formazione dei lavoratori, dirigenti e preposti;',
-      'D.Lgs. 106/2009 – Modifiche integrative al D.Lgs. 81/08.',
-    ].map(t => new Paragraph({
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { before: 30, after: 30 },
-      numbering: { reference: 'bullets', level: 0 },
-      children: [new TextRun({ text: t, font: FONT, size: 20 })],
-    })),
-    vuoto(60),
-
-    // 3. OBIETTIVI
-    titoloSezione('3. OBIETTIVI DELLA FORMAZIONE'),
-    corpo('La formazione ha lo scopo di fornire ai lavoratori adeguate conoscenze in materia di salute e sicurezza sul lavoro, con particolare riferimento a:', { before: 60 }),
-    ...[
-      'Concetti di rischio, danno, prevenzione e protezione nell\'ambiente lavorativo;',
-      'Organizzazione della prevenzione aziendale e principali soggetti del sistema prevenzionistico;',
-      'Diritti e doveri dei lavoratori, sanzioni per i lavoratori inadempienti;',
-      'Rischi specifici propri della mansione svolta e relative misure di prevenzione e protezione;',
-      'Corretto utilizzo dei Dispositivi di Protezione Individuale (DPI);',
-      'Segnaletica di sicurezza e procedure per il primo soccorso e la gestione delle emergenze;',
-      'Stress lavoro-correlato, incidenti e mancati infortuni (near miss).',
-    ].map(t => new Paragraph({
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { before: 30, after: 30 },
-      numbering: { reference: 'bullets', level: 0 },
-      children: [new TextRun({ text: t, font: FONT, size: 20 })],
-    })),
-    vuoto(60),
-
-    // 4. STRUTTURA DEL CORSO
-    titoloSezione('4. STRUTTURA DEL CORSO'),
-    corpo('Il percorso formativo si articola in due moduli distinti, come previsto dall\'ASR 17/04/2025:', { before: 60 }),
-    vuoto(60),
-
-    // Tabella struttura
-    new Table({
-      width: { size: 9638, type: WidthType.DXA },
-      columnWidths: [2200, 4038, 1700, 1700],
-      borders: {
-        top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        insideH: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        insideV: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-      },
-      rows: [
-        new TableRow({
-          tableHeader: true,
-          children: [
-            cella('Modulo', { width: 2200, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-            cella('Contenuti', { width: 4038, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-            cella('Durata', { width: 1700, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-            cella('Riferimento normativo', { width: 1700, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          ],
-        }),
-        new TableRow({
-          children: [
-            cella('FORMAZIONE GENERALE', { width: 2200, bold: true }),
-            cella('Concetti di rischio, organizzazione prevenzione, diritti e doveri, segnaletica, primo soccorso, stress lavoro-correlato, near miss', { width: 4038 }),
-            cella('4 ore', { width: 1700, align: 'center' }),
-            cella('ASR 17/04/2025 – Parte II, Punto 2', { width: 1700 }),
-          ],
-        }),
-        new TableRow({
-          children: [
-            cella('FORMAZIONE SPECIFICA – Rischio BASSO', { width: 2200, bold: true, fill: C.GRIGIO_ALT }),
-            cella('Rischi specifici per Impiegata/o Amministrativa/o e Commerciale – DPI, procedure operative', { width: 4038, fill: C.GRIGIO_ALT }),
-            cella('4 ore', { width: 1700, align: 'center', fill: C.GRIGIO_ALT }),
-            cella('ASR 17/04/2025 – Parte IV, Punto 1', { width: 1700, fill: C.GRIGIO_ALT }),
-          ],
-        }),
-        new TableRow({
-          children: [
-            cella('FORMAZIONE SPECIFICA – Rischio MEDIO', { width: 2200, bold: true }),
-            cella('Rischi specifici per Manutentore – cadute dall\'alto, agenti chimici, rischio elettrico, DPI, ambienti confinati', { width: 4038 }),
-            cella('8 ore', { width: 1700, align: 'center' }),
-            cella('ASR 17/04/2025 – Parte IV, Punto 1', { width: 1700 }),
-          ],
-        }),
-      ],
-    }),
-    vuoto(120),
-
-    // 5. MANSIONI E LAVORATORI
-    titoloSezione('5. MANSIONI E LAVORATORI INTERESSATI'),
-    corpo('Le seguenti mansioni aziendali sono soggette a formazione obbligatoria ai sensi del D.Lgs. 81/2008:', { before: 60 }),
-    ...MANSIONI.map(m => new Paragraph({
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { before: 30, after: 30 },
-      numbering: { reference: 'bullets', level: 0 },
-      children: [new TextRun({ text: `${m.nome} – Rischio ${m.livello}: 4 ore generali + ${m.oreSpec} ore specifiche = ${4 + m.oreSpec} ore totali`, font: FONT, size: 20 })],
-    })),
-    corpo('I Tirocinanti seguono il percorso formativo della mansione di riferimento con supervisione obbligatoria del tutor aziendale.', { before: 60, after: 60 }),
-
-    // 6. METODOLOGIA
-    titoloSezione('6. METODOLOGIA DIDATTICA'),
-    corpo('La formazione si svolge con le seguenti modalità, nel rispetto dell\'ASR 17/04/2025:', { before: 60 }),
-    ...[
-      'Presenza sul campo (formazione diretta con il Datore di Lavoro/RSPP);',
-      'Utilizzo di materiale didattico specifico per mansione (schede mansione, test, attestati);',
-      'Verifica dell\'apprendimento tramite test scritto a risposta multipla (30 domande);',
-      'Possibilità di videoconferenza sincrona per i moduli di aggiornamento.',
-    ].map(t => new Paragraph({
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { before: 30, after: 30 },
-      numbering: { reference: 'bullets', level: 0 },
-      children: [new TextRun({ text: t, font: FONT, size: 20 })],
-    })),
-    vuoto(60),
-
-    // 7. PROGRAMMA DETTAGLIATO FORMAZIONE GENERALE
-    titoloSezione('7. PROGRAMMA DETTAGLIATO – FORMAZIONE GENERALE (4 ore)'),
-    new Table({
-      width: { size: 9638, type: WidthType.DXA },
-      columnWidths: [1200, 6438, 2000],
-      borders: {
-        top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        insideH: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        insideV: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-      },
-      rows: [
-        new TableRow({
-          tableHeader: true,
-          children: [
-            cella('U.D.', { width: 1200, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-            cella('Argomento', { width: 6438, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-            cella('Durata', { width: 2000, bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          ],
-        }),
-        ...[
-          ['U.D. 1', 'Il sistema legislativo: D.Lgs. 81/08, figure della sicurezza, diritti e doveri dei lavoratori', '45 min'],
-          ['U.D. 2', 'Concetti di rischio, danno, prevenzione e protezione – metodologia di valutazione dei rischi', '45 min'],
-          ['U.D. 3', 'Organizzazione della prevenzione aziendale – SPP, RLS, MC, addetti emergenza', '30 min'],
-          ['U.D. 4', 'Segnaletica di sicurezza – tipologie, colori, significati (D.Lgs. 81/08 All. XXV)', '30 min'],
-          ['U.D. 5', 'Procedure organizzative per il primo soccorso e la gestione delle emergenze', '30 min'],
-          ['U.D. 6', 'Stress lavoro-correlato – definizione, fattori di rischio, misure di prevenzione', '20 min'],
-          ['U.D. 7', 'Incidenti e mancati infortuni (near miss) – riconoscimento e segnalazione', '20 min'],
-        ].map(([ud, arg, dur], i) => new TableRow({
-          children: [
-            cella(ud, { width: 1200, fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT }),
-            cella(arg, { width: 6438, fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT }),
-            cella(dur, { width: 2000, align: 'center', fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT }),
-          ],
-        })),
-      ],
-    }),
-    vuoto(120),
-
-    // 8. PROGRAMMA FORMAZIONE SPECIFICA
-    titoloSezione('8. PROGRAMMA DETTAGLIATO – FORMAZIONE SPECIFICA'),
-    ...MANSIONI.map(m => [
-      new Paragraph({
-        spacing: { before: 60, after: 30 },
-        children: [new TextRun({ text: `${m.nome} – Rischio ${m.livello} (${m.oreSpec} ore)`, bold: true, font: FONT, size: 22, color: C.BLU_MED })],
-      }),
-      new Table({
-        width: { size: 9638, type: WidthType.DXA },
-        columnWidths: [5638, 4000],
-        borders: {
-          top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-          bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-          left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-          right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-          insideH: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-          insideV: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-        },
-        rows: [
-          new TableRow({
-            tableHeader: true,
-            children: [
-              cella('Argomento specifico', { width: 5638, bold: true, fill: C.BLU_LIGHT }),
-              cella('DPI associati', { width: 4000, bold: true, fill: C.BLU_LIGHT }),
-            ],
-          }),
-          ...m.rischi.map((r, i) => new TableRow({
-            children: [
-              cella(r.nome, { width: 5638, fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT }),
-              cella(r.dpi.join(', '), { width: 4000, fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT }),
-            ],
-          })),
+          new Paragraph({ spacing: { after: 20 }, children: [new TextRun({ text: 'NOTA BENE', bold: true, font: FONT, color: C.BLU_DARK })] }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 20 }, children: [new TextRun({ text: 'In coerenza con le previsioni di cui all\'articolo 37, comma 12, del D.Lgs. n. 81/08, i corsi di formazione vanno realizzati previa richiesta di collaborazione agli organismi paritetici di cui al Decreto del Ministro del Lavoro e delle Politiche Sociali dell\'11 ottobre 2022, n. 171, ove presenti nel settore e nel territorio in cui si svolge l\'attività del datore.', font: FONT, size: 20 })] }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 20 }, children: [new TextRun({ text: 'In mancanza, il datore di lavoro procede alla pianificazione e realizzazione delle attività di formazione. Ove la richiesta riceva riscontro da parte dell\'organismo paritetico, delle relative indicazioni occorre tener conto nella pianificazione e realizzazione delle attività di formazione.', font: FONT, size: 20 })] }),
+          new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 0 }, children: [new TextRun({ text: 'Ove la richiesta di cui al precedente periodo non riceva riscontro dall\'organismo paritetico entro quindici giorni dal suo invio, il datore di lavoro procede autonomamente alla pianificazione e realizzazione delle attività di formazione.', font: FONT, size: 20 })] }),
         ],
       }),
-      vuoto(80),
-    ]).flat(),
+    ]})]
+  });
 
-    // 9. AGGIORNAMENTO
-    titoloSezione('9. AGGIORNAMENTO PERIODICO'),
-    corpo('L\'aggiornamento della formazione è obbligatorio ogni 5 anni per tutti i lavoratori, per una durata minima di 6 ore. L\'aggiornamento può essere svolto in modalità e-learning o in presenza, anche in un\'unica soluzione.', { before: 60 }),
-    vuoto(60),
+  // ── CORPO COMPLETO ────────────────────────────────────────────────────────
+  // Struttura esatta del master (con page break agli indici corretti)
+  const children = [
+    // Info azienda nel corpo (come nel master)
+    N(CLIENTE.ragioneSociale, { bold: true, sz: 18, col: C.BLU_DARK, spA: 4 }),
+    N(CLIENTE.indirizzo, { col: C.GRIGIO, spA: 4 }),
+    N(`P.IVA: ${CLIENTE.piva}`, { col: C.GRIGIO, spA: 4 }),
+    N(`Codice Fiscale: ${CLIENTE.piva}`, { col: C.GRIGIO, spA: 4 }),
+    new Paragraph({ children: [] }), // empty [4]
 
-    // 10. VERIFICA APPRENDIMENTO
-    titoloSezione('10. VERIFICA DELL\'APPRENDIMENTO'),
-    corpo('Al termine di ciascun modulo (formazione generale e formazione specifica) viene effettuata una verifica dell\'apprendimento mediante:', { before: 60 }),
-    ...[
-      'Test scritto a risposta multipla (30 domande con 4 opzioni ciascuna);',
-      'Soglia minima di superamento: 60% delle risposte corrette (18/30);',
-      'In caso di mancato superamento: colloquio individuale orale con il Docente/RSPP.',
-    ].map(t => new Paragraph({
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { before: 30, after: 30 },
-      numbering: { reference: 'bullets', level: 0 },
-      children: [new TextRun({ text: t, font: FONT, size: 20 })],
-    })),
-    vuoto(60),
+    // Title table 1×1
+    new Table({
+      width: { size: W, type: WidthType.DXA }, columnWidths: [W],
+      borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: NO.top, insideV: NO.top },
+      rows: [new TableRow({ children: [
+        new TableCell({
+          width: { size: W, type: WidthType.DXA },
+          shading: { fill: C.BLU_DARK, type: ShadingType.CLEAR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 }, borders: BD,
+          children: [
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: [new TextRun({ text: 'PROGETTO FORMATIVO AZIENDALE', bold: true, font: FONT, size: 26, color: C.BIANCO })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: [new TextRun({ text: 'Formazione sulla Salute e Sicurezza sul Lavoro', font: FONT, size: 22, color: 'D5E8F0' })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 0 }, children: [new TextRun({ text: 'D.Lgs. 81/2008 e s.m.i. – Accordo Stato-Regioni 17/04/2025', font: FONT, size: 20, color: 'D5E8F0' })] }),
+          ],
+        }),
+      ]})]
+    }),
+    new Paragraph({ children: [] }), // empty [6]
 
-    // 11. FIRME
-    titoloSezione('11. APPROVAZIONE E FIRME'),
-    vuoto(80),
-    rigaDati('Datore di Lavoro / RSPP', `${CLIENTE.datoreLavoro}`, { sz: 20 }),
-    vuoto(60),
-    corpo('Luogo e data: Campagnola di Zevio, ___/___/_____', { before: 60 }),
-    vuoto(60),
+    // Summary table 2×2
+    summaryTable,
+    new Paragraph({ children: [] }), // empty [8]
+
+    // PAGE BREAK [9] — tra copertina e sezioni
+    new Paragraph({ children: [new PageBreak()] }),
+
+    // ── SEZIONE 1 ─────────────────────────────────────────────────────────
+    N('1. PREFAZIONE AL PROGETTO FORMATIVO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
+    SUB('Formazione del Datore di Lavoro che svolge il ruolo di RSPP'),
+    new Paragraph({ children: [] }),
+    N('Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro adottato dal Datore di Lavoro che svolge direttamente il ruolo di Responsabile del Servizio di Prevenzione e Protezione (RSPP).', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    N('La progettazione della formazione è stata sviluppata in conformità al D.Lgs. 81/2008 e s.m.i., nonché agli indirizzi introdotti dall\'Accordo Stato-Regioni del 17 aprile 2025 (entrato in vigore il 24 maggio 2025), che rafforzano il principio secondo cui la formazione non deve essere considerata un adempimento formale, ma uno strumento operativo e funzionale alla gestione reale dei rischi aziendali.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    N('In tale contesto, il Datore di Lavoro assume un ruolo centrale non solo come destinatario della formazione, ma anche come soggetto responsabile della pianificazione, organizzazione e verifica del processo formativo, garantendo che i contenuti siano coerenti con:', { sz: 10 }),
+    LP('la specifica attività aziendale;'),
+    LP('i rischi effettivamente presenti nei luoghi di lavoro;'),
+    LP('l\'organizzazione interna e le modalità operative adottate.'),
+    new Paragraph({ children: [] }),
+    N('Il presente progetto ha lo scopo di:', { sz: 10 }),
+    LP('collegare la formazione alla Valutazione dei Rischi, rendendo il percorso uno strumento integrato al sistema di prevenzione aziendale;'),
+    LP('garantire la tracciabilità delle attività formative, delle verifiche di apprendimento e degli aggiornamenti periodici;'),
+    LP('dimostrare l\'effettiva coerenza tra formazione erogata, competenze acquisite e gestione operativa della sicurezza.'),
+    new Paragraph({ children: [] }),
+    N('La formazione viene progettata con un approccio pratico e applicativo, privilegiando esempi concreti, analisi di casi reali aziendali e collegamenti diretti sul campo, con le procedure operative adottate.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    N('Il presente Progetto Formativo Aziendale rappresenta pertanto uno strumento dinamico, soggetto ad aggiornamento periodico in relazione:', { sz: 10 }),
+    LP('all\'evoluzione normativa;'),
+    LP('alle modifiche organizzative o produttive dell\'azienda;'),
+    LP('all\'esito delle verifiche di efficacia della formazione e degli eventi infortunistici o dei mancati infortuni.'),
+    new Paragraph({ children: [] }),
+    N('Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo e una costante presenza del Datore di lavoro RSPP negli interventi formativi e addestrativi del proprio personale.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+
+    // PAGE BREAK [36] — paragrafo vuoto con pagebreak e spaziatura 14/6
     new Paragraph({
-      spacing: { after: 80 },
-      children: [new TextRun({ text: 'Firma: ___________________________________', font: FONT, size: 20 })],
+      spacing: { before: 14*20, after: 6*20 },
+      children: [new PageBreak()],
     }),
+
+    // ── SEZIONE 2 ─────────────────────────────────────────────────────────
+    N('2. RIFERIMENTO NORMATIVO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
+    SUB('Accordo Stato-Regioni del 17 aprile 2025 – Parte II, Punto 2 e Parte IV, Punto 1'),
+    new Paragraph({ children: [] }),
+    N('Parte II dell\'Accordo – Punto 2: i datori di lavoro possono organizzare direttamente i corsi di formazione ex art. 37, comma 2, del D.Lgs. n. 81/2008 nei confronti dei propri lavoratori, preposti e dirigenti, a condizione che venga rispettato quanto previsto dal presente Accordo. In questo caso il datore di lavoro riveste il ruolo di soggetto formatore cui spettano gli adempimenti del presente accordo.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    N('Il datore di lavoro in possesso dei requisiti per lo svolgimento diretto dei compiti del servizio di prevenzione e protezione di cui all\'articolo 34 del D.Lgs. n. 81/2008, può svolgere anche in qualità di docente, esclusivamente nei riguardi dei propri lavoratori, preposti e dirigenti, la formazione di cui ai paragrafi: 2.1, 2.2 e 2.3.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    N('Parte IV dell\'Accordo – Punto 1: le indicazioni metodologiche per l\'organizzazione e la gestione dei corsi, fatta eccezione dei punti 3.2, 3.3, 3.4, 3.5, 6.3 e 7, non si applicano ai Datori di Lavoro che organizzano ed erogano autonomamente, all\'interno delle proprie aziende, la formazione sulla salute e sicurezza sul lavoro, ma esse possono trovare indicazioni utili per la gestione dei percorsi formativi di cui al presente accordo.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+
+    // ── SEZIONE 3 ─────────────────────────────────────────────────────────
+    N('3. DATI IDENTIFICATIVI DEL CORSO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
+    new Paragraph({ children: [] }),
+    corsoTable,
+    new Paragraph({ children: [] }),
+    mansioniTable,
+    new Paragraph({ children: [] }),
+    new Paragraph({ children: [] }),
+    new Paragraph({ children: [] }),
+
+    // ── SEZIONE 4 ─────────────────────────────────────────────────────────
+    N('4. STRUTTURA DEL CORSO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
+    new Paragraph({ children: [] }),
+
+    SUBSEC('4.1 – Formazione Generale'),
+    new Paragraph({ children: [] }),
+    DUR('Durata: 4 ore – Costituisce credito formativo permanente'),
+    new Paragraph({ children: [] }),
+    N('Sono trattati i seguenti argomenti:', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    LP('Concetti di pericolo, rischio e danno (1 ora)'),
+    LP('Prevenzione e protezione (1 ora)'),
+    LP('Organizzazione della prevenzione aziendale e sistema di partecipazione dei lavoratori (1 ora)'),
+    LP('Diritti, doveri e sanzioni dei vari soggetti aziendali; organi di vigilanza, controllo e assistenza (1 ora)'),
+    new Paragraph({ children: [] }),
+    new Paragraph({ children: [] }),
+
+    SUBSEC('4.2 – Formazione Specifica dei Rischi'),
+    new Paragraph({ children: [] }),
+    // Per ogni livello di rischio distinto tra le mansioni
+    ...(() => {
+      const result = [];
+      livelli.forEach(livello => {
+        const mansioniLiv = MANSIONI.filter(m => m.livello === livello);
+        const oreSpec = mansioniLiv[0].oreSpec;
+        const rischiUnici = [...new Set(mansioniLiv.flatMap(m => m.rischi.map(r => r.nome)))];
+        result.push(DUR(`Durata: ${oreSpec} ore – Settore a rischio ${livello} (ATECO ${CLIENTE.atecoCodice})`));
+        result.push(new Paragraph({ children: [] }));
+        result.push(N('La formazione specifica è mirata ai rischi effettivamente presenti nel luogo di lavoro, identificati dalla valutazione dei rischi aziendale (DVR). Per ogni mansione sono trattati i rischi specifici della postazione lavorativa:', { sz: 10 }));
+        result.push(new Paragraph({ children: [] }));
+        result.push(MOD(`Modulo Specifico – Rischio ${livello} (${oreSpec} ore)`));
+        rischiUnici.forEach(r => result.push(LP(r)));
+        result.push(LP('DPI: tipologie, scelta, uso e manutenzione'));
+        result.push(LP('Segnaletica di sicurezza'));
+        result.push(LP('Prevenzione incendi ed evacuazione'));
+        result.push(LP('Segnaletica'));
+        result.push(LP('Procedure organizzative per il primo soccorso'));
+        result.push(LP('Stress lavoro correlato'));
+        result.push(LP('Incidenti, mancati infortuni'));
+        result.push(new Paragraph({ children: [] }));
+      });
+      return result;
+    })(),
+
+    SUBSEC('4.3 – Aggiornamento della formazione specifica'),
+    new Paragraph({ children: [] }),
+    DUR('Durata: 6 ore ogni 5 anni (Accordo Stato-Regioni 17/04/2025, Parte III).'),
+    new Paragraph({ children: [] }),
+    N('Modalità: colloquio individuale o test scritto a risposta multipla.', { sz: 10 }),
+    new Paragraph({ children: [] }),
+    N('Contenuti:', { sz: 10 }),
+    LP('aggiornamento sui rischi specifici'),
+    LP('nuove normative'),
+    // PAGE BREAK [97] — nell'ultimo elemento della lista 4.3
+    new Paragraph({
+      style: 'List Paragraph',
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 4, after: 4 },
+      children: [
+        new TextRun({ text: 'cambiamenti organizzativi/produttivi.', font: FONT, size: 20 }),
+        new PageBreak(),
+      ],
+    }),
+
+    // ── SEZIONE 5 ─────────────────────────────────────────────────────────
+    N('5. SOGGETTI FORMATORI E DOCENTI', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
+    new Paragraph({ children: [] }),
+    tKV2([
+      ['Soggetto formatore', `${CLIENTE.datoreLavoro} – Datore di Lavoro e RSPP`],
+      ['Base normativa', 'ASR 17/04/2025, Punto 2 – Parte II'],
+    ]),
+    new Paragraph({ children: [] }),
+    tKV2([
+      ['Soggetto relatore / docente', `${CLIENTE.datoreLavoro} – Datore di Lavoro e RSPP`],
+      ['Base normativa docente', 'ASR 17/04/2025, Punto 2 – Parte II (deroga per Datore di Lavoro RSPP)'],
+    ]),
+    new Paragraph({ children: [] }),
+
+    // ── SEZIONE 6 ─────────────────────────────────────────────────────────
+    N('6. NOTA BENE', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
+    new Paragraph({ children: [] }),
+    notaBeneTable,
+    new Paragraph({ children: [] }),
   ];
 
   const doc = new Document({
-    numbering: {
-      config: [{
-        reference: 'bullets',
-        levels: [{ level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT,
-          style: { paragraph: { indent: { left: 720, hanging: 360 } } } }],
-      }],
-    },
     styles: docStyles,
     sections: [{
-      properties: {
-        page: { size: A4_P, margin: MARGIN_STD },
-      },
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: MARGIN } },
       headers: { default: header },
       footers: { default: footer },
       children,
     }],
   });
-
   await salvaDoc(doc, `${OUT}/00 - PROGETTO FORMATIVO/ProgettoFormativo.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REGISTRO PRESENZE FORMAZIONE INIZIALE (per mansione)
+// REGISTRO PRESENZE FORMAZIONE INIZIALE
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroFormIniziale(mansione) {
-  // Struttura corretta: NO header standard, footer con azienda+pag, corpo con titolo centrato
-  const W = 16838 - 1134 - 2267; // landscape content: margini L2.0 R1.3 circa → uso valori corretti
-  const WL = 16838; // page width landscape
-
+  const MARGIN = { top: 878, right: 1134, bottom: 1134, left: 1134 };
+  const W = 14570;
   const footer = new Footer({ children: [new Paragraph({
-    tabStops: [{ type: TabStopType.RIGHT, position: 16000 }],
     children: [
       new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
       new SimpleField('PAGE'),
     ],
   })]});
-
-  const nRighe = 15;
-  const W9 = 13438; // landscape content ~ (29.7cm - 2cm - 2cm margins = 25.7cm = 14566 DXA, using approx)
-  const colW = [2600, 2000, 2200, 900, 2200, 900, 2638]; // sum=13438
+  const colW = [2025, 2004, 3196, 708, 3402, 709, 2526];
 
   const children = [
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 30 },
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 6*20 },
       children: [new TextRun({ text: 'REGISTRO PRESENZE', bold: true, font: FONT, size: 34, color: C.BLU_DARK })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 10 },
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 2*20 },
       children: [new TextRun({ text: CLIENTE.ragioneSociale, bold: true, font: FONT, size: 24 })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 100 },
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 8*20 },
       children: [new TextRun({ text: CLIENTE.indirizzo, font: FONT, size: 20 })],
     }),
-    // Info corso table
     new Table({
-      width: { size: W9, type: WidthType.DXA }, columnWidths: [Math.floor(W9/2), W9 - Math.floor(W9/2)],
-      borders: { top:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},insideH:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},insideV:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'} },
-      rows: [
-        new TableRow({ children: [
-          cella(`Corso: Formazione Generale + Specifica (D.Lgs. 81/08 – ASR 17/04/2025)  |  ${mansione.oreSpec + 4} ore totali`, { width: Math.floor(W9/2) }),
-          cella(`Mansione: ${mansione.nome}`, { width: W9 - Math.floor(W9/2) }),
+      width:{size:W,type:WidthType.DXA}, columnWidths:[Math.floor(W/2), W-Math.floor(W/2)],
+      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+      rows:[
+        new TableRow({children:[
+          cella(`Corso: Formazione Generale + Specifica (D.Lgs. 81/08 – ASR 17/04/2025)  |  ${mansione.oreSpec+4} ore totali`,{width:Math.floor(W/2)}),
+          cella(`Mansione: ${mansione.nome}`,{width:W-Math.floor(W/2)}),
         ]}),
-        new TableRow({ children: [
-          cella(`Relatore / Docente: ${CLIENTE.datoreLavoro}`, { width: Math.floor(W9/2) }),
-          cella('', { width: W9 - Math.floor(W9/2) }),
+        new TableRow({children:[
+          cella(`Relatore / Docente: ${CLIENTE.datoreLavoro}`,{width:Math.floor(W/2)}),
+          cella('',{width:W-Math.floor(W/2)}),
         ]}),
       ],
     }),
-    vuoto(60),
-    // Firma table
+    vuoto(30),
     new Table({
-      width: { size: W9, type: WidthType.DXA }, columnWidths: colW,
-      borders: { top:{style:BorderStyle.SINGLE,size:1,color:'999999'},bottom:{style:BorderStyle.SINGLE,size:1,color:'999999'},left:{style:BorderStyle.SINGLE,size:1,color:'999999'},right:{style:BorderStyle.SINGLE,size:1,color:'999999'},insideH:{style:BorderStyle.SINGLE,size:1,color:'999999'},insideV:{style:BorderStyle.SINGLE,size:1,color:'999999'} },
-      rows: [
-        new TableRow({ tableHeader: true, children: [
-          cella('COGNOME', { width: colW[0], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('NOME', { width: colW[1], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('FIRMA ENTRATA', { width: colW[2], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('ORA', { width: colW[3], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('FIRMA USCITA', { width: colW[4], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('ORA', { width: colW[5], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('DATA INTERVENTO', { width: colW[6], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
+      width:{size:W,type:WidthType.DXA}, columnWidths:colW,
+      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+      rows:[
+        new TableRow({tableHeader:true, children:[
+          cella('COGNOME',{width:colW[0],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
+          cella('NOME',{width:colW[1],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
+          cella('FIRMA ENTRATA',{width:colW[2],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('ORA',{width:colW[3],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('FIRMA USCITA',{width:colW[4],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('ORA',{width:colW[5],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('DATA INTERVENTO',{width:colW[6],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
         ]}),
-        ...Array.from({ length: nRighe }, (_, i) => new TableRow({
-          height: { value: 550, rule: 'atLeast' },
-          children: colW.map(w => cella('', { width: w, fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT })),
+        ...Array.from({length:15},(_,i) => new TableRow({
+          height:{value:500,rule:'atLeast'},
+          children: colW.map(w => cella('',{width:w,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT})),
         })),
       ],
     }),
-    vuoto(60),
+    vuoto(30),
     new Table({
-      width: { size: W9, type: WidthType.DXA }, columnWidths: [W9],
-      borders: { top:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},insideH:{style:BorderStyle.NONE},insideV:{style:BorderStyle.NONE} },
-      rows: [new TableRow({ children: [
-        cella('Argomenti trattati:  Vedasi progetto formativo', { width: W9 }),
-      ]})],
+      width:{size:W,type:WidthType.DXA}, columnWidths:[W],
+      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:NO.top},
+      rows:[new TableRow({children:[cella('Argomenti trattati:  Vedasi progetto formativo',{width:W})]})]
     }),
   ];
 
-  const doc = new Document({
-    styles: docStyles,
-    sections: [{
-      properties: { page: { size: A4_L, margin: { top: 850, right: 1134, bottom: 1134, left: 1134 } } },
-      footers: { default: footer },
-      children,
-    }],
-  });
+  const doc = new Document({styles:docStyles, sections:[{
+    properties:{page:{size:{width:16838,height:11906},margin:MARGIN}},
+    footers:{default:footer},
+    children,
+  }]});
   await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/Registro_FormIniziale_${mansione.id}.docx`);
 }
 
@@ -408,77 +542,72 @@ async function genRegistroFormIniziale(mansione) {
 // REGISTRO AGGIORNAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroAggiornamento() {
+  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
+  const W = 14570;
   const footer = new Footer({ children: [new Paragraph({
-    tabStops: [{ type: TabStopType.RIGHT, position: 16000 }],
     children: [
       new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}   |   Pag. `, size: 16, font: FONT, color: C.GRIGIO }),
       new SimpleField('PAGE'),
     ],
   })]});
-
-  const nRighe = 14;
-  const W9 = 13438;
-  const colW = [2600, 2000, 2200, 900, 2200, 900, 2638];
+  const colW = [2025, 2004, 3196, 708, 3402, 709, 2526];
 
   const children = [
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 30 },
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 6*20 },
       children: [new TextRun({ text: 'REGISTRO PRESENZE', bold: true, font: FONT, size: 34, color: C.BLU_DARK })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 10 },
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 2*20 },
       children: [new TextRun({ text: CLIENTE.ragioneSociale, bold: true, font: FONT, size: 24 })],
     }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 100 },
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 8*20 },
       children: [new TextRun({ text: CLIENTE.indirizzo, font: FONT, size: 20 })],
     }),
     new Table({
-      width: { size: W9, type: WidthType.DXA }, columnWidths: [Math.floor(W9/2), W9 - Math.floor(W9/2)],
-      borders: { top:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},insideH:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},insideV:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'} },
-      rows: [
-        new TableRow({ children: [
-          cella('Corso: Aggiornamento della formazione specifica (6 ore)', { width: Math.floor(W9/2) }),
-          cella('Mansione: _________________________________', { width: W9 - Math.floor(W9/2) }),
+      width:{size:W,type:WidthType.DXA}, columnWidths:[Math.floor(W/2), W-Math.floor(W/2)],
+      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+      rows:[
+        new TableRow({children:[
+          cella('Corso: Aggiornamento della formazione specifica (6 ore)',{width:Math.floor(W/2)}),
+          cella('Mansione: _________________________________',{width:W-Math.floor(W/2)}),
         ]}),
-        new TableRow({ children: [
-          cella(`Relatore / Docente: ${CLIENTE.datoreLavoro}`, { width: Math.floor(W9/2) }),
-          cella('', { width: W9 - Math.floor(W9/2) }),
+        new TableRow({children:[
+          cella(`Relatore / Docente: ${CLIENTE.datoreLavoro}`,{width:Math.floor(W/2)}),
+          cella('',{width:W-Math.floor(W/2)}),
         ]}),
       ],
     }),
-    vuoto(60),
+    vuoto(30),
     new Table({
-      width: { size: W9, type: WidthType.DXA }, columnWidths: colW,
-      borders: { top:{style:BorderStyle.SINGLE,size:1,color:'999999'},bottom:{style:BorderStyle.SINGLE,size:1,color:'999999'},left:{style:BorderStyle.SINGLE,size:1,color:'999999'},right:{style:BorderStyle.SINGLE,size:1,color:'999999'},insideH:{style:BorderStyle.SINGLE,size:1,color:'999999'},insideV:{style:BorderStyle.SINGLE,size:1,color:'999999'} },
-      rows: [
-        new TableRow({ tableHeader: true, children: [
-          cella('COGNOME', { width: colW[0], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('NOME', { width: colW[1], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('FIRMA ENTRATA', { width: colW[2], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('ORA', { width: colW[3], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('FIRMA USCITA', { width: colW[4], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('ORA', { width: colW[5], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
-          cella('DATA INTERVENTO', { width: colW[6], bold: true, fill: C.BLU_LIGHT, align: 'center' }),
+      width:{size:W,type:WidthType.DXA}, columnWidths:colW,
+      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
+      rows:[
+        new TableRow({tableHeader:true, children:[
+          cella('COGNOME',{width:colW[0],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
+          cella('NOME',{width:colW[1],bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
+          cella('FIRMA ENTRATA',{width:colW[2],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('ORA',{width:colW[3],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('FIRMA USCITA',{width:colW[4],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('ORA',{width:colW[5],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+          cella('DATA INTERVENTO',{width:colW[6],bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
         ]}),
-        ...Array.from({ length: nRighe }, (_, i) => new TableRow({
-          height: { value: 550, rule: 'atLeast' },
-          children: colW.map(w => cella('', { width: w, fill: i % 2 === 0 ? C.BIANCO : C.GRIGIO_ALT })),
+        ...Array.from({length:14},(_,i) => new TableRow({
+          height:{value:500,rule:'atLeast'},
+          children: colW.map(w => cella('',{width:w,fill:i%2===0?C.BIANCO:C.GRIGIO_ALT})),
         })),
       ],
     }),
-    vuoto(60),
-    new Paragraph({ children: [new TextRun({ text: 'Argomenti trattati:', bold: true, font: FONT, size: 20 })] }),
-    new Paragraph({ children: [new TextRun({ text: '____________________________________________________________________________________________________', font: FONT, size: 20 })] }),
-    new Paragraph({ children: [new TextRun({ text: '____________________________________________________________________________________________________', font: FONT, size: 20 })] }),
-    new Paragraph({ children: [new TextRun({ text: '____________________________________________________________________________________________________', font: FONT, size: 20 })] }),
+    vuoto(30),
+    new Paragraph({spacing:{after:6*20},children:[new TextRun({text:'Argomenti trattati:',bold:true,font:FONT,size:20})]}),
+    new Paragraph({spacing:{after:4},children:[new TextRun({text:'____________________________________________________________________________________________________',font:FONT,size:20})]}),
+    new Paragraph({spacing:{after:4},children:[new TextRun({text:'____________________________________________________________________________________________________',font:FONT,size:20})]}),
+    new Paragraph({spacing:{after:4},children:[new TextRun({text:'____________________________________________________________________________________________________',font:FONT,size:20})]}),
   ];
 
-  const doc = new Document({
-    styles: docStyles,
-    sections: [{
-      properties: { page: { size: A4_L, margin: { top: 453, right: 1134, bottom: 1134, left: 1134 } } },
-      footers: { default: footer },
-      children,
-    }],
-  });
+  const doc = new Document({styles:docStyles, sections:[{
+    properties:{page:{size:{width:16838,height:11906},margin:MARGIN}},
+    footers:{default:footer},
+    children,
+  }]});
   await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/Registro_Aggiornamento.docx`);
 }
 
