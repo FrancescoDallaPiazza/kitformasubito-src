@@ -21,6 +21,7 @@ const C = {
   ROSSO      : 'C00000',
   ARANCIO    : 'E07000',
   VERDE      : '538135',
+  GIALLO     : 'FFFF00',
 };
 
 const FONT = 'Gill Sans MT';
