@@ -8,8 +8,8 @@ const {
   makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes,
 } = h;
 
-// PageBreak va importato separatamente
-const { PageBreak } = require('docx');
+// Import aggiuntivi
+const { PageBreak, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType, TextWrappingSide } = require('docx');
 
 const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
 
@@ -506,7 +506,7 @@ async function genProgettoFormativo() {
 // REGISTRO PRESENZE FORMAZIONE INIZIALE
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroFormIniziale(mansione) {
-  const MARGIN = { top: 878, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
   const W = 14570;
 
   // ── Bordi AAAAAA (come nel master) ────────────────────────────────────────
@@ -524,13 +524,20 @@ async function genRegistroFormIniziale(mansione) {
     right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
   };
 
-  // ── Header con logo (in alto a sinistra) ──────────────────────────────────
+  // ── Header con logo flottante (anchor, angolo in alto a sinistra) ────────
   const header = new Header({
     children: [new Paragraph({
       children: [new ImageRun({
         data: logoBytes,
         type: 'jpg',
-        transformation: { width: 90, height: 90 },
+        transformation: { width: 166, height: 38 },
+        floating: {
+          horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: -172085 },
+          verticalPosition:   { relative: VerticalPositionRelativeFrom.TOP_MARGIN, offset: 0 },
+          wrap:               { type: TextWrappingType.SQUARE, side: TextWrappingSide.BOTH_SIDES },
+          zIndex: 251659264,
+          behindDocument: false,
+        },
       })],
     })],
   });
@@ -690,7 +697,7 @@ async function genRegistroFormIniziale(mansione) {
 // REGISTRO AGGIORNAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroAggiornamento() {
-  const MARGIN = { top: 878, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
   const W = 14570;
 
   const BAA = {
@@ -708,7 +715,18 @@ async function genRegistroAggiornamento() {
 
   const header = new Header({
     children: [new Paragraph({
-      children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 90, height: 90 } })],
+      children: [new ImageRun({
+        data: logoBytes,
+        type: 'jpg',
+        transformation: { width: 166, height: 38 },
+        floating: {
+          horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: -172085 },
+          verticalPosition:   { relative: VerticalPositionRelativeFrom.TOP_MARGIN, offset: 0 },
+          wrap:               { type: TextWrappingType.SQUARE, side: TextWrappingSide.BOTH_SIDES },
+          zIndex: 251659264,
+          behindDocument: false,
+        },
+      })],
     })],
   });
 
@@ -817,15 +835,22 @@ async function genRegistroAggiornamento() {
       ],
     }),
     spacer,
-    new Table({
-      width: { size: W, type: WidthType.DXA }, columnWidths: [W],
-      borders: { top: BAA.top, bottom: BAA.bottom, left: BAA.left, right: BAA.right, insideH: BAA.top, insideV: BAA.left },
-      rows: [new TableRow({ children: [
-        cellaAA(new Paragraph({ children: [
-          new TextRun({ text: 'Argomenti trattati:  ', bold: true, font: FONT, size: 20 }),
-          new TextRun({ text: 'Vedasi progetto formativo', font: FONT, size: 20 }),
-        ]}), { width: W }),
-      ]})],
+    // ── Argomenti trattati: label + 3 righe libere con underscore ──────────
+    new Paragraph({
+      spacing: { after: 60 },
+      children: [new TextRun({ text: 'Argomenti trattati:', bold: true, font: FONT, size: 20 })],
+    }),
+    new Paragraph({
+      spacing: { after: 40, line: 276, lineRule: 'auto' },
+      children: [new TextRun({ text: '_________________________________________________________________________________________________________________________________________________', bold: true, font: FONT, size: 20 })],
+    }),
+    new Paragraph({
+      spacing: { after: 40, line: 276, lineRule: 'auto' },
+      children: [new TextRun({ text: '_________________________________________________________________________________________________________________________________________________', bold: true, font: FONT, size: 20 })],
+    }),
+    new Paragraph({
+      spacing: { after: 40, line: 276, lineRule: 'auto' },
+      children: [new TextRun({ text: '_________________________________________________________________________________________________________________________________________________', bold: true, font: FONT, size: 20 })],
     }),
   ];
 
