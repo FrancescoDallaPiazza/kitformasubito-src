@@ -145,9 +145,22 @@ async function genSchedaMansione(mansione) {
 // Firma table: header fill=F7CAAC, 4 colonne, 11 righe
 // ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaAddestrativa(mansione) {
-  // Margini esatti dal master: top=587, right=1134, bottom=556, left=1134
-  const MARGIN = { top: 587, right: 1134, bottom: 556, left: 1134 };
+  // Margini esatti dal master: top=587, right=1134, bottom=556, left=1134, header=142, footer=51
+  const MARGIN = { top: 587, right: 1134, bottom: 556, left: 1134, header: 142, footer: 51 };
   const W = 9638;
+  // Header: logo inline 131×29 px
+  const { Header: HdrCls, Footer: FtrCls, SimpleField } = require('docx');
+  const header = new HdrCls({ children: [new Paragraph({
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 131, height: 29 } })],
+  })]});
+  // Footer: Pag. X right-aligned, no border
+  const footer = new FtrCls({ children: [new Paragraph({
+    alignment: AlignmentType.RIGHT,
+    children: [
+      new TextRun({ text: 'Pag. ', font: FONT }),
+      new SimpleField('PAGE'),
+    ],
+  })]});
 
   const BD_A = {top:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:1,color:'AAAAAA'}};
   const SALMON = 'F7CAAC';
@@ -235,19 +248,45 @@ async function genSchedaAddestrativa(mansione) {
       new Paragraph({spacing:{after:6},children:[new TextRun({text:'Durata addestramento _____ mesi -  _____settimana/e -  _____giorno/i – per un totale di ________ore – 10 min',font:FONT,size:20})]}),
       new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:20})]}),
     ]),
-    istrRow('Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni di lavoro:', SALMON),
-    istrRow('Istruzioni di lavoro in sicurezza', PURPLE),
-    istrRow('Utilizzo corretto ed in sicurezza delle attrezzature in dotazione', PURPLE),
-    istrRow('Sicurezze presenti sulle attrezzature in uso (emergenze, microinterruttori, allarmi)', PURPLE),
-    istrRow('Segnaletica di sicurezza, salute ed emergenza in reparto.', PURPLE),
-    istrRow('Istruzioni specifiche di reparto (specificare di seguito se presenti)', PURPLE),
-    fullRow([
-      new Paragraph({spacing:{after:4},children:[new TextRun({text:'DPI necessari alla lavorazione (specificare di seguito se necessari):',bold:true,font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:4},children:[new TextRun({text:dpiTxt,font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:4},children:[new TextRun({text:'Rischi per i quali sono necessari i DPI.',font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:4},children:[new TextRun({text:"Utilizzo dei DPI (modalità d'impiego, verifica della necessità di utilizzo).",font:FONT,size:20})]}),
-      new Paragraph({children:[new TextRun({text:'Modalità di conservazione e richiesta di sostituzione/integrazione dei DPI.',font:FONT,size:20})]}),
-    ]),
+    // ── "Al lavoratore..." header + tutti i sottopunti istruzioni in UNA sola cella ──
+    new TableRow({children:[
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
+        shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni di lavoro:',bold:true,font:FONT,size:18})]})],
+      }),
+    ]}),
+    new TableRow({children:[
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
+        shading:{fill:PURPLE,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Istruzioni di lavoro in sicurezza',bold:true,font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Utilizzo corretto ed in sicurezza delle attrezzature in dotazione',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Sicurezze presenti sulle attrezzature in uso (emergenze, microinterruttori, allarmi)',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Segnaletica di sicurezza, salute ed emergenza in reparto.',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Istruzioni specifiche di reparto (specificare di seguito se presenti)',font:FONT,size:18})]}),
+        ],
+      }),
+    ]}),
+    // ── DPI: col[0] vuota + cols[1-3] merged CCC0D9 con "DPI da utilizzare" header ──
+    new TableRow({children:[
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
+        shading:{fill:PURPLE,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'DPI da utilizzare',bold:true,font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'DPI necessari alla lavorazione (specificare di seguito se necessari):',bold:true,font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:dpiTxt,font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Rischi per i quali sono necessari i DPI.',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:"Utilizzo dei DPI (modalità d'impiego, verifica della necessità di utilizzo).",font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Modalità di conservazione e richiesta di sostituzione/integrazione dei DPI.',font:FONT,size:18})]}),
+        ],
+      }),
+    ]}),
     new TableRow({children:[
       new TableCell({columnSpan:2,width:{size:COLS[0]+COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
         children:[
@@ -288,19 +327,59 @@ async function genSchedaAddestrativa(mansione) {
     });
   }
 
+  function fCellW(txt, opts={}) {
+    const w = opts.w || FCOLS[0];
+    const span = opts.span || 1;
+    const realW = span === 2 ? FCOLS[0]+FCOLS[1] : w;
+    return new TableCell({
+      ...(span>1?{columnSpan:span}:{}),
+      width:{size:realW,type:WidthType.DXA},
+      shading:opts.fill?{fill:opts.fill,type:ShadingType.CLEAR}:undefined,
+      borders:BD_A, margins:{top:40,bottom:40,left:80,right:80},
+      children:[new Paragraph({alignment:opts.center?AlignmentType.CENTER:AlignmentType.LEFT,
+        children:[new TextRun({text:txt,font:FONT,size:opts.sz||20,bold:opts.bold||false,color:opts.col||undefined})],
+      })],
+    });
+  }
   const firmaTable = new Table({
     width:{size:W,type:WidthType.DXA}, columnWidths:FCOLS,
     borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
     rows:[
-      new TableRow({children:[new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'FIRME ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:20,color:'000000'})]})]})]},),
-      new TableRow({children:[fCell('Nome lavoratore:'),fCell('Firma lavoratore:'),fCell('Istruttore:'),fCell('Firma Istruttore:')]}),
-      ...[...Array(4)].map(()=>new TableRow({height:{value:500,rule:'atLeast'},children:[fCell(''),fCell(''),fCell(''),fCell('')]})),
-      new TableRow({children:[fCell(`DDL/RSPP: ${CLIENTE.datoreLavoro}`),fCell('Firma DDL/RSPP:'),fCell('Data:'),fCell('')]}),
+      // Row 1: FIRME header SALMON full width
+      new TableRow({children:[new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'FIRME ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:20})]})]})]},),
+      // Row 2: Nome lavoratore (colspan 2) + Firma lavoratore (colspan 2)
+      new TableRow({height:{value:270,rule:'exact'},children:[
+        fCellW('Nome lavoratore:',{span:2,bold:true,col:'000000'}),
+        fCellW('Firma lavoratore:',{span:2,bold:true,col:'000000'}),
+      ]}),
+      // Rows 3-8: empty (6 righe per la firma)
+      ...[...Array(6)].map(()=>new TableRow({height:{value:270,rule:'exact'},children:[
+        fCellW('',{span:2}), fCellW('',{span:2}),
+      ]})),
+      // Row 9: separatore SALMON full width
+      new TableRow({height:{value:212,rule:'exact'},children:[new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:18})]})]})]},),
+      // Row 10: Istruttore | Firma Istruttore | Data
+      new TableRow({height:{value:420,rule:'exact'},children:[
+        new TableCell({columnSpan:2,width:{size:FCOLS[0]+FCOLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},children:[new Paragraph({children:[new TextRun({text:`Istruttore: `,font:FONT,size:20})]})]}),
+        fCellW('Firma Istruttore:',{}),
+        fCellW('Data:',{w:FCOLS[3]}),
+      ]}),
+      // Row 11: DDL/RSPP | Firma DDL/RSPP | Data
+      new TableRow({height:{value:420,rule:'exact'},children:[
+        new TableCell({columnSpan:2,width:{size:FCOLS[0]+FCOLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},children:[new Paragraph({children:[
+          new TextRun({text:' DDL/RSPP: ',font:FONT,size:20}),
+          new TextRun({text:CLIENTE.datoreLavoro,font:FONT,size:18}),
+        ]})]}),
+        fCellW('Firma DDL/RSPP: ',{}),
+        fCellW('Data:',{w:FCOLS[3]}),
+      ]}),
     ],
   });
 
   const doc = new Document({styles:docStyles,sections:[{
     properties:{page:{size:A4_P,margin:MARGIN}},
+    headers:{default:header},
+    footers:{default:footer},
     children:[
       new Paragraph({spacing:{after:60},children:[new TextRun({text:'SCHEDA ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:22})]}),
       mainTable,
