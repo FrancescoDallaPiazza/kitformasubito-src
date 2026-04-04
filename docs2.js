@@ -359,47 +359,59 @@ async function genGradimento() {
 // Due attestati in file unico (generale + specifica)
 // ─────────────────────────────────────────────────────────────────────────────
 async function genAttestato(mansione) {
-  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
-  // Master: NO header, NO footer
+  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
+  // Master: header con logo inline 164x36, footer indirizzo NO pag
+  const header = new Header({ children: [new Paragraph({
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+  })]});
+  const footer = new Footer({ children: [new Paragraph({
+    border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
+    children: [new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}`, size: 16, font: FONT, color: C.GRIGIO })],
+  })]});
   const wL = 2698; const wR = W - wL; // 6940
   const BD_A = {top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}};
   const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
   const wFirma = 4819;
 
+  const BF = {top:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'}};
   function firmaCol(label) {
-    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:BF,
       margins:{top:80,bottom:80,left:120,right:120},
-      children:[
-        new Paragraph({children:[]}), new Paragraph({children:[]}),
-        new Paragraph({children:[]}), new Paragraph({children:[]}),
-        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
-      ],
+      children:[new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,size:20,color:'000000'})]})],
     });
   }
-  function firmaLinea() {
-    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+  function firmaVuota() {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:BF,
       margins:{top:80,bottom:80,left:120,right:120},
-      children:[
-        new Paragraph({spacing:{before:200},children:[]}),
-        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
-      ],
+      children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:40})]})],
     });
   }
   const tableFirme = new Table({
     width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
-    borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+    borders:{top:BF.top,bottom:BF.bottom,left:BF.left,right:BF.right,insideH:BF.top,insideV:BF.left},
     rows:[
       new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol('Firma del Relatore / Datore di Lavoro / RSPP')]}),
-      new TableRow({children:[firmaLinea(), firmaLinea()]}),
+      new TableRow({children:[firmaVuota(), firmaVuota()]}),
     ],
   });
 
-  const REF_NORM = `ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)\nRiferimento normativo e contenuti minimi secondo l'Accordo Stato-Regioni del 17 aprile 2025\nParte II dell'Accordo - Punto 2 e Parte IV dell'Accordo - Punto 1`;
+  // Cella "Riferimento normativo" con 3 paragrafi: riga 1 normale sz20, righe 2-3 italic sz18
+  function cellaRifNorm(wR, riga2, riga3) {
+    const BD_A2 = {top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}};
+    return new TableCell({ width:{size:wR,type:WidthType.DXA}, borders:BD_A2,
+      shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[
+        new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
+        new Paragraph({children:[new TextRun({text:riga2,font:FONT,size:18,italic:true,color:'000000'})]}),
+        new Paragraph({children:[new TextRun({text:riga3,font:FONT,size:18,italic:true,color:'000000'})]}),
+      ],
+    });
+  }
 
   function buildAttest(tipoLabel, durata, nota) {
     return [
       PAR('ATTESTATO DI FORMAZIONE',{bold:true,sz:20,col:C.BLU_DARK,spA:4}),
-      PAR('Formazione Generale e Specifica – D.Lgs. 81/2008 – ASR 17/04/2025',{col:C.BLU_MED,spA:4}),
       PAR(`Il/La sottoscritto/a ${CLIENTE.datoreLavoro} in qualità di Datore di Lavoro e Soggetto Formatore`,{spA:2}),
       PAR(`della Società ${CLIENTE.ragioneSociale}`,{spA:2}),
       PAR(`con Codice ATECO ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`,{spA:2}),
@@ -412,23 +424,20 @@ async function genAttestato(mansione) {
       new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wL,wR],
         borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
         rows:[
-          ['Tipologia corso:',tipoLabel],
-          ['Riferimento normativo:', REF_NORM],
-          ['Durata:',durata],
-          ['Modalità:','Presenza sul campo'],
-          ['Data inizio:','___/___/_____'],
-          ['Data fine:','___/___/_____'],
-          ['Sede:',CLIENTE.indirizzo],
-        ].map(([k,v]) => new TableRow({children:[
-          cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
-          cella(v,{width:wR,color:'000000'}),
-        ]})),
+          new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(tipoLabel,{width:wR,color:'000000'})]}),
+          new TableRow({children:[cella('Riferimento normativo:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cellaRifNorm(wR,"Riferimento normativo e contenuti minimi secondo l'Accordo Stato-Regioni del 17 aprile 2025","Parte II dell'Accordo - Punto 2 e Parte IV dell'Accordo - Punto 1")]}),
+          new TableRow({children:[cella('Durata:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(durata,{width:wR,color:'000000'})]}),
+          new TableRow({children:[cella('Modalità:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('Presenza sul campo',{width:wR,color:'000000'})]}),
+          new TableRow({children:[cella('Data inizio:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('___/___/_____',{width:wR,color:'000000'})]}),
+          new TableRow({children:[cella('Data fine:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('___/___/_____',{width:wR,color:'000000'})]}),
+          new TableRow({children:[cella('Sede:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(CLIENTE.indirizzo,{width:wR,color:'000000'})]}),
+        ],
       }),
       vuoto(20),
       PAR('Superando con esito positivo la verifica finale dell\'apprendimento,',{sz:10,spA:2}),
       PAR('effettuata in data ___/___/_____ secondo quanto previsto dall\'Accordo.',{sz:10,spA:5}),
-      PAR(nota,{bold:true,sz:9.5,col:C.GRIGIO,spA:5}),
-      new Paragraph({spacing:{after:20},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:nota,bold:true,italic:true,font:FONT,size:19,color:C.GRIGIO})]}),
+      new Paragraph({spacing:{after:100},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
       vuoto(30),
       tableFirme,
     ];
@@ -438,8 +447,8 @@ async function genAttestato(mansione) {
   const sec2 = buildAttest(`FORMAZIONE SPECIFICA RISCHIO ${mansione.livello}`,`${mansione.oreSpec} ore specifiche`,'Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.');
 
   const doc = new Document({styles:docStyles,sections:[
-    {properties:{page:{size:A4_P,margin:MARGIN}},children:sec1},
-    {properties:{page:{size:A4_P,margin:MARGIN}},children:sec2},
+    {properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children:sec1},
+    {properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children:sec2},
   ]});
   await salvaDoc(doc, `${OUT}/05 - ATTESTATI/Attestato_${mansione.id}.docx`);
 }
@@ -448,40 +457,43 @@ async function genAttestato(mansione) {
 // ATTESTATO AGGIORNAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 async function genAttestatiAggiornamento() {
-  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
   const wL = 2698; const wR = W - wL;
+  const header = new Header({ children: [new Paragraph({
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+  })]});
+  const footer = new Footer({ children: [new Paragraph({
+    border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
+    children: [new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}`, size: 16, font: FONT, color: C.GRIGIO })],
+  })]});
   const BD_A = {top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}};
   const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
   const wFirma = 4819;
 
+  const BF = {top:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,space:0,color:'AAAAAA'}};
   function firmaCol(label) {
-    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:BF,
       margins:{top:80,bottom:80,left:120,right:120},
-      children:[new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),
-        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
-      ],
+      children:[new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,size:20,color:'000000'})]})],
     });
   }
-  function firmaLinea() {
-    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
+  function firmaVuota() {
+    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:BF,
       margins:{top:80,bottom:80,left:120,right:120},
-      children:[new Paragraph({spacing:{before:200},children:[]}),
-        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
-      ],
+      children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:40})]})],
     });
   }
   const tableFirme = new Table({
     width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
-    borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+    borders:{top:BF.top,bottom:BF.bottom,left:BF.left,right:BF.right,insideH:BF.top,insideV:BF.left},
     rows:[
       new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol('Firma del Relatore / Datore di Lavoro / RSPP')]}),
-      new TableRow({children:[firmaLinea(), firmaLinea()]}),
+      new TableRow({children:[firmaVuota(), firmaVuota()]}),
     ],
   });
 
   const children = [
     PAR('ATTESTATO DI FORMAZIONE',{bold:true,sz:20,col:C.BLU_DARK,spA:4}),
-    PAR('Aggiornamento – D.Lgs. 81/2008 – ASR 17/04/2025',{col:C.BLU_MED,spA:4}),
     PAR(`Il/La sottoscritto/a ${CLIENTE.datoreLavoro} in qualità di Datore di Lavoro e Soggetto Formatore`,{spA:2}),
     PAR(`della Società ${CLIENTE.ragioneSociale}`,{spA:2}),
     PAR(`con Codice ATECO ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`,{spA:2}),
@@ -494,29 +506,32 @@ async function genAttestatiAggiornamento() {
     new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wL,wR],
       borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
       rows:[
-        ['Tipologia corso:','AGGIORNAMENTO FORMAZIONE LAVORATORI'],
-        ['Riferimento normativo:',`ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)\nRiferimento normativo e contenuti minimi secondo l'Accordo Stato-Regioni del 17 aprile 2025\nParte II dell'Accordo - Punto 2 /2.1 e Parte III`],
-        ['Durata:','6 ore'],
-        ['Modalità:','Presenza sul campo'],
-        ['Data inizio:','___/___/_____'],
-        ['Data fine:','___/___/_____'],
-      ].map(([k,v]) => new TableRow({children:[
-        cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
-        cella(v,{width:wR,color:'000000'}),
-      ]})),
+        new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('AGGIORNAMENTO FORMAZIONE LAVORATORI',{width:wR,color:'000000'})]}),
+        new TableRow({children:[cella('Riferimento normativo:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
+          new TableCell({width:{size:wR,type:WidthType.DXA},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}},shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},children:[
+            new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
+            new Paragraph({children:[new TextRun({text:"Parte II dell'Accordo - Punto 2 /2.1 e Parte IV dell'Accordo - Punto 6 e 6.3",font:FONT,size:18,italic:true,color:'000000'})]}),
+          ]})
+        ]}),
+        new TableRow({children:[cella('Durata:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('6 ore',{width:wR,color:'000000'})]}),
+        new TableRow({children:[cella('Modalità:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('Presenza sul campo',{width:wR,color:'000000'})]}),
+        new TableRow({children:[cella('Data inizio:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('___/___/_____',{width:wR,color:'000000'})]}),
+        new TableRow({children:[cella('Data fine:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('___/___/_____',{width:wR,color:'000000'})]}),
+        new TableRow({children:[cella('Sede:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(CLIENTE.indirizzo,{width:wR,color:'000000'})]}),
+      ],
     }),
     vuoto(20),
     PAR('Superando con esito positivo la verifica finale dell\'apprendimento,',{sz:10,spA:2}),
     PAR('effettuata in data ___/___/_____ secondo quanto previsto dall\'Accordo.',{sz:10,spA:5}),
-    PAR('Aggiornamento effettuato ai sensi dell\'art. 37 del D.Lgs. 81/2008.',{bold:true,sz:9.5,col:C.GRIGIO,spA:5}),
-    PAR('Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.',{bold:true,sz:9.5,col:C.GRIGIO,spA:5}),
-    new Paragraph({spacing:{after:20},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:'Aggiornamento effettuato ai sensi dell\'art. 37 del D.Lgs. 81/2008.',bold:true,italic:true,font:FONT,size:19,color:C.GRIGIO})]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:'Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.',bold:true,italic:true,font:FONT,size:19,color:C.GRIGIO})]}),
+    new Paragraph({spacing:{after:100},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
     vuoto(30),
     tableFirme,
   ];
 
   const doc = new Document({styles:docStyles,sections:[{
-    properties:{page:{size:A4_P,margin:MARGIN}},children,
+    properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children,
   }]});
   await salvaDoc(doc, `${OUT}/05 - ATTESTATI/Attestato_Aggiorn.docx`);
 }
