@@ -669,45 +669,61 @@ async function genVerbaleVerifica() {
 // Tabella valutazione 11x4, col widths precisi dal modello
 // ─────────────────────────────────────────────────────────────────────────────
 async function genVerificaEfficacia() {
-  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
-  // Master: NO header, NO footer
+  const MARGIN = { top: 1134, right: 1133, bottom: 1134, left: 1134, header: 426, footer: 708 };
+  // Master: header logo inline 164×36, footer indirizzo NO pag
+  const header = new Header({ children: [new Paragraph({
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+  })]});
+  const footer = new Footer({ children: [new Paragraph({
+    border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
+    children: [new TextRun({ text: `${CLIENTE.ragioneSociale} – ${CLIENTE.indirizzo}`, size: 16, font: FONT, color: C.GRIGIO })],
+  })]});
   const NO_F = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
   const wFirma = 4819;
 
-  function firmaCol(label) {
-    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
-      margins:{top:80,bottom:80,left:120,right:120},
-      children:[new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),new Paragraph({children:[]}),
-        new Paragraph({children:[new TextRun({text:label,bold:true,font:FONT,color:'000000'})]}),
-      ],
-    });
-  }
-  function firmaLinea() {
-    return new TableCell({ width:{size:wFirma,type:WidthType.DXA}, borders:NO_F,
-      margins:{top:80,bottom:80,left:120,right:120},
-      children:[new Paragraph({spacing:{before:200},children:[]}),
-        new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:4,space:0,color:'CCCCCC'}},children:[]}),
-      ],
-    });
-  }
+  const BF_VE = {top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}};
 
   function buildSezione(mansione) {
     const wDati = 3256; const wVal = W - wDati; // 6382
     // col widths valutazione: dal master [2405, 4253, 1742, 1238]
-    const wVoce=2405; const wCrit=4253; const wEs=1742; const wNote=1238;
 
-    const voci = mansione.rischi.slice(0,4).map(r => ({
-      voce: r.nome.length>25?r.nome.substring(0,25)+'…':r.nome,
-      criterio: `Il lavoratore applica correttamente le misure di prevenzione per: ${r.nome.toLowerCase()}.`,
-    }));
-    if (voci.length < 4) voci.push({voce:'Uso DPI',criterio:`Il lavoratore indossa correttamente i DPI richiesti per la mansione di ${mansione.nome}.`});
+
+    // 10 voci fisse dai rischi della mansione (+ trasversali)
+    const voceFromRischio = (r) => ({
+      voce: r.nome.length>22 ? r.nome.substring(0,22)+'…' : r.nome,
+      criterio: r.misure && r.misure[0]
+        ? `Il lavoratore ${r.misure[0].charAt(0).toLowerCase()}${r.misure[0].slice(1)}?`
+        : `Il lavoratore applica correttamente le misure di prevenzione per ${r.nome.toLowerCase()}?`,
+    });
+    const voceBase = mansione.rischi.map(voceFromRischio);
+    const voceTraversali = [
+      {voce:'Movimentazione carichi', criterio:`Il lavoratore utilizza la tecnica corretta per sollevare e spostare carichi, piegando le ginocchia e mantenendo la schiena dritta?`},
+      {voce:'Postura',                criterio:`Il lavoratore mantiene una postura corretta durante le lavorazioni prolungate e sfrutta le pause previste?`},
+      {voce:'Procedure emergenza',    criterio:`Il lavoratore conosce ed applica le procedure di emergenza ed evacuazione e sa usare gli estintori?`},
+      {voce:'Segnalazione rischi',    criterio:`Il lavoratore segnala tempestivamente situazioni di pericolo, anomalie o near miss al responsabile?`},
+      {voce:'Ordine e pulizia',       criterio:`Il lavoratore mantiene l'area di lavoro in ordine e pulisce regolarmente le attrezzature?`},
+    ];
+    // Combina fino a 10 voci
+    const vociAll = [...voceBase, ...voceTraversali];
+    const voci = vociAll.slice(0, 10);
+    // Col widths valutazione calibrate sul numero voci e sulla mansione
+    const wVoce = 2405;
+    const wNote = 1238;
+    const wEs_m = 1600;
+    const wCrit = W - wVoce - wEs_m - wNote; // adatta criterio al layout
 
     const tableFirme = new Table({
       width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
-      borders:{top:NO_F.top,bottom:NO_F.bottom,left:NO_F.left,right:NO_F.right,insideH:NO_F.top,insideV:NO_F.top},
+      borders:{top:BF_VE.top,bottom:BF_VE.bottom,left:BF_VE.left,right:BF_VE.right,insideH:BF_VE.top,insideV:BF_VE.left},
       rows:[
-        new TableRow({children:[firmaCol('Firma Osservatore'), firmaCol('Firma Datore di Lavoro / RSPP')]}),
-        new TableRow({children:[firmaLinea(), firmaLinea()]}),
+        new TableRow({children:[
+          new TableCell({width:{size:wFirma,type:WidthType.DXA},borders:BF_VE,margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:'Firma Osservatore',bold:true,font:FONT,size:20})]})]}) ,
+          new TableCell({width:{size:wFirma,type:WidthType.DXA},borders:BF_VE,margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:20})]})]})
+        ]}),
+        new TableRow({children:[
+          new TableCell({width:{size:wFirma,type:WidthType.DXA},borders:BF_VE,margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:50})]})]}) ,
+          new TableCell({width:{size:wFirma,type:WidthType.DXA},borders:BF_VE,margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:50})]})]})
+        ]}),
       ],
     });
 
@@ -725,8 +741,8 @@ async function genVerificaEfficacia() {
         ].map(([k,v]) => new TableRow({children:[cella(k,{width:wDati,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),cella(v,{width:wVal,color:'000000'})]})),
       }),
       vuoto(20),
-      new Paragraph({spacing:{before:16,after:8},children:[new TextRun({text:`VALUTAZIONE COMPORTAMENTALE – MANSIONE: ${mansione.nome.toUpperCase()}`,bold:true,font:FONT,size:20,color:C.BLU_DARK})]}),
-      new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wVoce,wCrit,wEs,wNote],
+      new Paragraph({spacing:{before:160,after:80},children:[new TextRun({text:`VALUTAZIONE COMPORTAMENTALE – MANSIONE: ${mansione.nome.toUpperCase()}`,bold:true,font:FONT,color:C.BLU_DARK})]}),
+      new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wVoce,wCrit,wEs_m,wNote],
         borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
         rows:[
           new TableRow({tableHeader:true,children:[
@@ -738,25 +754,27 @@ async function genVerificaEfficacia() {
           ...voci.map((v,i) => new TableRow({height:{value:650,rule:'atLeast'},children:[
             cella(v.voce,{width:wVoce}),
             cella(v.criterio,{width:wCrit}),
-            new TableCell({width:{size:wEs,type:WidthType.DXA},borders:BD,margins:{top:60,bottom:60,left:80,right:80},children:[
-              new Paragraph({children:[new TextRun({text:'☐ Adeguato',font:FONT,size:19})]}),
-              new Paragraph({children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:19})]}),
+            new TableCell({width:{size:wEs_m,type:WidthType.DXA},borders:BD,margins:{top:60,bottom:60,left:80,right:80},children:[
+              new Paragraph({children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]}),
+              new Paragraph({children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]}),
             ]}),
             cella('',{width:wNote}),
           ]})),
         ],
       }),
       vuoto(20),
-      new Paragraph({spacing:{after:10},children:[new TextRun({text:'Esito complessivo:',bold:true,font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:10},children:[new TextRun({text:'☐ ADEGUATO     ☐ PARZIALMENTE ADEGUATO     ☐ NON ADEGUATO',bold:true,font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Azioni correttive proposte:',font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:20},children:[new TextRun({text:'____________________________________________________________',font:FONT,size:20})]}),
+      new Paragraph({spacing:{before:160,after:80},children:[new TextRun({text:'Esito complessivo:',bold:true,font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:100},children:[new TextRun({text:'☐ ADEGUATO     ☐ PARZIALMENTE ADEGUATO     ☐ NON ADEGUATO',bold:true,font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:60},children:[new TextRun({text:'Azioni correttive proposte:',font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:200},children:[new TextRun({text:'____________________________________________________________',font:FONT,size:20})]}),
       tableFirme,
     ];
   }
 
   const sections = MANSIONI.map((m) => ({
     properties:{page:{size:A4_P,margin:MARGIN}},
+    headers:{default:header},
+    footers:{default:footer},
     children: buildSezione(m),
   }));
 
