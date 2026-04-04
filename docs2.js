@@ -543,7 +543,7 @@ async function genAttestatiAggiornamento() {
 async function genVerbaleVerifica() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 426 };
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 70, height: 70 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
   })]});
   const footer = footerAziendaPag();
   const wL = 3539; const wR = W - wL; // 6099
@@ -552,14 +552,14 @@ async function genVerbaleVerifica() {
     return new Paragraph({spacing:{before:200,after:100},children:[new TextRun({text:`${n}. ${txt}`,bold:true,font:FONT,color:C.BLU_MED})]});
   }
   function CHECK(txt) {
-    return new Paragraph({spacing:{before:0,after:6},children:[new TextRun({text:`☐  ${txt}`,font:FONT,size:20})]});
+    return new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:`☐  ${txt}`,font:FONT,size:20})]});
   }
   function RIGA(txt) {
-    return new Paragraph({spacing:{before:0,after:8},children:[new TextRun({text:txt,font:FONT,size:20})]});
+    return new Paragraph({spacing:{before:0,after:80},children:[new TextRun({text:txt,font:FONT,size:20})]});
   }
 
   // Elenco: col widths dal master [464, 2384, 1986, 2403, 2401]
-  const wN=464;const wNome=2384;const wCF=1986;const wAm=2403;const wEs=2401;
+  const wN=464;const wNome=2384;const wCF=3243;const wAm=1417;const wEs=2130;
   const elencoTable = new Table({
     width:{size:W,type:WidthType.DXA}, columnWidths:[wN,wNome,wCF,wAm,wEs],
     borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
@@ -569,9 +569,18 @@ async function genVerbaleVerifica() {
         cella('Cognome e Nome',{width:wNome,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
         cella('Codice Fiscale',{width:wCF,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
         cella('Ammesso (SI/NO)',{width:wAm,bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-        cella('Esito (Idoneo / Non idoneo)',{width:wEs,bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+        new TableCell({width:{size:wEs,type:WidthType.DXA},
+          borders:{top:{style:BorderStyle.SINGLE,size:4,color:'1F4E79'},bottom:{style:BorderStyle.SINGLE,size:4,color:'1F4E79'},left:{style:BorderStyle.SINGLE,size:4,color:'1F4E79'},right:{style:BorderStyle.SINGLE,size:4,color:'1F4E79'}},
+          shading:{fill:'1F4E79',type:ShadingType.CLEAR},
+          margins:{top:80,bottom:80,left:100,right:100},
+          verticalAlign:VerticalAlign.CENTER,
+          children:[
+            new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Esito ',bold:true,font:FONT,size:18,color:'FFFFFF'})]}),
+            new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'(Idoneo / Non idoneo)',bold:true,font:FONT,size:18,color:'FFFFFF'})]}),
+          ],
+        }),
       ]}),
-      ...Array.from({length:8},(_,i) => new TableRow({height:{value:480,rule:'atLeast'},children:[
+      ...Array.from({length:8},(_,i) => new TableRow({height:{value:454,rule:'atLeast'},children:[
         cella(`${i+1}`,{width:wN,align:'center'}),
         cella('',{width:wNome}),
         cella('',{width:wCF}),
@@ -586,8 +595,16 @@ async function genVerbaleVerifica() {
   const firmaTable = new Table({width:{size:wFirma,type:WidthType.DXA},columnWidths:[wFirma],
     borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:NO.top},
     rows:[
-      new TableRow({children:[cella('Responsabile del Progetto Formativo',{width:wFirma,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER})]}),
-      new TableRow({height:{value:600,rule:'atLeast'},children:[cella('',{width:wFirma})]}),
+      new TableRow({children:[new TableCell({width:{size:wFirma,type:WidthType.DXA},
+        borders:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}},
+        margins:{top:80,bottom:80,left:120,right:120},
+        children:[new Paragraph({children:[new TextRun({text:'Responsabile del Progetto Formativo',bold:true,font:FONT,size:20})]})],
+      })]}),
+      new TableRow({children:[new TableCell({width:{size:wFirma,type:WidthType.DXA},
+        borders:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}},
+        margins:{top:80,bottom:80,left:120,right:120},
+        children:[new Paragraph({children:[new TextRun({text:' ',font:FONT,size:50})]})],
+      })]}),
     ],
   });
 
@@ -608,13 +625,13 @@ async function genVerbaleVerifica() {
     vuoto(30),
 
     SEZ(2,'DATI DEL CORSO'),
-    new Paragraph({spacing:{after:8},children:[new TextRun({text:'Tipologia e durata:',bold:true,font:FONT,size:20})]}),
+    new Paragraph({spacing:{after:80},children:[new TextRun({text:'Tipologia e durata:',bold:true,font:FONT,size:20})]}),
     CHECK('Formazione Generale – Durata: 4 ore'),
     ...MANSIONI.map(m => CHECK(`Formazione Specifica – Durata: ${m.oreSpec} ore (Settore rischio ${m.livello}) – Mansione: ${m.nome}`)),
     CHECK('Aggiornamento – Durata: ___ ore'),
     CHECK('Formazione Aggiuntiva Preposti – Durata: ___ ore'),
     CHECK('Aggiornamento Preposti – Durata: ___ ore'),
-    new Paragraph({spacing:{before:8,after:30},children:[new TextRun({text:'Modalità di erogazione:  ☐ Aula / Sul campo',font:FONT,size:20})]}),
+    new Paragraph({spacing:{before:80,after:100},children:[new TextRun({text:'Modalità di erogazione:  ☐ Aula / Sul campo',font:FONT,size:20})]}),
 
     SEZ(3,'ELENCO AMMESSI ALLA VERIFICA FINALE ED ESITO'),
     elencoTable,
