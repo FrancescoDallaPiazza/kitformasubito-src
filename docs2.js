@@ -411,6 +411,7 @@ async function genAttestato(mansione) {
 
   function buildAttest(tipoLabel, durata, nota) {
     return [
+      vuoto(400),
       PAR('ATTESTATO DI FORMAZIONE',{bold:true,sz:20,col:C.BLU_DARK,spA:4}),
       PAR(`Il/La sottoscritto/a ${CLIENTE.datoreLavoro} in qualità di Datore di Lavoro e Soggetto Formatore`,{spA:2}),
       PAR(`della Società ${CLIENTE.ragioneSociale}`,{spA:2}),
@@ -424,7 +425,7 @@ async function genAttestato(mansione) {
       new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wL,wR],
         borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
         rows:[
-          new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(tipoLabel,{width:wR,color:'000000'})]}),
+          new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(tipoLabel,{width:wR,color:'000000',bold:true})]}),
           new TableRow({children:[cella('Riferimento normativo:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cellaRifNorm(wR,"Riferimento normativo e contenuti minimi secondo l'Accordo Stato-Regioni del 17 aprile 2025","Parte II dell'Accordo - Punto 2 e Parte IV dell'Accordo - Punto 1")]}),
           new TableRow({children:[cella('Durata:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella(durata,{width:wR,color:'000000'})]}),
           new TableRow({children:[cella('Modalità:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('Presenza sul campo',{width:wR,color:'000000'})]}),
@@ -493,6 +494,7 @@ async function genAttestatiAggiornamento() {
   });
 
   const children = [
+    vuoto(400),
     PAR('ATTESTATO DI FORMAZIONE',{bold:true,sz:20,col:C.BLU_DARK,spA:4}),
     PAR(`Il/La sottoscritto/a ${CLIENTE.datoreLavoro} in qualità di Datore di Lavoro e Soggetto Formatore`,{spA:2}),
     PAR(`della Società ${CLIENTE.ragioneSociale}`,{spA:2}),
@@ -506,7 +508,7 @@ async function genAttestatiAggiornamento() {
     new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wL,wR],
       borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
       rows:[
-        new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('AGGIORNAMENTO FORMAZIONE LAVORATORI',{width:wR,color:'000000'})]}),
+        new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('AGGIORNAMENTO FORMAZIONE LAVORATORI',{width:wR,color:'000000',bold:true})]}),
         new TableRow({children:[cella('Riferimento normativo:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
           new TableCell({width:{size:wR,type:WidthType.DXA},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}},shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},children:[
             new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
