@@ -402,8 +402,8 @@ async function genAttestato(mansione) {
       margins:{top:80,bottom:80,left:120,right:120},
       children:[
         new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
-        new Paragraph({children:[new TextRun({text:riga2,font:FONT,size:18,italic:true,color:'000000'})]}),
-        new Paragraph({children:[new TextRun({text:riga3,font:FONT,size:18,italic:true,color:'000000'})]}),
+        new Paragraph({children:[new TextRun({text:riga2,font:FONT,size:18,italics:true,color:'000000'})]}),
+        new Paragraph({children:[new TextRun({text:riga3,font:FONT,size:18,italics:true,color:'000000'})]}),
       ],
     });
   }
@@ -436,7 +436,7 @@ async function genAttestato(mansione) {
       vuoto(20),
       PAR('Superando con esito positivo la verifica finale dell\'apprendimento,',{sz:10,spA:2}),
       PAR('effettuata in data ___/___/_____ secondo quanto previsto dall\'Accordo.',{sz:10,spA:5}),
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:nota,bold:true,italic:true,font:FONT,size:19,color:C.GRIGIO})]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:nota,bold:true,italics:true,font:FONT,size:19,color:C.GRIGIO})]}),
       new Paragraph({spacing:{after:100},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
       vuoto(30),
       tableFirme,
@@ -511,7 +511,7 @@ async function genAttestatiAggiornamento() {
         new TableRow({children:[cella('Riferimento normativo:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
           new TableCell({width:{size:wR,type:WidthType.DXA},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}},margins:{top:80,bottom:80,left:120,right:120},children:[
             new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
-            new Paragraph({children:[new TextRun({text:"Parte II dell'Accordo - Punto 2 /2.1 e Parte IV dell'Accordo - Punto 6 e 6.3",font:FONT,size:18,italic:true,color:'000000'})]}),
+            new Paragraph({children:[new TextRun({text:"Parte II dell'Accordo - Punto 2 /2.1 e Parte IV dell'Accordo - Punto 6 e 6.3",font:FONT,size:18,italics:true,color:'000000'})]}),
           ]})
         ]}),
         new TableRow({children:[cella('Durata:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('6 ore',{width:wR,color:'000000'})]}),
@@ -524,8 +524,8 @@ async function genAttestatiAggiornamento() {
     vuoto(20),
     PAR('Superando con esito positivo la verifica finale dell\'apprendimento,',{sz:10,spA:2}),
     PAR('effettuata in data ___/___/_____ secondo quanto previsto dall\'Accordo.',{sz:10,spA:5}),
-    new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:'Aggiornamento effettuato ai sensi dell\'art. 37 del D.Lgs. 81/2008.',bold:true,italic:true,font:FONT,size:19,color:C.GRIGIO})]}),
-    new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:'Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.',bold:true,italic:true,font:FONT,size:19,color:C.GRIGIO})]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:'Aggiornamento effettuato ai sensi dell\'art. 37 del D.Lgs. 81/2008.',bold:true,italics:true,font:FONT,size:19,color:C.GRIGIO})]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},children:[new TextRun({text:'Il presente attestato ha validità di 5 anni su tutto il territorio nazionale.',bold:true,italics:true,font:FONT,size:19,color:C.GRIGIO})]}),
     new Paragraph({spacing:{after:100},children:[new TextRun({text:'Luogo e data: ______________________',font:FONT,size:20})]}),
     vuoto(30),
     tableFirme,
