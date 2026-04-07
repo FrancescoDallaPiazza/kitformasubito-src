@@ -8,7 +8,7 @@ const {
   makeHeader, makeFooter, vuoto, cella, salvaDoc,
 } = h;
 
-const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
+const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
 const W = 9638;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -748,7 +748,7 @@ async function genVerificaEfficacia() {
           new TableRow({tableHeader:true,children:[
             cella('Voce',{width:wVoce,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
             cella('Criterio di osservazione',{width:wCrit,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
-            cella('Esito',{width:wEs,bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
+            cella('Esito',{width:wEs_m,bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
             cella('Note',{width:wNote,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
           ]}),
           ...voci.map((v,i) => new TableRow({height:{value:650,rule:'atLeast'},children:[

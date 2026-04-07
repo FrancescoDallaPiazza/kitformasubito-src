@@ -11,7 +11,7 @@ const {
 // Import aggiuntivi
 const { PageBreak, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType, TextWrappingSide } = require('docx');
 
-const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
+const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
 
 // ── helpers locali ─────────────────────────────────────────────────────────
 const BD = {

@@ -7,7 +7,7 @@ const {
   vuoto, cella, salvaDoc,
 } = h;
 
-const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
+const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
 
 const BD = {top:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},bottom:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},left:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},right:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'}};
 const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};

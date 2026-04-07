@@ -1,5 +1,5 @@
 'use strict';
-const { MANSIONI } = require('./helpers');
+const { MANSIONI, CLIENTE } = require('./helpers');
 const { genProgettoFormativo, genRegistroFormIniziale, genRegistroAggiornamento } = require('./docs1');
 const { genColloquio, genGradimento, genAttestato, genAttestatiAggiornamento, genVerbaleVerifica, genVerificaEfficacia } = require('./docs2');
 const { genTestGenerale, genTestMansione } = require('./gen_test');
@@ -7,11 +7,12 @@ const { genSchedaMansione, genSchedaAddestrativa } = require('./gen_scheda');
 const { execSync } = require('child_process');
 const path = require('path');
 
-const OUT = '/home/claude/kit/OUT/KIT FORMASUBITO - Calor Energy Verona';
+const NOME_BREVE = CLIENTE.ragioneSocialeBreve;
+const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${NOME_BREVE}`;
 
 async function main() {
   console.log('═══════════════════════════════════════════════════');
-  console.log('  KIT FORMASUBITO – Calor Energy Verona Soc. Coop.');
+  console.log(`  KIT FORMASUBITO – ${CLIENTE.ragioneSociale}`);
   console.log('═══════════════════════════════════════════════════');
 
   // 00 – Progetto Formativo
@@ -62,13 +63,12 @@ async function main() {
 
   // BONUS – Schede Addestrative
   console.log('\n🛠️  [BONUS] Schede Addestrative...');
-  for (const m of MANSIONI) {
-    await genSchedaAddestrativa(m);
-  }
+  await genSchedaAddestrativa(MANSIONI.find(m => m.id === 'AddLabFoto'));
 
   // ZIP
   console.log('\n📦 Creazione ZIP...');
-  execSync(`cd /home/claude/kit/OUT && zip -r "/mnt/user-data/outputs/KIT_FORMASUBITO_CalorEnergyVerona.zip" "KIT FORMASUBITO - Calor Energy Verona" -q`);
+  const nomeZip = NOME_BREVE.replace(/[^a-zA-Z0-9]/g, '_');
+  execSync(`cd /home/claude/kit/OUT && zip -r "/mnt/user-data/outputs/KIT_FORMASUBITO_${nomeZip}.zip" "KIT FORMASUBITO - ${NOME_BREVE}" -q`);
 
   console.log('\n═══════════════════════════════════════════════════');
   console.log('  ✅ KIT FORMASUBITO COMPLETATO!');
