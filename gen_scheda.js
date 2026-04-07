@@ -145,8 +145,8 @@ async function genSchedaMansione(mansione) {
 // Firma table: header fill=F7CAAC, 4 colonne, 11 righe
 // ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaAddestrativa(mansione) {
-  // Margini esatti dal master: top=587, right=1134, bottom=556, left=1134, header=142, footer=51
-  const MARGIN = { top: 587, right: 1134, bottom: 556, left: 1134, header: 142, footer: 51 };
+  // Margini corretti: header=567 (~1cm dal bordo), top=1417 (~2.5cm corpo), footer=400
+  const MARGIN = { top: 1417, right: 1134, bottom: 556, left: 1134, header: 567, footer: 400 };
   const W = 9638;
   // Header: logo inline 131×29 px
   const { Header: HdrCls, Footer: FtrCls, SimpleField } = require('docx');
@@ -381,7 +381,6 @@ async function genSchedaAddestrativa(mansione) {
     headers:{default:header},
     footers:{default:footer},
     children:[
-      vuoto(400),
       new Paragraph({spacing:{after:60},children:[new TextRun({text:'SCHEDA ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:22})]}),
       mainTable,
       new Paragraph({spacing:{after:40},children:[]}),
