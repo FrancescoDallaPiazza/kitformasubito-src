@@ -381,6 +381,7 @@ async function genSchedaAddestrativa(mansione) {
     headers:{default:header},
     footers:{default:footer},
     children:[
+      vuoto(400),
       new Paragraph({spacing:{after:60},children:[new TextRun({text:'SCHEDA ADDESTRAMENTO SUL CAMPO',bold:true,font:FONT,size:22})]}),
       mainTable,
       new Paragraph({spacing:{after:40},children:[]}),
