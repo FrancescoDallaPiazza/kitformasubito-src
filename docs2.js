@@ -399,7 +399,6 @@ async function genAttestato(mansione) {
   function cellaRifNorm(wR, riga2, riga3) {
     const BD_A2 = {top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}};
     return new TableCell({ width:{size:wR,type:WidthType.DXA}, borders:BD_A2,
-      shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},
       margins:{top:80,bottom:80,left:120,right:120},
       children:[
         new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
@@ -510,7 +509,7 @@ async function genAttestatiAggiornamento() {
       rows:[
         new TableRow({children:[cella('Tipologia corso:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}), cella('AGGIORNAMENTO FORMAZIONE LAVORATORI',{width:wR,color:'000000',bold:true})]}),
         new TableRow({children:[cella('Riferimento normativo:',{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),
-          new TableCell({width:{size:wR,type:WidthType.DXA},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}},shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},children:[
+          new TableCell({width:{size:wR,type:WidthType.DXA},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}},margins:{top:80,bottom:80,left:120,right:120},children:[
             new Paragraph({children:[new TextRun({text:"ASR 17/04/2025 (D.Lgs. 81/2008, art. 37)",font:FONT,size:20,color:'000000'})]}),
             new Paragraph({children:[new TextRun({text:"Parte II dell'Accordo - Punto 2 /2.1 e Parte IV dell'Accordo - Punto 6 e 6.3",font:FONT,size:18,italic:true,color:'000000'})]}),
           ]})
