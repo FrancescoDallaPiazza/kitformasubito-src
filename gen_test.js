@@ -530,7 +530,32 @@ async function genTestGenerale(cliente) {
       {lettera:'D', testo:"Agenzie di viaggio", corretta:false},
     ]},
   ];
-  return domande;
+
+  // ── Genera i documenti Test Generale (Corsista + Docente) ──
+  const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
+  const header = makeHeaderTest();
+  const footer = makeFooterTest();
+
+  function buildChildrenGenerale(isDocente) {
+    return [
+      makeTopTable(),
+      vuoto(20),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'TEST DI APPRENDIMENTO –',bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:isDocente?40:40},children:[new TextRun({text:'FORMAZIONE GENERALE',bold:true,font:FONT,size:28,color:C.BLU_DARK})]}),
+      ...(isDocente?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'– VERSIONE DOCENTE – CON RISPOSTE EVIDENZIATE –',bold:true,font:FONT,size:20,color:C.ROSSO})]})]:[]),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:200},children:[new TextRun({text:'Formazione obbligatoria – D.Lgs. 81/08 e Accordo Stato-Regioni 17/04/2025',italic:true,font:FONT,size:18,color:C.GRIGIO})]}),
+      makeDiscente(),
+      vuoto(20),
+      ...(!isDocente?[new Paragraph({spacing:{after:200},children:[new TextRun({text:'ISTRUZIONI: Per ogni domanda, barrare la risposta che si ritiene corretta (A, B, C oppure D). È ammessa una sola risposta per domanda. Durata: 30 minuti. Punteggio minimo per il superamento: 21/30 (70%).',italic:true,font:FONT,size:18})]})]:[]),
+      ...domande.flatMap(({d,r}) => [makeQuestion(d,r,isDocente), vuoto(10)]),
+      ...firme(),
+    ];
+  }
+
+  const docG = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildrenGenerale(false)}]});
+  await salvaDoc(docG, `${OUT}/03 - TEST DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_Generale.docx`);
+  const docGD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildrenGenerale(true)}]});
+  await salvaDoc(docGD, `${OUT}/03 - TEST DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_Generale_Docente.docx`);
 }
 
 
