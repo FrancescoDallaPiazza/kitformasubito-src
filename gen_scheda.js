@@ -360,7 +360,7 @@ async function genSchedaAddestrativa(mansione) {
       ]}),
       new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:20})]}),
     ]),
-    // ── R7: header "Al lavoratore..." ──
+    // ── R7: header "Al lavoratore..." — C1 vuota, C2 span3 SALMON italic bold ──
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
         children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
@@ -369,9 +369,10 @@ async function genSchedaAddestrativa(mansione) {
         children:[new Paragraph({children:[new TextRun({text:'Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni di lavoro:',bold:true,italics:true,font:FONT,size:18})]})],
       }),
     ]}),
-    // ── R8: Istruzioni di lavoro in sicurezza ──
+    // ── R8: C1=CCC0D9 "Istruzioni di lavoro in sicurezza" | C2 span3 bianca ──
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        shading:{fill:'CCC0D9',type:ShadingType.CLEAR},
         verticalAlign:VerticalAlign.CENTER,
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Istruzioni di lavoro in sicurezza',bold:true,font:FONT,size:18})]})]}),
@@ -385,9 +386,10 @@ async function genSchedaAddestrativa(mansione) {
         ],
       }),
     ]}),
-    // ── R9: DPI da utilizzare ──
+    // ── R9: C1=CCC0D9 "DPI da utilizzare" | C2 span3 bianca ──
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        shading:{fill:'CCC0D9',type:ShadingType.CLEAR},
         verticalAlign:VerticalAlign.CENTER,
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'DPI da utilizzare',bold:true,font:FONT,size:18})]})]}),
@@ -402,36 +404,25 @@ async function genSchedaAddestrativa(mansione) {
         ],
       }),
     ]}),
-    // ── R10: Istruttori e Preposto | testo | GIUDIZIO ──
+    // ── R10: C1=CCC0D9 "Istruttori e Preposto" | C2=span2 bianca | C3=SALMON con GIUDIZIO+opzioni ──
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        shading:{fill:'CCC0D9',type:ShadingType.CLEAR},
         verticalAlign:VerticalAlign.CENTER,
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Istruttori e Preposto',bold:true,font:FONT,size:18})]})]}),
-      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+      new TableCell({columnSpan:2,width:{size:COLS[1]+COLS[2],type:WidthType.DXA},borders:BD_A,
+        margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({children:[new TextRun({text:"Al termine dell'addestramento, effettuato secondo quanto sopra esposto, l'Istruttore e il Preposto valutando in campo le modalità operative e le conoscenze ricevute, ritengono il lavoratore:",font:FONT,size:18})]})]}),
-      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,
+      new TableCell({width:{size:COLS[3],type:WidthType.DXA},borders:BD_A,
+        shading:{fill:SALMON,type:ShadingType.CLEAR},
         verticalAlign:VerticalAlign.CENTER,
         margins:{top:60,bottom:60,left:80,right:80},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:18})]})]}),
-    ]}),
-    // ── R11: ☐ Adeguato ──
-    new TableRow({children:[
-      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]})]}),
-    ]}),
-    // ── R12: ☐ Non adeguato ──
-    new TableRow({children:[
-      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]})]}),
+        children:[
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:60},children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:18})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]}),
+        ]}),
     ]}),
     // ── R13: Note: fullspan ──
     new TableRow({children:[
