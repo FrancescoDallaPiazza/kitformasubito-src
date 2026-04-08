@@ -366,6 +366,7 @@ async function genSchedaAddestrativa(mansione) {
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
         verticalAlign:VerticalAlign.CENTER,
+        shading:{fill:SALMON,type:ShadingType.CLEAR},
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Istruzioni di lavoro in sicurezza',bold:true,font:FONT,size:18})]})]}),
       new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
@@ -382,6 +383,7 @@ async function genSchedaAddestrativa(mansione) {
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
         verticalAlign:VerticalAlign.CENTER,
+        shading:{fill:SALMON,type:ShadingType.CLEAR},
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'DPI da utilizzare',bold:true,font:FONT,size:18})]})]}),
       new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
@@ -395,10 +397,11 @@ async function genSchedaAddestrativa(mansione) {
         ],
       }),
     ]}),
-    // ── R10: Istruttori e Preposto | testo | GIUDIZIO ──
+    // ── R10: Istruttori e Preposto | testo | GIUDIZIO+Adeguato+NonAdeguato (stessa riga) ──
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
         verticalAlign:VerticalAlign.CENTER,
+        shading:{fill:SALMON,type:ShadingType.CLEAR},
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Istruttori e Preposto',bold:true,font:FONT,size:18})]})]}),
       new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
@@ -407,26 +410,10 @@ async function genSchedaAddestrativa(mansione) {
         verticalAlign:VerticalAlign.CENTER,
         margins:{top:60,bottom:60,left:80,right:80},
         children:[
-          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:20})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:60},children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:20})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'☐ Adeguato',font:FONT,size:20})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:20})]}),
         ]}),
-    ]}),
-    // ── R11: ☐ Adeguato ──
-    new TableRow({children:[
-      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Adeguato',font:FONT,size:20})]})]}),
-    ]}),
-    // ── R12: ☐ Non adeguato ──
-    new TableRow({children:[
-      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
-      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:20})]})]}),
     ]}),
     // ── R13: Note: fullspan ──
     new TableRow({children:[
