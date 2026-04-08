@@ -698,7 +698,7 @@ async function genVerificaEfficacia() {
 
     // 10 voci fisse dai rischi della mansione (+ trasversali)
     const voceFromRischio = (r) => ({
-      voce: r.nome.length>22 ? r.nome.substring(0,22)+'…' : r.nome,
+      voce: r.nome,
       criterio: r.misure && r.misure[0]
         ? `Il lavoratore ${r.misure[0].charAt(0).toLowerCase()}${r.misure[0].slice(1)}?`
         : `Il lavoratore applica correttamente le misure di prevenzione per ${r.nome.toLowerCase()}?`,
@@ -715,7 +715,7 @@ async function genVerificaEfficacia() {
     const vociAll = [...voceBase, ...voceTraversali];
     const voci = vociAll.slice(0, 10);
     // Col widths valutazione calibrate sul numero voci e sulla mansione
-    const wVoce = 2405;
+    const wVoce = 3000;
     const wNote = 1238;
     const wEs_m = 1600;
     const wCrit = W - wVoce - wEs_m - wNote; // adatta criterio al layout
@@ -762,7 +762,7 @@ async function genVerificaEfficacia() {
           ...voci.map((v,i) => new TableRow({height:{value:650,rule:'atLeast'},children:[
             cella(v.voce,{width:wVoce}),
             cella(v.criterio,{width:wCrit}),
-            new TableCell({width:{size:wEs_m,type:WidthType.DXA},borders:BD,margins:{top:60,bottom:60,left:80,right:80},children:[
+            new TableCell({width:{size:wEs_m,type:WidthType.DXA},borders:{top:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},bottom:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},left:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'},right:{style:BorderStyle.SINGLE,size:4,color:'AAAAAA'}},margins:{top:60,bottom:60,left:80,right:80},children:[
               new Paragraph({children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]}),
               new Paragraph({children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]}),
             ]}),
