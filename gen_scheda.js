@@ -2,7 +2,7 @@
 const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
-  AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
+  AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign, PageOrientation,
   C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, logoBytes,
   vuoto, cella, salvaDoc,
 } = h;
@@ -22,117 +22,285 @@ const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{s
 //   [revisione: no fill]
 // ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaMansione(mansione) {
+  // Landscape A4 corretto: width=lungo, height=corto
+  const PAGE_L = { width: 11906, height: 16838, orientation: PageOrientation.LANDSCAPE };
   const MARGIN = { top: 720, right: 720, bottom: 720, left: 720 };
-  // Content width: 16838 - 2*720 = 15398 DXA
-  const W = 15398;
+  const W = 15398; // 16838 - 720*2
 
-  const livColor = {ALTO:C.ROSSO,MEDIO:C.ARANCIO,BASSO:C.VERDE}[mansione.livello]||C.GRIGIO;
+  const fs_mod = require('fs');
+  const path_mod = require('path');
+  const { PageOrientation: PO } = require('docx');
 
-  // Misure colonne da modello (pt → DXA): RISCHIO=169pt=3380, MISURE=293pt=5860, DPI_REQ=169pt=3380, DPI_AZ=W-resto
-  const wRis=3380; const wMis=5860; const wDpi=3380; const wAz=W-wRis-wMis-wDpi;
+  // Colori categoria
+  const CAT_FILL = {
+    'Sicurezza': 'FFE6E6', 'Chimico / Cancerogeno': 'FFF2CC',
+    'Fisico': 'DAE3F3',    'Ergonomico': 'E2EFDA',
+    'Elettrico': 'DAE3F3', 'Biologico': 'F5E6FF',
+  };
+  const ROW_FILL = { ALTO:'FFF5F5', MEDIO:'FFFBF0', BASSO:'F5FFF5' };
+  const LIV_COL  = { ALTO:'C00000', MEDIO:'E07000', BASSO:'538135' };
 
-  // TOP BAR 1x3
-  const wLogo=1400; const wTit=Math.floor(W*0.53); const wInf=W-wLogo-wTit;
-  const topBar = new Table({
-    width:{size:W,type:WidthType.DXA}, columnWidths:[wLogo,wTit,wInf],
-    borders:{top:{style:BorderStyle.SINGLE,size:4,color:C.BLU_DARK},bottom:{style:BorderStyle.SINGLE,size:4,color:C.BLU_DARK},left:NO.left,right:NO.right,insideH:NO.top,insideV:NO.top},
-    rows:[new TableRow({children:[
-      // Logo cell: no fill
-      new TableCell({width:{size:wLogo,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,borders:NO,margins:{top:80,bottom:80,left:80,right:120},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:logoBytes,type:'jpg',transformation:{width:60,height:60}})]})],
-      }),
-      // Title cell: fill=1F3864
-      new TableCell({width:{size:wTit,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,
-        shading:{fill:C.BLU_DARK,type:ShadingType.CLEAR},
-        borders:{top:NO.top,bottom:NO.bottom,left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}},
-        margins:{top:80,bottom:80,left:160,right:160},
-        children:[
-          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:20},children:[new TextRun({text:'SCHEDA MANSIONE',bold:true,font:FONT,size:20,color:C.BIANCO})]}),
-          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:mansione.nome.toUpperCase(),bold:true,font:FONT,size:26,color:C.BIANCO})]}),
-        ],
-      }),
-      // Info cell: fill=1F4E79
-      new TableCell({width:{size:wInf,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,
-        shading:{fill:C.BLU_HEADER,type:ShadingType.CLEAR},
-        borders:NO,margins:{top:80,bottom:80,left:160,right:80},
-        children:[
-          new Paragraph({alignment:AlignmentType.RIGHT,spacing:{after:20},children:[new TextRun({text:`Reparto: ${mansione.reparto}`,font:FONT,size:18,color:C.BIANCO})]}),
-          new Paragraph({alignment:AlignmentType.RIGHT,spacing:{after:20},children:[new TextRun({text:'Rischio: ',font:FONT,size:18,color:C.BIANCO}),new TextRun({text:mansione.livello,bold:true,font:FONT,size:18,color:C.BIANCO})]}),
-          new Paragraph({alignment:AlignmentType.RIGHT,spacing:{after:0},children:[new TextRun({text:'D.Lgs. 81/08 – Art. 36-37',font:FONT,size:16,color:C.BIANCO})]}),
-        ],
-      }),
-    ]})]
-  });
+  function catRischio(nome) {
+    const n = nome.toLowerCase();
+    if (/elettr/.test(n)) return 'Elettrico';
+    if (/chimico|toner|alcool|cancerogeno|polvere|solvente|detergente|agente chim|inchiostro/.test(n)) return 'Chimico / Cancerogeno';
+    if (/rumore|vibrazion|microclima|calore|freddo|radiazion|illuminaz|campi elettro/.test(n)) return 'Fisico';
+    if (/postura|movimentazione|ergono|vdt|videoterminale|sollevamento|ripetitiv|stress/.test(n)) return 'Ergonomico';
+    if (/biologico|virus|batterio/.test(n)) return 'Biologico';
+    return 'Sicurezza';
+  }
 
-  // RISCHI TABLE (header fill=1F4E79, righe alt FFFFFF/F2F2F2)
-  function hdCell(txt, w) {
-    return new TableCell({width:{size:w,type:WidthType.DXA},shading:{fill:C.BLU_HEADER,type:ShadingType.CLEAR},
-      margins:{top:80,bottom:80,left:100,right:80},borders:BD,
-      children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:txt,bold:true,font:FONT,size:18,color:C.BIANCO})]})],
+  const BDt = {
+    top:    {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    bottom: {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    left:   {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    right:  {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    insideH:{style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    insideV:{style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+  };
+  const BDc = {
+    top:    {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    bottom: {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    left:   {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    right:  {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+  };
+
+  function tc(children, {w, fill, span, vAlign}={}) {
+    return new TableCell({
+      width: w ? {size:w, type:WidthType.DXA} : undefined,
+      columnSpan: span,
+      verticalAlign: vAlign || VerticalAlign.CENTER,
+      shading: fill ? {fill, type:ShadingType.CLEAR} : undefined,
+      borders: BDc,
+      margins: {top:60, bottom:60, left:80, right:80},
+      children: Array.isArray(children) ? children : [children],
     });
   }
-  function blt(txt,col) {
-    return new Paragraph({spacing:{before:0,after:24},children:[
-      new TextRun({text:'• ',font:FONT,size:18,color:col||C.BLU_MED}),
-      new TextRun({text:txt,font:FONT,size:18}),
-    ]});
-  }
-  function dc(w,fill,children) {
-    return new TableCell({width:{size:w,type:WidthType.DXA},shading:{fill,type:ShadingType.CLEAR},
-      margins:{top:60,bottom:60,left:100,right:80},verticalAlign:VerticalAlign.TOP,borders:BD,children});
+
+  function p(text, {sz=20, bold=false, color, align=AlignmentType.LEFT, spB=0, italics=false}={}) {
+    return new Paragraph({
+      alignment: align,
+      spacing: {before:0, after:spB},
+      children: [new TextRun({text, font:FONT, size:sz, bold, italics, color})],
+    });
   }
 
-  const rischioTable = new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[wRis,wMis,wDpi,wAz],
-    borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
-    rows:[
-      new TableRow({tableHeader:true,children:[hdCell('RISCHIO',wRis),hdCell('MISURE DI PREVENZIONE',wMis),hdCell('DPI RICHIESTI',wDpi),hdCell('DPI AZIENDA',wAz)]}),
-      ...mansione.rischi.map((r,i) => {
-        const fill = i%2===0 ? C.BIANCO : C.GRIGIO_ALT;
-        return new TableRow({children:[
-          dc(wRis,fill,[new Paragraph({children:[new TextRun({text:r.nome,bold:true,font:FONT,size:18,color:C.BLU_DARK})]})]),
-          dc(wMis,fill,r.misure.map(m=>blt(m,C.BLU_MED))),
-          dc(wDpi,fill,r.dpi.length?r.dpi.map(d=>blt(d,C.ARANCIO)):[new Paragraph({children:[new TextRun({text:'—',font:FONT,size:18,color:C.GRIGIO})]})]),
-          dc(wAz,fill,[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]),
-        ]});
-      }),
+  // ═══ TABELLA 1 – HEADER AZIENDALE (2 righe) ══════════════════════════════
+  const tblHeader = new Table({
+    width: {size:W, type:WidthType.DXA},
+    columnWidths: [2800, 7200, 5398],
+    borders: BDt,
+    rows: [
+      // Riga 1: P.IVA+ragione breve | ragione completa+indirizzo+ATECO | box SCHEDA MANSIONE
+      new TableRow({children:[
+        tc([
+          p(CLIENTE.ragioneSocialeBreve, {sz:16, bold:true, color:'1F3864'}),
+          p(`P.IVA: ${CLIENTE.piva}`, {sz:14, color:'595959'}),
+        ], {w:2800, fill:'FFFFFF'}),
+        tc([
+          p(CLIENTE.ragioneSociale, {sz:18, bold:true, color:'1F3864', spB:20}),
+          p(CLIENTE.indirizzo, {sz:15, color:'595959'}),
+          p(`ATECO ${CLIENTE.atecoCodice} \u2013 ${CLIENTE.atecoDesc}`, {sz:15, color:'595959'}),
+        ], {w:7200, fill:'FFFFFF'}),
+        tc([
+          p('SCHEDA MANSIONE', {sz:14, color:'BDD7EE', align:AlignmentType.RIGHT}),
+          p(mansione.nome.toUpperCase(), {sz:26, bold:true, color:'FFFFFF', align:AlignmentType.RIGHT}),
+          p(mansione.reparto, {sz:16, color:'BDD7EE', align:AlignmentType.RIGHT}),
+        ], {w:5398, fill:'1F3864'}),
+      ]}),
+      // Riga 2: RSPP | ATECO | Livello | Anno revisione
+      new TableRow({children:[
+        tc([
+          p('RSPP / DATORE DI LAVORO', {sz:13, color:'BDD7EE'}),
+          p(CLIENTE.datoreLavoro, {sz:16, bold:true, color:'FFFFFF'}),
+        ], {w:3849, fill:'2E75B6'}),
+        tc([
+          p('CODICE ATECO', {sz:13, color:'1F4E79'}),
+          p(`${CLIENTE.atecoCodice} \u2013 ${CLIENTE.atecoDesc}`, {sz:15, bold:true, color:'1F3864'}),
+        ], {w:3849, fill:'D5E8F0'}),
+        tc([
+          p('LIVELLO RISCHIO SETTORE', {sz:13, color:'FFD7D7'}),
+          p(`\u25cf ${mansione.livello} \u2013 ${mansione.oreSpec} ore specifica`, {sz:16, bold:true, color:'FFFFFF'}),
+        ], {w:3849, fill:'C00000'}),
+        tc([
+          p('DATA REVISIONE', {sz:13, color:'595959'}),
+          p(CLIENTE.anno, {sz:16, bold:true, color:'1F3864'}),
+        ], {w:3851, fill:'F2F2F2'}),
+      ]}),
     ],
   });
 
-  // DPI BAR: fill=1F3864 label, fill=D5E8F0 content
-  const wDpiL=3380;
-  const dpiBar = new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[wDpiL,W-wDpiL],
-    borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:BD.top},
-    rows:[new TableRow({children:[
-      new TableCell({width:{size:wDpiL,type:WidthType.DXA},shading:{fill:C.BLU_DARK,type:ShadingType.CLEAR},borders:BD,margins:{top:80,bottom:80,left:120,right:120},
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'DPI OBBLIGATORI',bold:true,font:FONT,size:20,color:C.BIANCO})]})],
-      }),
-      new TableCell({width:{size:W-wDpiL,type:WidthType.DXA},shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},borders:BD,margins:{top:80,bottom:80,left:120,right:120},
-        children:[new Paragraph({children:[new TextRun({text:mansione.dpi.join('   |   '),font:FONT,size:18})]})],
-      }),
-    ]})]
+  // ═══ TABELLA 2 – RISCHI ══════════════════════════════════════════════════
+  const Cn=400, Ccat=1300, Cris=3400, Cliv=1100, Cmis=5498, Cdpi=3700;
+
+  const rHdr = new TableRow({children:[
+    tc(p('N.',        {sz:16,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}), {w:Cn,   fill:'1F3864'}),
+    tc(p('Categoria', {sz:16,bold:true,color:'FFFFFF'}),                            {w:Ccat, fill:'1F3864'}),
+    tc(p('Rischio identificato',{sz:16,bold:true,color:'FFFFFF'}),                  {w:Cris, fill:'1F3864'}),
+    tc(p('Livello',   {sz:16,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}), {w:Cliv, fill:'1F3864'}),
+    tc(p('Misure di prevenzione e protezione',{sz:16,bold:true,color:'FFFFFF'}),    {w:Cmis, fill:'1F3864'}),
+    tc(p('DPI richiesti',{sz:16,bold:true,color:'FFFFFF'}),                         {w:Cdpi, fill:'1F3864'}),
+  ]});
+
+  const rischioRows = mansione.rischi.map((r, i) => {
+    const cat     = catRischio(r.nome);
+    const catFill = CAT_FILL[cat] || 'FFFFFF';
+    const livello = r.livello || mansione.livello;
+    const rowFill = ROW_FILL[livello] || 'FFFBF0';
+    const livCol  = LIV_COL[livello]  || '000000';
+
+    const misurePars = r.misure.map(m => new Paragraph({
+      spacing:{before:0, after:40},
+      children:[
+        new TextRun({text:'\u25cf ', font:FONT, size:14, color:'538135', bold:true}),
+        new TextRun({text:m, font:FONT, size:14}),
+      ],
+    }));
+
+    const dpiPars = r.dpi.map(d => new Paragraph({
+      spacing:{before:0, after:40},
+      children:[new TextRun({text:'  '+d, font:FONT, size:14, color:'1F4E79'})],
+    }));
+
+    return new TableRow({children:[
+      tc(p(String(i+1), {sz:16,bold:true,color:'C00000',align:AlignmentType.CENTER}), {w:Cn,   fill:rowFill}),
+      tc(p(cat,          {sz:14,bold:true,color:'1F3864'}),                             {w:Ccat, fill:catFill, vAlign:VerticalAlign.CENTER}),
+      tc(p(r.nome,       {sz:15}),                                                       {w:Cris, fill:rowFill}),
+      tc([
+        p('\u26a0', {sz:20, bold:true, color:livCol, align:AlignmentType.CENTER}),
+        p(livello,  {sz:14, bold:true, color:livCol, align:AlignmentType.CENTER}),
+      ], {w:Cliv, fill:rowFill}),
+      tc(misurePars.length ? misurePars : [p('')], {w:Cmis, fill:rowFill}),
+      tc(dpiPars.length   ? dpiPars   : [p('\u2014', {color:'AAAAAA'})], {w:Cdpi, fill:rowFill}),
+    ]});
   });
 
-  // REVISIONE BAR (no fill)
-  const wRev=Math.floor(W*0.7);
-  const reviBar = new Table({
-    width:{size:W,type:WidthType.DXA},columnWidths:[wRev,W-wRev],
-    borders:{top:NO.top,bottom:NO.bottom,left:NO.left,right:NO.right,insideH:NO.top,insideV:NO.top},
-    rows:[new TableRow({children:[
-      new TableCell({width:{size:wRev,type:WidthType.DXA},borders:NO,margins:{top:60,bottom:40,left:0,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'Revisione, aggiornamento e consegna al lavoratore: il presente documento è soggetto a revisione periodica o in seguito a variazioni delle mansioni, dell\'organizzazione del lavoro o dei rischi presenti.',font:FONT,size:16,color:C.GRIGIO})]})],
-      }),
-      new TableCell({width:{size:W-wRev,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,margins:{top:60,bottom:40,left:80,right:0},
-        children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:`${CLIENTE.ragioneSocialeBreve} – Rev. ${CLIENTE.anno}`,bold:true,font:FONT,size:16,color:C.BLU_HEADER})]})],
-      }),
-    ]})]
+  const tblRischi = new Table({
+    width: {size:W, type:WidthType.DXA},
+    columnWidths: [Cn, Ccat, Cris, Cliv, Cmis, Cdpi],
+    borders: BDt,
+    rows: [rHdr, ...rischioRows],
   });
 
-  const doc = new Document({styles:docStyles,sections:[{
-    properties:{page:{size:A4_L,margin:MARGIN}},
-    children:[topBar,vuoto(40),rischioTable,vuoto(40),dpiBar,vuoto(20),reviBar],
-  }]});
+  // ═══ TABELLA 3 – DPI PREVISTI (header + icone) ═══════════════════════════
+  const ICON_MAP = [
+    {re:/occhiali/i,                                  file:'Immagine10.png', label:'Occhiali protettivi'},
+    {re:/calzatur|scarpe|antiscivolo|ergonomic/i,     file:'Immagine9.png',  label:'Calzature di sicurezza'},
+    {re:/antitaglio|nitrile/i,                        file:'Immagine7.png',  label:'Guanti chimico-res.'},
+    {re:/termoresist|da lavoro/i,                     file:'Immagine8.png',  label:'Guanti da lavoro'},
+    {re:/antivibranti/i,                              file:'Immagine3.png',  label:'Guanti antivibranti'},
+    {re:/otoprotett|auricolar/i,                      file:'Immagine4.png',  label:'Otoprotettori'},
+    {re:/ffp3/i,                                      file:'Immagine5.png',  label:'Maschera FFP3'},
+    {re:/ffp1|ffp2|mascherina|maschera/i,             file:'Immagine6.png',  label:'Maschera FFP2'},
+    {re:/tuta/i,                                      file:'Immagine2.png',  label:'Tuta monouso'},
+    {re:/alta visibilit|hv|gilet/i,                   file:'Immagine1.png',  label:'Alta visibilit\u00e0'},
+  ];
+  const ICONS_DIR = path_mod.join(__dirname, 'icons');
+
+  const usedFiles = new Set();
+  const dpiIconData = [];
+  for (const dpiName of mansione.dpi) {
+    for (const m of ICON_MAP) {
+      if (m.re.test(dpiName) && !usedFiles.has(m.file)) {
+        usedFiles.add(m.file);
+        const iconPath = path_mod.join(ICONS_DIR, m.file);
+        const iconBytes = fs_mod.existsSync(iconPath) ? fs_mod.readFileSync(iconPath) : null;
+        dpiIconData.push({iconBytes, label: dpiName.split('(')[0].trim()});
+        break;
+      }
+    }
+  }
+  if (!dpiIconData.length) dpiIconData.push({iconBytes:null, label:'\u2014'});
+
+  const nDpi = dpiIconData.length;
+  const dpiCellW  = Math.floor(W / nDpi);
+  const dpiCellWL = W - dpiCellW*(nDpi-1);
+  const dpiColW   = Array.from({length:nDpi}, (_,i)=> i===nDpi-1 ? dpiCellWL : dpiCellW);
+
+  const rDpiHdr = new TableRow({children:[
+    new TableCell({
+      width:{size:W, type:WidthType.DXA},
+      columnSpan: nDpi,
+      verticalAlign: VerticalAlign.CENTER,
+      shading:{fill:'1F3864', type:ShadingType.CLEAR},
+      borders: BDc,
+      margins:{top:60,bottom:60,left:80,right:80},
+      children:[p('DPI PREVISTI PER LA MANSIONE',{sz:16,bold:true,color:'FFFFFF',align:AlignmentType.CENTER})],
+    }),
+  ]});
+
+  const rDpiIcons = new TableRow({children: dpiIconData.map(({iconBytes, label}, i) =>
+    new TableCell({
+      width:{size:dpiColW[i], type:WidthType.DXA},
+      verticalAlign: VerticalAlign.CENTER,
+      shading:{fill:'EBF3FB', type:ShadingType.CLEAR},
+      borders: BDc,
+      margins:{top:40,bottom:40,left:40,right:40},
+      children:[
+        new Paragraph({
+          alignment:AlignmentType.CENTER,
+          spacing:{after:20},
+          children: iconBytes
+            ? [new ImageRun({data:iconBytes, type:'png', transformation:{width:36,height:36}})]
+            : [new TextRun({text:'\u25a1', font:FONT, size:24})],
+        }),
+        p(label, {sz:12, align:AlignmentType.CENTER}),
+      ],
+    })
+  )});
+
+  const tblDpi = new Table({
+    width:{size:W, type:WidthType.DXA},
+    columnWidths: dpiColW,
+    borders: BDt,
+    rows: [rDpiHdr, rDpiIcons],
+  });
+
+  // ═══ TABELLA 4 – FORMAZIONE + FIRME ══════════════════════════════════════
+  const tblForm = new Table({
+    width:{size:W, type:WidthType.DXA},
+    columnWidths:[2308,2308,2308,4237,4237],
+    borders: BDt,
+    rows:[
+      new TableRow({children:[
+        tc([
+          p('FORMAZIONE GENERALE', {sz:14,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
+          p('4 ORE',               {sz:20,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
+          p('Credito permanente',  {sz:12,color:'BDD7EE',align:AlignmentType.CENTER}),
+        ], {w:2308, fill:'1F3864'}),
+        tc([
+          p('FORMAZIONE SPECIFICA',    {sz:14,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
+          p(`${mansione.oreSpec} ORE`, {sz:20,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
+          p(`Rischio ${mansione.livello}`, {sz:12,color:'BDD7EE',align:AlignmentType.CENTER}),
+        ], {w:2308, fill:'2E75B6'}),
+        tc([
+          p('AGGIORNAMENTO',  {sz:14,bold:true,color:'1F4E79',align:AlignmentType.CENTER}),
+          p('6 ORE',          {sz:20,bold:true,color:'1F4E79',align:AlignmentType.CENTER}),
+          p('ogni 5 anni',    {sz:12,color:'1F4E79',align:AlignmentType.CENTER}),
+        ], {w:2308, fill:'D5E8F0'}),
+        tc([
+          p('Firma Datore di Lavoro / RSPP', {sz:13,bold:true,spB:20}),
+          p(CLIENTE.datoreLavoro,            {sz:14,color:'595959',spB:60}),
+          p('_______________________________',{sz:14}),
+        ], {w:4237, fill:'FFFFFF'}),
+        tc([
+          p('Firma Medico Competente', {sz:13,bold:true,spB:20}),
+          p('',                       {sz:14,spB:60}),
+          p('_______________________________',{sz:14}),
+        ], {w:4237, fill:'FFFFFF'}),
+      ]}),
+    ],
+  });
+
+  // ═══ DOCUMENTO ═══════════════════════════════════════════════════════════
+  const doc = new Document({
+    styles: docStyles,
+    sections:[{
+      properties:{page:{size:PAGE_L, margin:MARGIN}},
+      children:[tblHeader, tblRischi, tblDpi, tblForm],
+    }],
+  });
+
   await salvaDoc(doc, `${OUT}/01 - SCHEDE MANSIONI/${mansione.id}.docx`);
 }
 

@@ -248,47 +248,46 @@ async function genColloquio(mansione) {
 // Rating table 20x5: col0=5590dxa, col1-4=1020dxa each
 // ─────────────────────────────────────────────────────────────────────────────
 async function genGradimento() {
-  const MARGIN = { top: 710, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
+
+  // Header: logo sinistra + ragione sociale bold destra (sfondo bianco, no bordi)
+  const header = new Header({ children: [
+    new Table({
+      width:{size:W,type:WidthType.DXA}, columnWidths:[1800, W-1800],
+      borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},insideH:{style:BorderStyle.NONE},insideV:{style:BorderStyle.NONE}},
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:1800,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,children:[
+          new Paragraph({children:[new ImageRun({data:logoBytes,type:'jpg',transformation:{width:120,height:27}})]}),
+        ]}),
+        new TableCell({width:{size:W-1800,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,children:[
+          new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:20,color:C.BLU_DARK})]}),
+        ]}),
+      ]})]
+    })
+  ]});
+
   const footer = footerAziendaPag();
 
-  const wLogo = 3380; const wAz = W - wLogo;
-  const topTable = new Table({
-    width:{size:W,type:WidthType.DXA}, columnWidths:[wLogo,wAz],
-    borders:{top:NO.top,bottom:NO.bottom,left:NO.left,right:NO.right,insideH:NO.top,insideV:NO.top},
-    rows:[
-      new TableRow({children:[
-        new TableCell({width:{size:wLogo,type:WidthType.DXA},borders:NO,children:[new Paragraph({children:[]})]}),
-        new TableCell({width:{size:wAz,type:WidthType.DXA},borders:NO,shading:{fill:C.BLU_DARK,type:ShadingType.CLEAR},margins:{top:40,bottom:40,left:120,right:120},children:[
-          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:20,color:C.BIANCO})]}),
-        ]}),
-      ]}),
-      new TableRow({children:[
-        new TableCell({width:{size:wLogo,type:WidthType.DXA},borders:NO,children:[new Paragraph({children:[]})]}),
-        new TableCell({width:{size:wAz,type:WidthType.DXA},borders:NO,shading:{fill:C.BLU_MED,type:ShadingType.CLEAR},margins:{top:40,bottom:40,left:120,right:120},children:[
-          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'QUESTIONARIO DI GRADIMENTO',bold:true,font:FONT,size:20,color:C.BIANCO})]}),
-        ]}),
-      ]}),
-    ],
-  });
-
-  // Rating table: 5 colonne
+  // Tabella rating: 5 colonne
   const wDom = 5590; const wN = 1012; // 5590+4*1012=9638
-  function domRow(testo, isHeader=false, isSection=false) {
-    const fill = isHeader?C.BLU_HEADER:(isSection?C.BLU_LIGHT:undefined);
-    const colr = (isHeader||isSection)?C.BIANCO:undefined;
-    if (isSection) {
-      return new TableRow({children:[
-        new TableCell({columnSpan:5,width:{size:W,type:WidthType.DXA},shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},borders:BD,margins:{top:40,bottom:40,left:80,right:80},children:[
-          new Paragraph({children:[new TextRun({text:testo,bold:true,font:FONT,size:20,color:C.BLU_DARK})]}),
-        ]}),
-      ]});
-    }
+
+  function sectionRow(testo) {
     return new TableRow({children:[
-      cella(testo,{width:wDom,bold:isHeader,fill:fill||undefined,color:colr}),
-      cella(isHeader?'1':'☐',{width:wN,bold:isHeader,fill:fill||undefined,color:colr,align:'center'}),
-      cella(isHeader?'2':'☐',{width:wN,bold:isHeader,fill:fill||undefined,color:colr,align:'center'}),
-      cella(isHeader?'3':'☐',{width:wN,bold:isHeader,fill:fill||undefined,color:colr,align:'center'}),
-      cella(isHeader?'4':'☐',{width:W-wDom-3*wN,bold:isHeader,fill:fill||undefined,color:colr,align:'center'}),
+      new TableCell({columnSpan:5,width:{size:W,type:WidthType.DXA},
+        shading:{fill:'F2F2F2',type:ShadingType.CLEAR},borders:BD,
+        margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:testo,bold:true,font:FONT,size:20,color:'000000'})]})],
+      }),
+    ]});
+  }
+
+  function domRow(testo, isHeader=false) {
+    return new TableRow({children:[
+      cella(testo,{width:wDom,bold:isHeader,fill:isHeader?C.BLU_DARK:undefined,color:isHeader?C.BIANCO:undefined}),
+      cella(isHeader?'1':'☐',{width:wN,      bold:isHeader,fill:isHeader?C.BLU_DARK:undefined,color:isHeader?C.BIANCO:undefined,align:'center'}),
+      cella(isHeader?'2':'☐',{width:wN,      bold:isHeader,fill:isHeader?C.BLU_DARK:undefined,color:isHeader?C.BIANCO:undefined,align:'center'}),
+      cella(isHeader?'3':'☐',{width:wN,      bold:isHeader,fill:isHeader?C.BLU_DARK:undefined,color:isHeader?C.BIANCO:undefined,align:'center'}),
+      cella(isHeader?'4':'☐',{width:W-wDom-3*wN,bold:isHeader,fill:isHeader?C.BLU_DARK:undefined,color:isHeader?C.BIANCO:undefined,align:'center'}),
     ]});
   }
 
@@ -297,43 +296,50 @@ async function genGradimento() {
     borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
     rows:[
       domRow('DOMANDA',true),
-      domRow('CONTENUTI',false,true),
+      // CONTENUTI
+      sectionRow('CONTENUTI'),
       domRow('I contenuti del corso erano pertinenti alle mie mansioni lavorative'),
       domRow('I contenuti erano aggiornati e conformi alla normativa vigente'),
       domRow('La quantità di informazioni fornita era adeguata'),
-      domRow('DOCENTE',false,true),
+      domRow('I materiali didattici erano chiari e ben strutturati'),
+      // DOCENTE / FORMATORE
+      sectionRow('DOCENTE / FORMATORE'),
       domRow('Il docente ha esposto gli argomenti in modo chiaro e comprensibile'),
-      domRow('Il docente era disponibile a rispondere alle domande'),
-      domRow('Gli esempi pratici erano pertinenti alla realtà lavorativa'),
-      domRow('ORGANIZZAZIONE',false,true),
+      domRow('Il docente ha risposto in modo esauriente alle domande'),
+      domRow('Il ritmo della lezione era adeguato'),
+      domRow('Il docente ha stimolato la partecipazione attiva'),
+      // ORGANIZZAZIONE
+      sectionRow('ORGANIZZAZIONE'),
       domRow('La durata del corso era adeguata agli argomenti trattati'),
-      domRow('Il luogo/modalità di svolgimento era adeguato'),
-      domRow('UTILITÀ',false,true),
-      domRow('Il corso ha aumentato la mia consapevolezza sui rischi'),
-      domRow('Le informazioni ricevute sono applicabili nella mia attività quotidiana'),
-      domRow('La verifica finale era coerente con quanto trattato nel corso'),
-      domRow('VALUTAZIONE COMPLESSIVA',false,true),
-      domRow('Valutazione complessiva del corso'),
-      domRow('Consiglierei questo corso ad altri colleghi'),
-      domRow('Mi ritengo più preparato/a sulla sicurezza dopo il corso'),
+      domRow('Gli orari erano compatibili con le esigenze lavorative'),
+      domRow('La sede / l\'ambiente della formazione era adeguato'),
+      domRow('Il supporto organizzativo era efficiente'),
+      // UTILITÀ
+      sectionRow('UTILITÀ'),
+      domRow('La formazione ricevuta sarà utile nello svolgimento delle mie mansioni'),
+      domRow('Ho acquisito nuove conoscenze in materia di sicurezza sul lavoro'),
+      domRow('Raccomanderei questo corso ai miei colleghi'),
     ],
   });
 
   const ossTbl = new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],
     borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:NO.top,insideV:NO.top},
-    rows:[new TableRow({children:[cella('OSSERVAZIONI E SUGGERIMENTI',{width:W,bold:true,fill:C.BLU_HEADER,color:C.BIANCO})]})]
+    rows:[new TableRow({children:[cella('OSSERVAZIONI E SUGGERIMENTI',{width:W,bold:true,fill:C.BLU_DARK,color:C.BIANCO,align:'center'})]})]
   });
+
   const emptyTbl = () => new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],
     borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right},
-    rows:[new TableRow({height:{value:800,rule:'atLeast'},children:[cella('',{width:W})]})]
+    rows:[new TableRow({height:{value:1000,rule:'atLeast'},children:[cella('',{width:W})]})]
   });
 
   const children = [
-    topTable, vuoto(20),
-    PAR('QUESTIONARIO DI VALUTAZIONE DEL GRADIMENTO',{bold:true,sz:14,col:C.BLU_DARK,spA:3}),
-    PAR('Formazione Obbligatoria – D.Lgs. 81/08',{sz:10,col:C.GRIGIO,spA:10}),
-    new Paragraph({spacing:{after:20},children:[new TextRun({text:'Il presente questionario è anonimo e ha lo scopo di migliorare la qualità dei futuri interventi formativi. La preghiamo di compilarlo con sincerità.',font:FONT,size:20})]}),
-    new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right},rows:[new TableRow({children:[cella('LEGENDA: 1 = Insufficiente   2 = Sufficiente   3 = Buono   4 = Ottimo',{width:W,bold:true,fill:C.BLU_HEADER,color:C.BIANCO})]})]
+    vuoto(200),
+    PAR('QUESTIONARIO DI VALUTAZIONE DEL GRADIMENTO',{bold:true,sz:14,col:C.BLU_DARK,spA:3,align:AlignmentType.LEFT}),
+    PAR('Formazione Obbligatoria – D.Lgs. 81/08',{sz:10,col:C.GRIGIO,spA:10,italics:true,align:AlignmentType.LEFT}),
+    new Paragraph({spacing:{after:100},children:[new TextRun({text:'Il presente questionario è anonimo e ha lo scopo di migliorare la qualità dei futuri interventi formativi. Le chiediamo di rispondere con sincerità.',font:FONT,size:20})]}),
+    new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],
+      borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right},
+      rows:[new TableRow({children:[cella('LEGENDA: 1 = Insufficiente   2 = Sufficiente   3 = Buono   4 = Ottimo',{width:W,bold:true,fill:C.BLU_DARK,color:C.BIANCO,align:'center'})]})]
     }),
     vuoto(10),
     ratingTable,
@@ -347,6 +353,7 @@ async function genGradimento() {
 
   const doc = new Document({styles:docStyles,sections:[{
     properties:{page:{size:A4_P,margin:MARGIN}},
+    headers:{default:header},
     footers:{default:footer},
     children,
   }]});
