@@ -345,72 +345,93 @@ async function genSchedaAddestrativa(mansione) {
         new TextRun({text:CLIENTE.datoreLavoro,font:FONT,size:20}),
       ]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({
-        text:`Ruolo: ( Datore di Lavoro /  Preposto /  Lavoratore /  Resp. Produz. /  RSPP /  Altro____________________), il quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto a all'attività specifica di:`,
+        text:`Ruolo: (☐ Datore di Lavoro / ☐ Preposto / ☐ Lavoratore / ☐ Resp. Produz. / ☐ RSPP / ☐ Altro____________________), il quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto a all'attività specifica di:`,
         font:FONT,size:20,
       })]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({text:attPrincipale,bold:true,font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Utilizzo della   macchina /  attrezzatura /  impianto /  procedura di lavoro /  altro _______________',font:FONT,size:20})]}),
-      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Durata addestramento _____ mesi -  _____settimana/e -  _____giorno/i – per un totale di ________ore – 10 min',font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Utilizzo della   ☐ macchina / ☐ attrezzatura / ☐ impianto / ☐ procedura di lavoro / ☐ altro _______________',font:FONT,size:20})]}),
+      new Paragraph({spacing:{after:6},children:[new TextRun({text:'Durata addestramento ____ ☐ mesi - ☐ ____settimana/e - ☐ ____giorno/i – per un totale di ________ore - 10 min',font:FONT,size:20})]}),
       new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:20})]}),
     ]),
-    // ── "Al lavoratore..." header + tutti i sottopunti istruzioni in UNA sola cella ──
+    // ── R7: header "Al lavoratore..." ──
     new TableRow({children:[
       new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
         children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
       new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
         shading:{fill:SALMON,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni di lavoro:',bold:true,font:FONT,size:18})]})],
+        children:[new Paragraph({children:[new TextRun({text:'Al lavoratore sono state illustrate e consegnate le seguenti informazioni - istruzioni di lavoro:',bold:true,italics:true,font:FONT,size:18})]})],
       }),
     ]}),
+    // ── R8: Istruzioni di lavoro in sicurezza ──
     new TableRow({children:[
-      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        verticalAlign:VerticalAlign.CENTER,
+        margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Istruzioni di lavoro in sicurezza',bold:true,font:FONT,size:18})]})]}),
       new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
-        shading:{fill:PURPLE,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
         children:[
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Istruzioni di lavoro in sicurezza',bold:true,font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Utilizzo corretto ed in sicurezza delle attrezzature in dotazione',font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Sicurezze presenti sulle attrezzature in uso (emergenze, microinterruttori, allarmi)',font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Segnaletica di sicurezza, salute ed emergenza in reparto.',font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Istruzioni specifiche di reparto (specificare di seguito se presenti)',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ Utilizzo corretto ed in sicurezza delle attrezzature in dotazione',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ Sicurezze presenti sulle attrezzature in uso (emergenze, microinterruttori, allarmi)',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ Segnaletica di sicurezza, salute ed emergenza in reparto.',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ Istruzioni specifiche di reparto (specificare di seguito se presenti)',font:FONT,size:18})]}),
         ],
       }),
     ]}),
-    // ── DPI: col[0] vuota + cols[1-3] merged CCC0D9 con "DPI da utilizzare" header ──
+    // ── R9: DPI da utilizzare ──
     new TableRow({children:[
-      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
-        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        verticalAlign:VerticalAlign.CENTER,
+        margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'DPI da utilizzare',bold:true,font:FONT,size:18})]})]}),
       new TableCell({columnSpan:3,width:{size:COLS[1]+COLS[2]+COLS[3],type:WidthType.DXA},
-        shading:{fill:PURPLE,type:ShadingType.CLEAR},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
         children:[
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'DPI da utilizzare',bold:true,font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'DPI necessari alla lavorazione (specificare di seguito se necessari):',bold:true,font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:dpiTxt,font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Rischi per i quali sono necessari i DPI.',font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:"Utilizzo dei DPI (modalità d'impiego, verifica della necessità di utilizzo).",font:FONT,size:18})]}),
-          new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'Modalità di conservazione e richiesta di sostituzione/integrazione dei DPI.',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ DPI necessari alla lavorazione (specificare di seguito se necessari):',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:0,after:40},children:[new TextRun({text:dpiTxt,font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ Rischi per i quali sono necessari i DPI.',font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:"☐ Utilizzo dei DPI (modalità d'impiego, verifica della necessità di utilizzo).",font:FONT,size:18})]}),
+          new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'☐ Modalità di conservazione e richiesta di sostituzione/integrazione dei DPI.',font:FONT,size:18})]}),
         ],
       }),
     ]}),
+    // ── R10: Istruttori e Preposto | testo | GIUDIZIO ──
     new TableRow({children:[
-      new TableCell({columnSpan:2,width:{size:COLS[0]+COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-        children:[
-          new Paragraph({spacing:{after:4},children:[new TextRun({text:"Al termine dell'addestramento, effettuato secondo quanto sopra esposto, l'Istruttore e il Preposto valutando in campo le modalità operative e le conoscenze ricevute, ritengono il lavoratore:",font:FONT,size:18})]}),
-        ]
-      }),
-      new TableCell({width:{size:COLS[2],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,
+        verticalAlign:VerticalAlign.CENTER,
+        margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Istruttori e Preposto',bold:true,font:FONT,size:18})]})]}),
+      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:"Al termine dell'addestramento, effettuato secondo quanto sopra esposto, l'Istruttore e il Preposto valutando in campo le modalità operative e le conoscenze ricevute, ritengono il lavoratore:",font:FONT,size:18})]})]}),
+      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,
+        verticalAlign:VerticalAlign.CENTER,
+        margins:{top:60,bottom:60,left:80,right:80},
         children:[
           new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:20})]}),
-          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Adeguato',font:FONT,size:20})]}),
-          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:20})]}),
-        ]
-      }),
-      new TableCell({width:{size:COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
-        children:[
-          new Paragraph({children:[new TextRun({text:'Note:',bold:true,font:FONT,size:20})]}),
-          new Paragraph({children:[new TextRun({text:'',font:FONT,size:20})]}),
-        ]
-      }),
+        ]}),
+    ]}),
+    // ── R11: ☐ Adeguato ──
+    new TableRow({children:[
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Adeguato',font:FONT,size:20})]})]}),
+    ]}),
+    // ── R12: ☐ Non adeguato ──
+    new TableRow({children:[
+      new TableCell({width:{size:COLS[0],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({width:{size:COLS[1],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'',font:FONT,size:18})]})]}),
+      new TableCell({columnSpan:2,width:{size:COLS[2]+COLS[3],type:WidthType.DXA},borders:BD_A,margins:{top:40,bottom:40,left:80,right:80},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:20})]})]}),
+    ]}),
+    // ── R13: Note: fullspan ──
+    new TableRow({children:[
+      new TableCell({columnSpan:4,width:{size:W,type:WidthType.DXA},borders:BD_A,margins:{top:60,bottom:60,left:80,right:80},
+        children:[new Paragraph({children:[new TextRun({text:'Note:',bold:true,font:FONT,size:20})]})]}),
     ]}),
   ];
 
