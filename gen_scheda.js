@@ -415,13 +415,34 @@ async function genSchedaAddestrativa(mansione) {
         margins:{top:60,bottom:60,left:80,right:80},
         children:[new Paragraph({children:[new TextRun({text:"Al termine dell'addestramento, effettuato secondo quanto sopra esposto, l'Istruttore e il Preposto valutando in campo le modalità operative e le conoscenze ricevute, ritengono il lavoratore:",font:FONT,size:18})]})]}),
       new TableCell({width:{size:COLS[3],type:WidthType.DXA},borders:BD_A,
-        shading:{fill:SALMON,type:ShadingType.CLEAR},
-        verticalAlign:VerticalAlign.CENTER,
-        margins:{top:60,bottom:60,left:80,right:80},
+        margins:{top:0,bottom:0,left:0,right:0},
         children:[
-          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:60},children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:18})]}),
-          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]}),
-          new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]}),
+          new Table({
+            width:{size:COLS[3],type:WidthType.DXA},
+            columnWidths:[COLS[3]],
+            borders:{top:BD_A.top,bottom:BD_A.bottom,left:BD_A.left,right:BD_A.right,insideH:BD_A.top,insideV:BD_A.top},
+            rows:[
+              new TableRow({children:[
+                new TableCell({width:{size:COLS[3],type:WidthType.DXA},
+                  shading:{fill:SALMON,type:ShadingType.CLEAR},
+                  borders:BD_A, margins:{top:60,bottom:60,left:80,right:80},
+                  children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'GIUDIZIO',bold:true,font:FONT,size:18})]})],
+                }),
+              ]}),
+              new TableRow({children:[
+                new TableCell({width:{size:COLS[3],type:WidthType.DXA},
+                  borders:BD_A, margins:{top:60,bottom:60,left:80,right:80},
+                  children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]})],
+                }),
+              ]}),
+              new TableRow({children:[
+                new TableCell({width:{size:COLS[3],type:WidthType.DXA},
+                  borders:BD_A, margins:{top:60,bottom:60,left:80,right:80},
+                  children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]})],
+                }),
+              ]}),
+            ],
+          }),
         ]}),
     ]}),
     // ── R13: Note: fullspan ──
