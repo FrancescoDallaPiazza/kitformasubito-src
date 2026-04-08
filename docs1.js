@@ -506,7 +506,7 @@ async function genProgettoFormativo() {
 // REGISTRO PRESENZE FORMAZIONE INIZIALE
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroFormIniziale(mansione) {
-  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 709, footer: 709 };
   const W = 14570;
 
   // ── Bordi AAAAAA (come nel master) ────────────────────────────────────────
@@ -524,21 +524,27 @@ async function genRegistroFormIniziale(mansione) {
     right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
   };
 
-  // ── Header con logo flottante (anchor, angolo in alto a sinistra) ────────
+  // ── Header inline: logo sinistra + ragione sociale destra ────────────────
+  const NO_HDR = { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE}, insideH:{style:BorderStyle.NONE}, insideV:{style:BorderStyle.NONE} };
   const header = new Header({
-    children: [new Paragraph({
-      children: [new ImageRun({
-        data: logoBytes,
-        type: 'jpg',
-        transformation: { width: 166, height: 38 },
-        floating: {
-          horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: -172085 },
-          verticalPosition:   { relative: VerticalPositionRelativeFrom.TOP_MARGIN, offset: 0 },
-          wrap:               { type: TextWrappingType.SQUARE, side: TextWrappingSide.BOTH_SIDES },
-          zIndex: 251659264,
-          behindDocument: false,
-        },
-      })],
+    children: [new Table({
+      width: { size: W, type: WidthType.DXA },
+      columnWidths: [2400, W - 2400],
+      borders: NO_HDR,
+      rows: [new TableRow({ children: [
+        new TableCell({
+          width: { size: 2400, type: WidthType.DXA },
+          borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 140, height: 32 } })] })],
+        }),
+        new TableCell({
+          width: { size: W - 2400, type: WidthType.DXA },
+          borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: CLIENTE.ragioneSociale, bold: true, font: FONT, size: 20, color: C.BLU_DARK })] })],
+        }),
+      ]})],
     })],
   });
 
@@ -697,7 +703,7 @@ async function genRegistroFormIniziale(mansione) {
 // REGISTRO AGGIORNAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 async function genRegistroAggiornamento() {
-  const MARGIN = { top: 426, right: 1134, bottom: 1134, left: 1134 };
+  const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 709, footer: 709 };
   const W = 14570;
 
   const BAA = {
@@ -713,20 +719,27 @@ async function genRegistroAggiornamento() {
     right:  { style: BorderStyle.SINGLE, size: 4, space: 0, color: '1F4E79' },
   };
 
+  // ── Header inline: logo sinistra + ragione sociale destra ────────────────
+  const NO_HDR = { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE}, insideH:{style:BorderStyle.NONE}, insideV:{style:BorderStyle.NONE} };
   const header = new Header({
-    children: [new Paragraph({
-      children: [new ImageRun({
-        data: logoBytes,
-        type: 'jpg',
-        transformation: { width: 166, height: 38 },
-        floating: {
-          horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: -172085 },
-          verticalPosition:   { relative: VerticalPositionRelativeFrom.TOP_MARGIN, offset: 0 },
-          wrap:               { type: TextWrappingType.SQUARE, side: TextWrappingSide.BOTH_SIDES },
-          zIndex: 251659264,
-          behindDocument: false,
-        },
-      })],
+    children: [new Table({
+      width: { size: W, type: WidthType.DXA },
+      columnWidths: [2400, W - 2400],
+      borders: NO_HDR,
+      rows: [new TableRow({ children: [
+        new TableCell({
+          width: { size: 2400, type: WidthType.DXA },
+          borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 140, height: 32 } })] })],
+        }),
+        new TableCell({
+          width: { size: W - 2400, type: WidthType.DXA },
+          borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: CLIENTE.ragioneSociale, bold: true, font: FONT, size: 20, color: C.BLU_DARK })] })],
+        }),
+      ]})],
     })],
   });
 
