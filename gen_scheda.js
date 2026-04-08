@@ -25,8 +25,8 @@ async function genSchedaMansione(mansione) {
   // Landscape A4
   const { PageOrientation: PO } = require('docx');
   const PAGE = { width: 11906, height: 16838, orientation: PO.LANDSCAPE };
-  const MARGIN = { top: 720, right: 720, bottom: 720, left: 720 };
-  const W = 15398; // 16838 - 720*2
+  const MARGIN = { top: 540, right: 540, bottom: 540, left: 540 };
+  const W = 15758; // 16838 - 540*2
 
   const LIV_COL = { ALTO: 'C00000', MEDIO: 'E07000', BASSO: '538135' };
   const LIV_FILL= { ALTO: 'FFE8E8', MEDIO: 'FFF3E0', BASSO: 'E8F5E9' };
@@ -59,7 +59,7 @@ async function genSchedaMansione(mansione) {
       verticalAlign: vAlign || VerticalAlign.CENTER,
       shading:       fill ? { fill, type: ShadingType.CLEAR } : undefined,
       borders:       borders || BDc,
-      margins:       { top: 80, bottom: 80, left: 100, right: 100 },
+      margins:       { top: 40, bottom: 40, left: 60, right: 60 },
       children:      Array.isArray(children) ? children : [children],
     });
   }
@@ -73,14 +73,14 @@ async function genSchedaMansione(mansione) {
   }
 
   // ═══ TAB1 – HEADER (logo | SCHEDA MANSIONE + nome | reparto/rischio/norma) ═══
-  const wL = 1985; const wC = 7575; const wR = W - wL - wC; // 5838
+  const wL = 1900; const wC = 7700; const wR = W - wL - wC;
   const tblHeader = new Table({
     width: { size: W, type: WidthType.DXA },
     columnWidths: [wL, wC, wR],
     borders: BDt,
     rows: [new TableRow({ children: [
       tc(new Paragraph({
-        children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 120, height: 60 } })],
+        children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 100, height: 45 } })],
       }), { w: wL, borders: NO_BDR }),
       tc([
         p('SCHEDA MANSIONE', { sz: 18, bold: true, color: C.BLU_HEADER, align: AlignmentType.CENTER }),
@@ -102,16 +102,16 @@ async function genSchedaMansione(mansione) {
   });
 
   // ═══ TAB2 – RISCHI (4 colonne: rischio | livello | misure | DPI) ═══
-  const Cr = 3380; const Cl = 2006; const Cm = 6237; const Cd = W - Cr - Cl - Cm; // 1775
+  const Cr = 3500; const Cl = 2100; const Cm = 6400; const Cd = W - Cr - Cl - Cm;
 
   const hdrRow = new TableRow({ children: [
-    tc(p('RISCHIO IDENTIFICATO', { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+    tc(p('RISCHIO IDENTIFICATO', { sz: 16, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
        { w: Cr, fill: C.BLU_DARK }),
-    tc(p('LIVELLO RISCHIO',       { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+    tc(p('LIVELLO RISCHIO',       { sz: 16, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
        { w: Cl, fill: C.BLU_DARK }),
-    tc(p('MISURE DI PREVENZIONE', { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+    tc(p('MISURE DI PREVENZIONE', { sz: 16, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
        { w: Cm, fill: C.BLU_DARK }),
-    tc(p('DPI RICHIESTI',         { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+    tc(p('DPI RICHIESTI',         { sz: 16, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
        { w: Cd, fill: C.BLU_DARK }),
   ]});
 
@@ -121,34 +121,34 @@ async function genSchedaMansione(mansione) {
     const lFill= LIV_FILL[lv] || 'FFFFFF';
 
     const misurePars = r.misure.map(m => new Paragraph({
-      spacing: { before: 0, after: 40 },
+      spacing: { before: 0, after: 20 },
       children: [
-        new TextRun({ text: '\u2022 ', font: FONT, size: 18 }),
-        new TextRun({ text: m, font: FONT, size: 18 }),
+        new TextRun({ text: '\u2022 ', font: FONT, size: 16 }),
+        new TextRun({ text: m, font: FONT, size: 16 }),
       ],
     }));
 
     const dpiPars = r.dpi.length
       ? r.dpi.map(d => new Paragraph({
-          spacing: { before: 0, after: 40 },
+          spacing: { before: 0, after: 20 },
           children: [
-            new TextRun({ text: '\u2022 ', font: FONT, size: 18 }),
-            new TextRun({ text: d, font: FONT, size: 18 }),
+            new TextRun({ text: '\u2022 ', font: FONT, size: 16 }),
+            new TextRun({ text: d, font: FONT, size: 16 }),
           ],
         }))
       : [p('\u2014', { color: 'AAAAAA', align: AlignmentType.CENTER })];
 
     return new TableRow({ children: [
       // C1 – Rischio bold
-      tc(p(r.nome, { sz: 18, bold: true }), { w: Cr }),
+      tc(p(r.nome, { sz: 16, bold: true }), { w: Cr }),
       // C2 – Livello con icona triangolo + testo colorato
       tc([
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { before: 0, after: 20 },
-          children: [new TextRun({ text: '\u26a0', font: FONT, size: 28, bold: true, color: lCol })],
+          children: [new TextRun({ text: '\u26a0', font: FONT, size: 22, bold: true, color: lCol })],
         }),
-        p(lv, { sz: 16, bold: true, color: lCol, align: AlignmentType.CENTER }),
+        p(lv, { sz: 14, bold: true, color: lCol, align: AlignmentType.CENTER }),
       ], { w: Cl }),
       // C3 – Misure
       tc(misurePars, { w: Cm }),
@@ -165,21 +165,21 @@ async function genSchedaMansione(mansione) {
   });
 
   // ═══ TAB3 – DPI OBBLIGATORI ═══
-  const wDpiL = 3380; const wDpiR = W - wDpiL;
+  const wDpiL = 3500; const wDpiR = W - wDpiL;
   const dpiTxt = mansione.dpi.join('   |   ');
   const tblDpi = new Table({
     width: { size: W, type: WidthType.DXA },
     columnWidths: [wDpiL, wDpiR],
     borders: BDt,
     rows: [new TableRow({ children: [
-      tc(p('DPI OBBLIGATORI', { sz: 18, bold: true, color: C.BIANCO }),
+      tc(p('DPI OBBLIGATORI', { sz: 16, bold: true, color: C.BIANCO }),
          { w: wDpiL, fill: C.BLU_MED }),
-      tc(p(dpiTxt, { sz: 18 }), { w: wDpiR }),
+      tc(p(dpiTxt, { sz: 16 }), { w: wDpiR }),
     ]})],
   });
 
   // ═══ TAB4 – FORMAZIONE + FIRMA ═══
-  const wF1 = 2697; const wF2 = 2696; const wF3 = W - wF1 - wF2;
+  const wF1 = 2800; const wF2 = 2800; const wF3 = W - wF1 - wF2;
   const tblForm = new Table({
     width: { size: W, type: WidthType.DXA },
     columnWidths: [wF1, wF2, wF3],
@@ -195,15 +195,15 @@ async function genSchedaMansione(mansione) {
         p('6 ORE ogni 5 anni', { sz: 18, bold: true, color: C.BLU_DARK }),
       ], { w: wF2, fill: C.BLU_LIGHT }),
       tc([
-        p('Firma Datore di Lavoro / RSPP', { sz: 16, bold: true, spB: 60 }),
-        p(CLIENTE.datoreLavoro, { sz: 16, spB: 200 }),
+        p('Firma Datore di Lavoro / RSPP', { sz: 16, bold: true, spB: 20 }),
+        p(CLIENTE.datoreLavoro, { sz: 16, spB: 120 }),
         p('_______________________________', { sz: 16 }),
       ], { w: wF3 }),
     ]})],
   });
 
   // ═══ TAB5 – REVISIONE ═══
-  const wRev1 = 10778; const wRev2 = W - wRev1;
+  const wRev1 = 11000; const wRev2 = W - wRev1;
   const revTxt = 'Revisione, aggiornamento e consegna al lavoratore: il presente documento è soggetto a revisione periodica o in seguito a variazioni delle mansioni, dell\'organizzazione del lavoro o dei rischi presenti.';
   const tblRev = new Table({
     width: { size: W, type: WidthType.DXA },
@@ -234,7 +234,7 @@ async function genSchedaMansione(mansione) {
     styles: docStyles,
     sections: [{
       properties: { page: { size: PAGE, margin: MARGIN } },
-      children: [tblHeader, vuoto(30), tblRischi, vuoto(20), tblDpi, vuoto(20), tblForm, vuoto(20), tblRev],
+      children: [tblHeader, vuoto(10), tblRischi, vuoto(8), tblDpi, vuoto(8), tblForm, vuoto(8), tblRev],
     }],
   });
 
