@@ -690,7 +690,7 @@ async function genRegistroFormIniziale(mansione) {
     footers: { default: footer },
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/Registro_FormIniziale_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/00.Registro_FormIniziale_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -860,7 +860,7 @@ async function genRegistroAggiornamento() {
     footers: { default: footer },
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/Registro_Aggiornamento.docx`);
+  await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/01.Registro_Aggiornamento.docx`);
 }
 
 module.exports = { genProgettoFormativo, genRegistroFormIniziale, genRegistroAggiornamento };

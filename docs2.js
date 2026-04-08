@@ -239,7 +239,7 @@ async function genColloquio(mansione) {
     headers:{default:header},footers:{default:footer},
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/03 - TEST DI APPRENDIMENTO/01. AGGIORNAMENTO/Colloquio_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/01. AGGIORNAMENTO/Colloquio_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -357,7 +357,7 @@ async function genGradimento() {
     footers:{default:footer},
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/04 - GRADIMENTO/Gradimento.docx`);
+  await salvaDoc(doc, `${OUT}/04 - QUESTIONARIO GRADIMENTO/Questionario di Gradimento.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -457,7 +457,7 @@ async function genAttestato(mansione) {
     {properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children:sec1},
     {properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children:sec2},
   ]});
-  await salvaDoc(doc, `${OUT}/05 - ATTESTATI/Attestato_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/05 - ATTESTATI/00_Attestato_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -541,7 +541,7 @@ async function genAttestatiAggiornamento() {
   const doc = new Document({styles:docStyles,sections:[{
     properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children,
   }]});
-  await salvaDoc(doc, `${OUT}/05 - ATTESTATI/Attestato_Aggiorn.docx`);
+  await salvaDoc(doc, `${OUT}/05 - ATTESTATI/01_Attestato_Aggiornamento.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
