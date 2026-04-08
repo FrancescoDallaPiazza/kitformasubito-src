@@ -22,282 +22,219 @@ const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{s
 //   [revisione: no fill]
 // ─────────────────────────────────────────────────────────────────────────────
 async function genSchedaMansione(mansione) {
-  // Landscape A4 corretto: width=lungo, height=corto
-  const PAGE_L = { width: 11906, height: 16838, orientation: PageOrientation.LANDSCAPE };
+  // Landscape A4
+  const { PageOrientation: PO } = require('docx');
+  const PAGE = { width: 11906, height: 16838, orientation: PO.LANDSCAPE };
   const MARGIN = { top: 720, right: 720, bottom: 720, left: 720 };
   const W = 15398; // 16838 - 720*2
 
-  const fs_mod = require('fs');
-  const path_mod = require('path');
-  const { PageOrientation: PO } = require('docx');
-
-  // Colori categoria
-  const CAT_FILL = {
-    'Sicurezza': 'FFE6E6', 'Chimico / Cancerogeno': 'FFF2CC',
-    'Fisico': 'DAE3F3',    'Ergonomico': 'E2EFDA',
-    'Elettrico': 'DAE3F3', 'Biologico': 'F5E6FF',
-  };
-  const ROW_FILL = { ALTO:'FFF5F5', MEDIO:'FFFBF0', BASSO:'F5FFF5' };
-  const LIV_COL  = { ALTO:'C00000', MEDIO:'E07000', BASSO:'538135' };
-
-  function catRischio(nome) {
-    const n = nome.toLowerCase();
-    if (/elettr/.test(n)) return 'Elettrico';
-    if (/chimico|toner|alcool|cancerogeno|polvere|solvente|detergente|agente chim|inchiostro/.test(n)) return 'Chimico / Cancerogeno';
-    if (/rumore|vibrazion|microclima|calore|freddo|radiazion|illuminaz|campi elettro/.test(n)) return 'Fisico';
-    if (/postura|movimentazione|ergono|vdt|videoterminale|sollevamento|ripetitiv|stress/.test(n)) return 'Ergonomico';
-    if (/biologico|virus|batterio/.test(n)) return 'Biologico';
-    return 'Sicurezza';
-  }
+  const LIV_COL = { ALTO: 'C00000', MEDIO: 'E07000', BASSO: '538135' };
+  const LIV_FILL= { ALTO: 'FFE8E8', MEDIO: 'FFF3E0', BASSO: 'E8F5E9' };
 
   const BDt = {
-    top:    {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    bottom: {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    left:   {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    right:  {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    insideH:{style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    insideV:{style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    top:    { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    bottom: { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    left:   { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    right:  { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    insideH:{ style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    insideV:{ style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
   };
   const BDc = {
-    top:    {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    bottom: {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    left:   {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
-    right:  {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'},
+    top:    { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    bottom: { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    left:   { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+    right:  { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' },
+  };
+  const NO_BDR = {
+    top:    { style: BorderStyle.NONE },
+    bottom: { style: BorderStyle.NONE },
+    left:   { style: BorderStyle.NONE },
+    right:  { style: BorderStyle.NONE },
   };
 
-  function tc(children, {w, fill, span, vAlign}={}) {
+  function tc(children, { w, fill, span, vAlign, borders } = {}) {
     return new TableCell({
-      width: w ? {size:w, type:WidthType.DXA} : undefined,
-      columnSpan: span,
+      width:         w ? { size: w, type: WidthType.DXA } : undefined,
+      columnSpan:    span,
       verticalAlign: vAlign || VerticalAlign.CENTER,
-      shading: fill ? {fill, type:ShadingType.CLEAR} : undefined,
-      borders: BDc,
-      margins: {top:60, bottom:60, left:80, right:80},
-      children: Array.isArray(children) ? children : [children],
+      shading:       fill ? { fill, type: ShadingType.CLEAR } : undefined,
+      borders:       borders || BDc,
+      margins:       { top: 80, bottom: 80, left: 100, right: 100 },
+      children:      Array.isArray(children) ? children : [children],
     });
   }
 
-  function p(text, {sz=20, bold=false, color, align=AlignmentType.LEFT, spB=0, italics=false}={}) {
+  function p(text, { sz = 20, bold = false, color, italics = false, align = AlignmentType.LEFT, spB = 0, spA = 0 } = {}) {
     return new Paragraph({
       alignment: align,
-      spacing: {before:0, after:spB},
-      children: [new TextRun({text, font:FONT, size:sz, bold, italics, color})],
+      spacing:   { before: spB, after: spA },
+      children:  [new TextRun({ text, font: FONT, size: sz, bold, italics, color })],
     });
   }
 
-  // ═══ TABELLA 1 – HEADER AZIENDALE (2 righe) ══════════════════════════════
+  // ═══ TAB1 – HEADER (logo | SCHEDA MANSIONE + nome | reparto/rischio/norma) ═══
+  const wL = 1985; const wC = 7575; const wR = W - wL - wC; // 5838
   const tblHeader = new Table({
-    width: {size:W, type:WidthType.DXA},
-    columnWidths: [2800, 7200, 5398],
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [wL, wC, wR],
     borders: BDt,
-    rows: [
-      // Riga 1: P.IVA+ragione breve | ragione completa+indirizzo+ATECO | box SCHEDA MANSIONE
-      new TableRow({children:[
-        tc([
-          p(CLIENTE.ragioneSocialeBreve, {sz:16, bold:true, color:'1F3864'}),
-          p(`P.IVA: ${CLIENTE.piva}`, {sz:14, color:'595959'}),
-        ], {w:2800, fill:'FFFFFF'}),
-        tc([
-          p(CLIENTE.ragioneSociale, {sz:18, bold:true, color:'1F3864', spB:20}),
-          p(CLIENTE.indirizzo, {sz:15, color:'595959'}),
-          p(`ATECO ${CLIENTE.atecoCodice} \u2013 ${CLIENTE.atecoDesc}`, {sz:15, color:'595959'}),
-        ], {w:7200, fill:'FFFFFF'}),
-        tc([
-          p('SCHEDA MANSIONE', {sz:14, color:'BDD7EE', align:AlignmentType.RIGHT}),
-          p(mansione.nome.toUpperCase(), {sz:26, bold:true, color:'FFFFFF', align:AlignmentType.RIGHT}),
-          p(mansione.reparto, {sz:16, color:'BDD7EE', align:AlignmentType.RIGHT}),
-        ], {w:5398, fill:'1F3864'}),
-      ]}),
-      // Riga 2: RSPP | ATECO | Livello | Anno revisione
-      new TableRow({children:[
-        tc([
-          p('RSPP / DATORE DI LAVORO', {sz:13, color:'BDD7EE'}),
-          p(CLIENTE.datoreLavoro, {sz:16, bold:true, color:'FFFFFF'}),
-        ], {w:3849, fill:'2E75B6'}),
-        tc([
-          p('CODICE ATECO', {sz:13, color:'1F4E79'}),
-          p(`${CLIENTE.atecoCodice} \u2013 ${CLIENTE.atecoDesc}`, {sz:15, bold:true, color:'1F3864'}),
-        ], {w:3849, fill:'D5E8F0'}),
-        tc([
-          p('LIVELLO RISCHIO SETTORE', {sz:13, color:'FFD7D7'}),
-          p(`\u25cf ${mansione.livello} \u2013 ${mansione.oreSpec} ore specifica`, {sz:16, bold:true, color:'FFFFFF'}),
-        ], {w:3849, fill:'C00000'}),
-        tc([
-          p('DATA REVISIONE', {sz:13, color:'595959'}),
-          p(CLIENTE.anno, {sz:16, bold:true, color:'1F3864'}),
-        ], {w:3851, fill:'F2F2F2'}),
-      ]}),
-    ],
+    rows: [new TableRow({ children: [
+      tc(new Paragraph({
+        children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 120, height: 60 } })],
+      }), { w: wL, borders: NO_BDR }),
+      tc([
+        p('SCHEDA MANSIONE', { sz: 18, bold: true, color: C.BLU_HEADER, align: AlignmentType.CENTER }),
+        p(mansione.nome.toUpperCase(), { sz: 28, bold: true, color: C.BLU_DARK, align: AlignmentType.CENTER }),
+      ], { w: wC, borders: NO_BDR }),
+      tc([
+        p(`Reparto: ${mansione.reparto}`, { sz: 16, align: AlignmentType.RIGHT }),
+        new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          children: [
+            new TextRun({ text: 'Rischio: ', font: FONT, size: 16 }),
+            new TextRun({ text: mansione.livello, font: FONT, size: 16, bold: true,
+              color: LIV_COL[mansione.livello] || '000000' }),
+          ],
+        }),
+        p('D.Lgs. 81/08 \u2013 Art. 36-37', { sz: 14, align: AlignmentType.RIGHT, color: C.GRIGIO }),
+      ], { w: wR, borders: NO_BDR }),
+    ]})],
   });
 
-  // ═══ TABELLA 2 – RISCHI ══════════════════════════════════════════════════
-  const Cn=400, Ccat=1300, Cris=3400, Cliv=1100, Cmis=5498, Cdpi=3700;
+  // ═══ TAB2 – RISCHI (4 colonne: rischio | livello | misure | DPI) ═══
+  const Cr = 3380; const Cl = 2006; const Cm = 6237; const Cd = W - Cr - Cl - Cm; // 1775
 
-  const rHdr = new TableRow({children:[
-    tc(p('N.',        {sz:16,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}), {w:Cn,   fill:'1F3864'}),
-    tc(p('Categoria', {sz:16,bold:true,color:'FFFFFF'}),                            {w:Ccat, fill:'1F3864'}),
-    tc(p('Rischio identificato',{sz:16,bold:true,color:'FFFFFF'}),                  {w:Cris, fill:'1F3864'}),
-    tc(p('Livello',   {sz:16,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}), {w:Cliv, fill:'1F3864'}),
-    tc(p('Misure di prevenzione e protezione',{sz:16,bold:true,color:'FFFFFF'}),    {w:Cmis, fill:'1F3864'}),
-    tc(p('DPI richiesti',{sz:16,bold:true,color:'FFFFFF'}),                         {w:Cdpi, fill:'1F3864'}),
+  const hdrRow = new TableRow({ children: [
+    tc(p('RISCHIO IDENTIFICATO', { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+       { w: Cr, fill: C.BLU_DARK }),
+    tc(p('LIVELLO RISCHIO',       { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+       { w: Cl, fill: C.BLU_DARK }),
+    tc(p('MISURE DI PREVENZIONE', { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+       { w: Cm, fill: C.BLU_DARK }),
+    tc(p('DPI RICHIESTI',         { sz: 18, bold: true, color: C.BIANCO, align: AlignmentType.CENTER }),
+       { w: Cd, fill: C.BLU_DARK }),
   ]});
 
-  const rischioRows = mansione.rischi.map((r, i) => {
-    const cat     = catRischio(r.nome);
-    const catFill = CAT_FILL[cat] || 'FFFFFF';
-    const livello = r.livello || mansione.livello;
-    const rowFill = ROW_FILL[livello] || 'FFFBF0';
-    const livCol  = LIV_COL[livello]  || '000000';
+  const rischioRows = mansione.rischi.map((r) => {
+    const lv   = r.livello || mansione.livello;
+    const lCol = LIV_COL[lv]  || '000000';
+    const lFill= LIV_FILL[lv] || 'FFFFFF';
 
     const misurePars = r.misure.map(m => new Paragraph({
-      spacing:{before:0, after:40},
-      children:[
-        new TextRun({text:'\u25cf ', font:FONT, size:14, color:'538135', bold:true}),
-        new TextRun({text:m, font:FONT, size:14}),
+      spacing: { before: 0, after: 40 },
+      children: [
+        new TextRun({ text: '\u2022 ', font: FONT, size: 18 }),
+        new TextRun({ text: m, font: FONT, size: 18 }),
       ],
     }));
 
-    const dpiPars = r.dpi.map(d => new Paragraph({
-      spacing:{before:0, after:40},
-      children:[new TextRun({text:'  '+d, font:FONT, size:14, color:'1F4E79'})],
-    }));
+    const dpiPars = r.dpi.length
+      ? r.dpi.map(d => new Paragraph({
+          spacing: { before: 0, after: 40 },
+          children: [
+            new TextRun({ text: '\u2022 ', font: FONT, size: 18 }),
+            new TextRun({ text: d, font: FONT, size: 18 }),
+          ],
+        }))
+      : [p('\u2014', { color: 'AAAAAA', align: AlignmentType.CENTER })];
 
-    return new TableRow({children:[
-      tc(p(String(i+1), {sz:16,bold:true,color:'C00000',align:AlignmentType.CENTER}), {w:Cn,   fill:rowFill}),
-      tc(p(cat,          {sz:14,bold:true,color:'1F3864'}),                             {w:Ccat, fill:catFill, vAlign:VerticalAlign.CENTER}),
-      tc(p(r.nome,       {sz:15}),                                                       {w:Cris, fill:rowFill}),
+    return new TableRow({ children: [
+      // C1 – Rischio bold
+      tc(p(r.nome, { sz: 18, bold: true }), { w: Cr }),
+      // C2 – Livello con icona triangolo + testo colorato
       tc([
-        p('\u26a0', {sz:20, bold:true, color:livCol, align:AlignmentType.CENTER}),
-        p(livello,  {sz:14, bold:true, color:livCol, align:AlignmentType.CENTER}),
-      ], {w:Cliv, fill:rowFill}),
-      tc(misurePars.length ? misurePars : [p('')], {w:Cmis, fill:rowFill}),
-      tc(dpiPars.length   ? dpiPars   : [p('\u2014', {color:'AAAAAA'})], {w:Cdpi, fill:rowFill}),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 20 },
+          children: [new TextRun({ text: '\u26a0', font: FONT, size: 28, bold: true, color: lCol })],
+        }),
+        p(lv, { sz: 16, bold: true, color: lCol, align: AlignmentType.CENTER }),
+      ], { w: Cl }),
+      // C3 – Misure
+      tc(misurePars, { w: Cm }),
+      // C4 – DPI
+      tc(dpiPars, { w: Cd }),
     ]});
   });
 
   const tblRischi = new Table({
-    width: {size:W, type:WidthType.DXA},
-    columnWidths: [Cn, Ccat, Cris, Cliv, Cmis, Cdpi],
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [Cr, Cl, Cm, Cd],
     borders: BDt,
-    rows: [rHdr, ...rischioRows],
+    rows: [hdrRow, ...rischioRows],
   });
 
-  // ═══ TABELLA 3 – DPI PREVISTI (header + icone) ═══════════════════════════
-  const ICON_MAP = [
-    {re:/occhiali/i,                                  file:'Immagine10.png', label:'Occhiali protettivi'},
-    {re:/calzatur|scarpe|antiscivolo|ergonomic/i,     file:'Immagine9.png',  label:'Calzature di sicurezza'},
-    {re:/antitaglio|nitrile/i,                        file:'Immagine7.png',  label:'Guanti chimico-res.'},
-    {re:/termoresist|da lavoro/i,                     file:'Immagine8.png',  label:'Guanti da lavoro'},
-    {re:/antivibranti/i,                              file:'Immagine3.png',  label:'Guanti antivibranti'},
-    {re:/otoprotett|auricolar/i,                      file:'Immagine4.png',  label:'Otoprotettori'},
-    {re:/ffp3/i,                                      file:'Immagine5.png',  label:'Maschera FFP3'},
-    {re:/ffp1|ffp2|mascherina|maschera/i,             file:'Immagine6.png',  label:'Maschera FFP2'},
-    {re:/tuta/i,                                      file:'Immagine2.png',  label:'Tuta monouso'},
-    {re:/alta visibilit|hv|gilet/i,                   file:'Immagine1.png',  label:'Alta visibilit\u00e0'},
-  ];
-  const ICONS_DIR = path_mod.join(__dirname, 'icons');
-
-  const usedFiles = new Set();
-  const dpiIconData = [];
-  for (const dpiName of mansione.dpi) {
-    for (const m of ICON_MAP) {
-      if (m.re.test(dpiName) && !usedFiles.has(m.file)) {
-        usedFiles.add(m.file);
-        const iconPath = path_mod.join(ICONS_DIR, m.file);
-        const iconBytes = fs_mod.existsSync(iconPath) ? fs_mod.readFileSync(iconPath) : null;
-        dpiIconData.push({iconBytes, label: dpiName.split('(')[0].trim()});
-        break;
-      }
-    }
-  }
-  if (!dpiIconData.length) dpiIconData.push({iconBytes:null, label:'\u2014'});
-
-  const nDpi = dpiIconData.length;
-  const dpiCellW  = Math.floor(W / nDpi);
-  const dpiCellWL = W - dpiCellW*(nDpi-1);
-  const dpiColW   = Array.from({length:nDpi}, (_,i)=> i===nDpi-1 ? dpiCellWL : dpiCellW);
-
-  const rDpiHdr = new TableRow({children:[
-    new TableCell({
-      width:{size:W, type:WidthType.DXA},
-      columnSpan: nDpi,
-      verticalAlign: VerticalAlign.CENTER,
-      shading:{fill:'1F3864', type:ShadingType.CLEAR},
-      borders: BDc,
-      margins:{top:60,bottom:60,left:80,right:80},
-      children:[p('DPI PREVISTI PER LA MANSIONE',{sz:16,bold:true,color:'FFFFFF',align:AlignmentType.CENTER})],
-    }),
-  ]});
-
-  const rDpiIcons = new TableRow({children: dpiIconData.map(({iconBytes, label}, i) =>
-    new TableCell({
-      width:{size:dpiColW[i], type:WidthType.DXA},
-      verticalAlign: VerticalAlign.CENTER,
-      shading:{fill:'EBF3FB', type:ShadingType.CLEAR},
-      borders: BDc,
-      margins:{top:40,bottom:40,left:40,right:40},
-      children:[
-        new Paragraph({
-          alignment:AlignmentType.CENTER,
-          spacing:{after:20},
-          children: iconBytes
-            ? [new ImageRun({data:iconBytes, type:'png', transformation:{width:36,height:36}})]
-            : [new TextRun({text:'\u25a1', font:FONT, size:24})],
-        }),
-        p(label, {sz:12, align:AlignmentType.CENTER}),
-      ],
-    })
-  )});
-
+  // ═══ TAB3 – DPI OBBLIGATORI ═══
+  const wDpiL = 3380; const wDpiR = W - wDpiL;
+  const dpiTxt = mansione.dpi.join('   |   ');
   const tblDpi = new Table({
-    width:{size:W, type:WidthType.DXA},
-    columnWidths: dpiColW,
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [wDpiL, wDpiR],
     borders: BDt,
-    rows: [rDpiHdr, rDpiIcons],
+    rows: [new TableRow({ children: [
+      tc(p('DPI OBBLIGATORI', { sz: 18, bold: true, color: C.BIANCO }),
+         { w: wDpiL, fill: C.BLU_MED }),
+      tc(p(dpiTxt, { sz: 18 }), { w: wDpiR }),
+    ]})],
   });
 
-  // ═══ TABELLA 4 – FORMAZIONE + FIRME ══════════════════════════════════════
+  // ═══ TAB4 – FORMAZIONE + FIRMA ═══
+  const wF1 = 2697; const wF2 = 2696; const wF3 = W - wF1 - wF2;
   const tblForm = new Table({
-    width:{size:W, type:WidthType.DXA},
-    columnWidths:[2308,2308,2308,4237,4237],
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [wF1, wF2, wF3],
     borders: BDt,
-    rows:[
-      new TableRow({children:[
-        tc([
-          p('FORMAZIONE GENERALE', {sz:14,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
-          p('4 ORE',               {sz:20,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
-          p('Credito permanente',  {sz:12,color:'BDD7EE',align:AlignmentType.CENTER}),
-        ], {w:2308, fill:'1F3864'}),
-        tc([
-          p('FORMAZIONE SPECIFICA',    {sz:14,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
-          p(`${mansione.oreSpec} ORE`, {sz:20,bold:true,color:'FFFFFF',align:AlignmentType.CENTER}),
-          p(`Rischio ${mansione.livello}`, {sz:12,color:'BDD7EE',align:AlignmentType.CENTER}),
-        ], {w:2308, fill:'2E75B6'}),
-        tc([
-          p('AGGIORNAMENTO',  {sz:14,bold:true,color:'1F4E79',align:AlignmentType.CENTER}),
-          p('6 ORE',          {sz:20,bold:true,color:'1F4E79',align:AlignmentType.CENTER}),
-          p('ogni 5 anni',    {sz:12,color:'1F4E79',align:AlignmentType.CENTER}),
-        ], {w:2308, fill:'D5E8F0'}),
-        tc([
-          p('Firma Datore di Lavoro / RSPP', {sz:13,bold:true,spB:20}),
-          p(CLIENTE.datoreLavoro,            {sz:14,color:'595959',spB:60}),
-          p('_______________________________',{sz:14}),
-        ], {w:4237, fill:'FFFFFF'}),
-        tc([
-          p('Firma Medico Competente', {sz:13,bold:true,spB:20}),
-          p('',                       {sz:14,spB:60}),
-          p('_______________________________',{sz:14}),
-        ], {w:4237, fill:'FFFFFF'}),
-      ]}),
-    ],
+    rows: [new TableRow({ children: [
+      tc([
+        p('FORMAZIONE SPECIFICA', { sz: 16, color: C.BIANCO }),
+        p(`${mansione.oreSpec} ORE`, { sz: 22, bold: true, color: C.BIANCO }),
+        p(`Rischio ${mansione.livello}`, { sz: 14, color: 'BDD7EE' }),
+      ], { w: wF1, fill: C.BLU_MED }),
+      tc([
+        p('AGGIORNAMENTO', { sz: 16, color: C.BLU_DARK }),
+        p('6 ORE ogni 5 anni', { sz: 18, bold: true, color: C.BLU_DARK }),
+      ], { w: wF2, fill: C.BLU_LIGHT }),
+      tc([
+        p('Firma Datore di Lavoro / RSPP', { sz: 16, bold: true, spB: 60 }),
+        p(CLIENTE.datoreLavoro, { sz: 16, spB: 200 }),
+        p('_______________________________', { sz: 16 }),
+      ], { w: wF3 }),
+    ]})],
   });
 
-  // ═══ DOCUMENTO ═══════════════════════════════════════════════════════════
+  // ═══ TAB5 – REVISIONE ═══
+  const wRev1 = 10778; const wRev2 = W - wRev1;
+  const revTxt = 'Revisione, aggiornamento e consegna al lavoratore: il presente documento è soggetto a revisione periodica o in seguito a variazioni delle mansioni, dell\'organizzazione del lavoro o dei rischi presenti.';
+  const tblRev = new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [wRev1, wRev2],
+    borders: {
+      top:    { style: BorderStyle.SINGLE, size: 4, color: C.BLU_MED },
+      bottom: { style: BorderStyle.NONE },
+      left:   { style: BorderStyle.NONE },
+      right:  { style: BorderStyle.NONE },
+      insideH:{ style: BorderStyle.NONE },
+      insideV:{ style: BorderStyle.SINGLE, size: 4, color: C.BLU_MED },
+    },
+    rows: [new TableRow({ children: [
+      tc(p(revTxt, { sz: 14, color: C.GRIGIO }), {
+        w: wRev1,
+        borders: { top:{ style:BorderStyle.NONE }, bottom:{ style:BorderStyle.NONE }, left:{ style:BorderStyle.NONE }, right:{ style:BorderStyle.NONE } },
+      }),
+      tc(p(`${CLIENTE.ragioneSocialeBreve} \u2013 Rev. ${CLIENTE.anno}`, {
+        sz: 16, bold: true, color: C.BLU_HEADER, align: AlignmentType.RIGHT,
+      }), {
+        w: wRev2,
+        borders: { top:{ style:BorderStyle.NONE }, bottom:{ style:BorderStyle.NONE }, left:{ style:BorderStyle.NONE }, right:{ style:BorderStyle.NONE } },
+      }),
+    ]})],
+  });
+
   const doc = new Document({
     styles: docStyles,
-    sections:[{
-      properties:{page:{size:PAGE_L, margin:MARGIN}},
-      children:[tblHeader, tblRischi, tblDpi, tblForm],
+    sections: [{
+      properties: { page: { size: PAGE, margin: MARGIN } },
+      children: [tblHeader, vuoto(30), tblRischi, vuoto(20), tblDpi, vuoto(20), tblForm, vuoto(20), tblRev],
     }],
   });
 
