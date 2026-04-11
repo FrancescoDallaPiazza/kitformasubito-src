@@ -419,6 +419,15 @@ async function genProgettoFormativo() {
         const mansioniLiv = MANSIONI.filter(m => m.livello === livello);
         const oreSpec = mansioniLiv[0].oreSpec;
         const rischiUnici = [...new Set(mansioniLiv.flatMap(m => m.rischi.map(r => r.nome)))];
+        // Riga mansione/i prima della durata (solo se ci sono più livelli distinti)
+        if (livelli.length > 1) {
+          const nomiMansioni = mansioniLiv.map(m => m.nome.toUpperCase()).join(' / ');
+          result.push(new Paragraph({
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { before: 6*20, after: 0 },
+            children: [new TextRun({ text: `Mansione: ${nomiMansioni}`, bold: true, font: FONT, size: 20, color: C.ROSSO })],
+          }));
+        }
         result.push(DUR(`Durata: ${oreSpec} ore – Settore a rischio ${livello} (ATECO ${CLIENTE.atecoCodice})`));
         result.push(new Paragraph({ children: [] }));
         result.push(N('La formazione specifica è mirata ai rischi effettivamente presenti nel luogo di lavoro, identificati dalla valutazione dei rischi aziendale (DVR). Per ogni mansione sono trattati i rischi specifici della postazione lavorativa:', { sz: 10 }));
