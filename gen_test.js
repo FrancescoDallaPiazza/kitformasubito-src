@@ -315,16 +315,19 @@ function domandeGenerali() {
 }
 
 // Domande specifiche per mansione
-// ── Rotazione risposta corretta: ciclo A→B→C→D ──────────────────────────
-function ruotaRisposte(risposte, posTarget) {
-  // posTarget: 0=A, 1=B, 2=C, 3=D
+// ── Distribuzione risposta corretta: sequenza pseudo-casuale bilanciata ─
+// Sequenza fissa (seed 11): 8×A 8×B 8×C 8×D, max 2 consecutive uguali,
+// nessun pattern sequenziale ovvio (non A→B→C→D in loop).
+const POS_CORRETTA = [1,3,0,1,0,0,3,3,2,0,2,3,0,1,2,1,1,3,1,3,3,1,2,2,0,2,2,0,2,1,3,0];
+// 0=A 1=B 2=C 3=D → B,D,A,B,A,A,D,D,C,A,C,D,A,B,C,B,B,D,B,D,D,B,C,C,A,C,C,A,C,B,D,A
+
+function ruotaRisposte(risposte, qIdx) {
   const LETTERE = ['A','B','C','D'];
+  const posTarget = POS_CORRETTA[qIdx % POS_CORRETTA.length];
   const idxCorretta = risposte.findIndex(r => r.corretta);
-  if (idxCorretta === posTarget) return risposte; // già in posizione
+  if (idxCorretta === posTarget) return risposte;
   const res = [...risposte];
-  // Scambia corretta con quella in posTarget
   [res[idxCorretta], res[posTarget]] = [res[posTarget], res[idxCorretta]];
-  // Ri-assegna lettere A/B/C/D in ordine
   return res.map((r, i) => ({ ...r, lettera: LETTERE[i] }));
 }
 
@@ -348,13 +351,29 @@ function domandeSpecifiche(mansione) {
       ], qIdx++ % 4)});
     }
   });
-  domande.push({d:`${n++}. In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`,r:[{lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},{lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},{lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},{lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false}]});
-  domande.push({d:`${n++}. In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`,r:[{lettera:'A',testo:'Non segnalarlo perché non ha causato danni',corretta:false},{lettera:'B',testo:'Segnalarlo immediatamente al responsabile per prevenire futuri incidenti',corretta:true},{lettera:'C',testo:'Annotarlo solo se si verifica più di una volta',corretta:false},{lettera:'D',testo:'Segnalarlo solo se ci sono testimoni',corretta:false}]});
-  domande.push({d:`${n++}. Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`,r:[{lettera:'A',testo:'La stanchezza fisica dopo una giornata di lavoro intensa',corretta:false},{lettera:'B',testo:'Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute',corretta:true},{lettera:'C',testo:'Un problema che riguarda solo i dirigenti',corretta:false},{lettera:'D',testo:'Un disturbo muscolare da sforzo eccessivo',corretta:false}]});
-  // ── Quiz extra calibrati sulla mansione (da helpers.js → quizExtra) ──
-  const extra = (mansione.quizExtra || []).map((q, i) => ({
-    d: `${n + i} ${q.d.replace(/^\d+\.\s*/, '')}`,
-    r: q.r,
+  // ── Trasversali (risposta corretta ruotata) ─────────────────────────────
+  domande.push({d:`${n++}. In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`, r: ruotaRisposte([
+    {lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},
+    {lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},
+    {lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},
+    {lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false},
+  ], qIdx++)});
+  domande.push({d:`${n++}. In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`, r: ruotaRisposte([
+    {lettera:'A',testo:'Non segnalarlo perché non ha causato danni',corretta:false},
+    {lettera:'B',testo:'Segnalarlo immediatamente al responsabile per prevenire futuri incidenti',corretta:true},
+    {lettera:'C',testo:'Annotarlo solo se si verifica più di una volta',corretta:false},
+    {lettera:'D',testo:'Segnalarlo solo se ci sono testimoni',corretta:false},
+  ], qIdx++)});
+  domande.push({d:`${n++}. Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`, r: ruotaRisposte([
+    {lettera:'A',testo:'La stanchezza fisica dopo una giornata di lavoro intensa',corretta:false},
+    {lettera:'B',testo:'Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute',corretta:true},
+    {lettera:'C',testo:'Un problema che riguarda solo i dirigenti',corretta:false},
+    {lettera:'D',testo:'Un disturbo muscolare da sforzo eccessivo',corretta:false},
+  ], qIdx++)});
+  // ── Quiz extra: applica anche qui la rotazione ───────────────────────────
+  const extra = (mansione.quizExtra || []).map((q) => ({
+    d: `${n++}. ${q.d.replace(/^\d+\.\s*/, '')}`,
+    r: ruotaRisposte(q.r, qIdx++),
   }));
   const all = [...domande, ...extra];
   // Rinumera in ordine progressivo
