@@ -315,23 +315,37 @@ function domandeGenerali() {
 }
 
 // Domande specifiche per mansione
+// ── Rotazione risposta corretta: ciclo A→B→C→D ──────────────────────────
+function ruotaRisposte(risposte, posTarget) {
+  // posTarget: 0=A, 1=B, 2=C, 3=D
+  const LETTERE = ['A','B','C','D'];
+  const idxCorretta = risposte.findIndex(r => r.corretta);
+  if (idxCorretta === posTarget) return risposte; // già in posizione
+  const res = [...risposte];
+  // Scambia corretta con quella in posTarget
+  [res[idxCorretta], res[posTarget]] = [res[posTarget], res[idxCorretta]];
+  // Ri-assegna lettere A/B/C/D in ordine
+  return res.map((r, i) => ({ ...r, lettera: LETTERE[i] }));
+}
+
 function domandeSpecifiche(mansione) {
   const domande = [];
   let n = 1;
+  let qIdx = 0; // contatore per rotazione risposta corretta
   mansione.rischi.forEach(r => {
-    domande.push({d:`${n++}. Quale DPI è specificamente richiesto per il rischio "${r.nome}"?`,r:[
+    domande.push({d:`${n++}. Quale DPI è specificamente richiesto per il rischio "${r.nome}"?`,r: ruotaRisposte([
       {lettera:'A',testo:r.dpi[0]||'Nessun DPI specifico',corretta:true},
       {lettera:'B',testo:'Otoprotettori',corretta:false},
       {lettera:'C',testo:'Maschera antigas integrale',corretta:false},
       {lettera:'D',testo:'Imbracatura anticaduta',corretta:false},
-    ]});
+    ], qIdx++ % 4)});
     if (r.misure.length > 0) {
-      domande.push({d:`${n++}. Qual è la principale misura di prevenzione per il rischio "${r.nome}"?`,r:[
+      domande.push({d:`${n++}. Qual è la principale misura di prevenzione per il rischio "${r.nome}"?`,r: ruotaRisposte([
         {lettera:'A',testo:r.misure[0],corretta:true},
         {lettera:'B',testo:'Ignorare il rischio se di breve durata',corretta:false},
         {lettera:'C',testo:'Continuare a lavorare senza interruzione',corretta:false},
         {lettera:'D',testo:'Attendere disposizioni del datore di lavoro prima di ogni azione',corretta:false},
-      ]});
+      ], qIdx++ % 4)});
     }
   });
   domande.push({d:`${n++}. In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`,r:[{lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},{lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},{lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},{lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false}]});
@@ -532,7 +546,6 @@ async function genTestGenerale(cliente) {
   ];
   return domande;
 }
-
 
 async function genTestMansione(mansione) {
   const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
