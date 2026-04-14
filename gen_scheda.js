@@ -80,7 +80,7 @@ async function genSchedaMansione(mansione) {
     borders: BDt,
     rows: [new TableRow({ children: [
       tc(new Paragraph({
-        children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 100, height: 45 } })],
+        children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
       }), { w: wL, borders: NO_BDR }),
       tc([
         p('SCHEDA MANSIONE', { sz: 18, bold: true, color: C.BLU_HEADER, align: AlignmentType.CENTER }),
@@ -256,7 +256,7 @@ async function genSchedaAddestrativa(mansione) {
   // Header: logo inline 131×29 px
   const { Header: HdrCls, Footer: FtrCls, SimpleField } = require('docx');
   const header = new HdrCls({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 131, height: 29 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 55, height: 55 } })],
   })]});
   // Footer: Pag. X right-aligned, no border
   const footer = new FtrCls({ children: [new Paragraph({

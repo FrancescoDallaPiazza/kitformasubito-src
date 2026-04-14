@@ -545,7 +545,7 @@ async function genRegistroFormIniziale(mansione) {
           width: { size: 2400, type: WidthType.DXA },
           borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 140, height: 32 } })] })],
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })] })],
         }),
         new TableCell({
           width: { size: W - 2400, type: WidthType.DXA },
@@ -740,7 +740,7 @@ async function genRegistroAggiornamento() {
           width: { size: 2400, type: WidthType.DXA },
           borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 140, height: 32 } })] })],
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })] })],
         }),
         new TableCell({
           width: { size: W - 2400, type: WidthType.DXA },

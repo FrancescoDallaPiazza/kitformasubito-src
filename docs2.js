@@ -257,7 +257,7 @@ async function genGradimento() {
       borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},insideH:{style:BorderStyle.NONE},insideV:{style:BorderStyle.NONE}},
       rows:[new TableRow({children:[
         new TableCell({width:{size:1800,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,children:[
-          new Paragraph({children:[new ImageRun({data:logoBytes,type:'jpg',transformation:{width:120,height:27}})]}),
+          new Paragraph({children:[new ImageRun({data:logoBytes,type:'jpg',transformation:{width:55,height:55}})]}),
         ]}),
         new TableCell({width:{size:W-1800,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,children:[
           new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:20,color:C.BLU_DARK})]}),
@@ -369,7 +369,7 @@ async function genAttestato(mansione) {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
   // Master: header con logo inline 164x36, footer indirizzo NO pag
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
   })]});
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
@@ -467,7 +467,7 @@ async function genAttestatiAggiornamento() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
   const wL = 2698; const wR = W - wL;
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
   })]});
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
@@ -551,7 +551,7 @@ async function genAttestatiAggiornamento() {
 async function genVerbaleVerifica() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 426 };
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
   })]});
   const footer = footerAziendaPag();
   const wL = 3539; const wR = W - wL; // 6099
@@ -680,7 +680,7 @@ async function genVerificaEfficacia() {
   const MARGIN = { top: 1134, right: 1133, bottom: 1134, left: 1134, header: 426, footer: 708 };
   // Master: header logo inline 164×36, footer indirizzo NO pag
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 164, height: 36 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
   })]});
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
