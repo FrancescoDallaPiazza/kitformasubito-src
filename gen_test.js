@@ -375,7 +375,7 @@ function domandeSpecifiche(mansione) {
     d: `${n++}. ${q.d.replace(/^\d+\.\s*/, '')}`,
     r: ruotaRisposte(q.r, qIdx++),
   }));
-  const all = [...domande, ...extra];
+  const all = [...domande, ...extra].slice(0, 30);
   // Rinumera in ordine progressivo
   return all.map((q, idx) => ({...q, d: q.d.replace(/^\d+\./, `${idx + 1}.`)}));
 }
@@ -568,7 +568,7 @@ function domandeGenerali() {
     d: `${n + i}. ${q.d.replace(/^\d+\.\s*/, '')}`,
     r: q.r,
   }));
-  const all = [...domande, ...extra];
+  const all = [...domande, ...extra].slice(0, 30);
   // Rinumera in ordine progressivo
   return all.map((q, idx) => ({...q, d: q.d.replace(/^\d+\./, `${idx + 1}.`)}));
 }
