@@ -654,7 +654,9 @@ async function genRegistroFormIniziale(mansione) {
             new TextRun({ text: 'Relatore / Docente: ', bold: true, font: FONT, size: 20 }),
             new TextRun({ text: CLIENTE.datoreLavoro, font: FONT, size: 20 }),
           ]}), { width: wL }),
-          cellaAA(new Paragraph({ children: [new TextRun({ text: ' ', font: FONT, size: 20 })] }), { width: wR }),
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Firma Relatore / Docente', bold: true, font: FONT, size: 20 }),
+          ]}), { width: wR }),
         ]}),
       ],
     }),
@@ -832,7 +834,9 @@ async function genRegistroAggiornamento() {
             new TextRun({ text: 'Relatore / Docente: ', bold: true, font: FONT, size: 20 }),
             new TextRun({ text: CLIENTE.datoreLavoro, font: FONT, size: 20 }),
           ]}), { width: wL }),
-          cellaAA(new Paragraph({ children: [new TextRun({ text: ' ', font: FONT, size: 20 })] }), { width: wR }),
+          cellaAA(new Paragraph({ children: [
+            new TextRun({ text: 'Firma Relatore / Docente', bold: true, font: FONT, size: 20 }),
+          ]}), { width: wR }),
         ]}),
       ],
     }),
