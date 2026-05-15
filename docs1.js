@@ -156,7 +156,11 @@ async function genProgettoFormativo() {
     borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
     rows: [
       new TableRow({ children: [
-        cellKV('Datore di Lavoro / RSPP:', CLIENTE.datoreLavoro, C.BLU_LIGHT),
+        cellKV(
+          CLIENTE.rspp ? 'Datore di Lavoro:' : 'Datore di Lavoro / RSPP:',
+          CLIENTE.datoreLavoro,
+          C.BLU_LIGHT
+        ),
         cellKV('Codice ATECO:', `${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`, C.BLU_LIGHT),
       ]}),
       new TableRow({ children: [
@@ -180,7 +184,12 @@ async function genProgettoFormativo() {
     ['Codice ATECO', `${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`],
     ['P.IVA / C.F.', CLIENTE.piva],
     ['Sede', CLIENTE.indirizzo],
-    ['Datore di Lavoro / RSPP', CLIENTE.datoreLavoro],
+    ...(CLIENTE.rspp
+      ? [
+          ['Datore di Lavoro', CLIENTE.datoreLavoro],
+          ['RSPP', CLIENTE.rspp],
+        ]
+      : [['Datore di Lavoro / RSPP', CLIENTE.datoreLavoro]]),
     ['Livello di rischio', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${l} (ATECO ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc})`; }).join(' / ')],
     ['Ore formazione specifica', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${m.oreSpec} ore (Rischio ${l})`; }).join(' / ')],
     ['Numero max partecipanti per sessione', '30'],
@@ -470,13 +479,16 @@ async function genProgettoFormativo() {
     N('5. SOGGETTI FORMATORI E DOCENTI', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
     new Paragraph({ children: [] }),
     tKV2([
-      ['Soggetto formatore', `${CLIENTE.datoreLavoro} – Datore di Lavoro e RSPP`],
+      ['Soggetto formatore', `${CLIENTE.datoreLavoro} – Datore di Lavoro${CLIENTE.rspp ? '' : ' e RSPP'}`],
       ['Base normativa', 'ASR 17/04/2025, Punto 2 – Parte II'],
     ]),
     new Paragraph({ children: [] }),
     tKV2([
-      ['Soggetto relatore / docente', `${CLIENTE.datoreLavoro} – Datore di Lavoro e RSPP`],
-      ['Base normativa docente', 'ASR 17/04/2025, Punto 2 – Parte II (deroga per Datore di Lavoro RSPP)'],
+      ['Soggetto relatore / docente', `${CLIENTE.datoreLavoro} – Datore di Lavoro${CLIENTE.rspp ? ' (in possesso dei requisiti ex art. 34 D.Lgs. 81/08)' : ' e RSPP'}`],
+      ...(CLIENTE.coDocente ? [['Co-docente', CLIENTE.coDocente]] : []),
+      ['Base normativa docente', CLIENTE.rspp
+        ? 'ASR 17/04/2025, Punto 2 – Parte II e D.M. 06/03/2013 (qualificazione del formatore)'
+        : 'ASR 17/04/2025, Punto 2 – Parte II (deroga per Datore di Lavoro RSPP)'],
     ]),
     new Paragraph({ children: [] }),
 
