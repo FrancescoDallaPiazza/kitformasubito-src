@@ -458,9 +458,11 @@ async function genProgettoFormativo() {
       })(),
     ] : []),
 
-    // ── 4.3 – Mostrata SOLO in modalità aggiornamento ────────────────────
+    // ── Sottocapitolo "Aggiornamento": numerazione dinamica ─────────────
+    // In modalità aggiornamento è il SOLO sottocapitolo della sezione 4 → "4.1"
+    // In modalità iniziale (futura coesistenza) segue 4.1 e 4.2 → "4.3"
     ...(MODALITA === 'aggiornamento' ? [
-      SUBSEC('4.3 – Aggiornamento della formazione specifica'),
+      SUBSEC('4.1 – Aggiornamento della formazione specifica'),
       new Paragraph({ children: [] }),
       DUR('Durata: 6 ore ogni 5 anni (Accordo Stato-Regioni 17/04/2025, Parte III).'),
       new Paragraph({ children: [] }),
