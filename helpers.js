@@ -27,6 +27,12 @@ const C = {
 const FONT = 'Gill Sans MT';
 const LOGO_PATH = '/home/claude/logo.png';
 
+// ─── MODALITÀ KIT ───────────────────────────────────────────────────────────
+// 'iniziale'      → formazione iniziale lavoratori (4h+4h / 4h+8h / 4h+12h)
+// 'aggiornamento' → aggiornamento quinquennale (6h ogni 5 anni)
+// Default: 'iniziale' per retro-compatibilità con kit storici.
+const MODALITA = 'iniziale';
+
 // ─── DEFAULT STYLES ──────────────────────────────────────────────────────────
 const docStyles = {
   default: {
@@ -550,7 +556,7 @@ const MANSIONI = [
 ];
 
 module.exports = {
-  C, FONT, CLIENTE, MANSIONI, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, logoBytes,
   docStyles, A4_P, A4_L, MARGIN_STD, MARGIN_REG,
   makeHeader, makeFooter,
   titoloSezione, corpo, rigaDati, vuoto, cella, salvaDoc,

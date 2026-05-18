@@ -4,7 +4,7 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField, LevelFormat,
-  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, MARGIN_STD,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
   makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes,
 } = h;
 
@@ -455,25 +455,22 @@ async function genProgettoFormativo() {
       return result;
     })(),
 
-    SUBSEC('4.3 – Aggiornamento della formazione specifica'),
-    new Paragraph({ children: [] }),
-    DUR('Durata: 6 ore ogni 5 anni (Accordo Stato-Regioni 17/04/2025, Parte III).'),
-    new Paragraph({ children: [] }),
-    N('Modalità: colloquio individuale o test scritto a risposta multipla.', { sz: 10 }),
-    new Paragraph({ children: [] }),
-    N('Contenuti:', { sz: 10 }),
-    LP('aggiornamento sui rischi specifici'),
-    LP('nuove normative'),
-    // PAGE BREAK [97] — nell'ultimo elemento della lista 4.3
-    new Paragraph({
-      numbering: { reference: 'bullets', level: 0 },
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { before: 4, after: 4 },
-      children: [
-        new TextRun({ text: 'cambiamenti organizzativi/produttivi.', font: FONT, size: 20 }),
-        new PageBreak(),
-      ],
-    }),
+    // ── 4.3 – Mostrata SOLO in modalità aggiornamento ────────────────────
+    ...(MODALITA === 'aggiornamento' ? [
+      SUBSEC('4.3 – Aggiornamento della formazione specifica'),
+      new Paragraph({ children: [] }),
+      DUR('Durata: 6 ore ogni 5 anni (Accordo Stato-Regioni 17/04/2025, Parte III).'),
+      new Paragraph({ children: [] }),
+      N('Modalità: colloquio individuale o test scritto a risposta multipla.', { sz: 10 }),
+      new Paragraph({ children: [] }),
+      N('Contenuti:', { sz: 10 }),
+      LP('aggiornamento sui rischi specifici'),
+      LP('nuove normative'),
+      LP('cambiamenti organizzativi/produttivi.'),
+    ] : []),
+
+    // PAGE BREAK prima della sezione 5 (sempre presente)
+    new Paragraph({ children: [new PageBreak()] }),
 
     // ── SEZIONE 5 ─────────────────────────────────────────────────────────
     N('5. SOGGETTI FORMATORI E DOCENTI', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
