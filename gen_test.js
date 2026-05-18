@@ -4,11 +4,11 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   SimpleField,
-  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, kitOutDir, docStyles, A4_P, logoBytes,
   vuoto, cella, salvaDoc,
 } = h;
 
-const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
+const OUT = kitOutDir();
 
 // W = 9638 DXA portrait content width
 

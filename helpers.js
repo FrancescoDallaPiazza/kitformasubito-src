@@ -33,6 +33,16 @@ const LOGO_PATH = '/home/claude/logo.png';
 // Default: 'iniziale' per retro-compatibilità con kit storici.
 const MODALITA = 'iniziale';
 
+// Restituisce il percorso radice del kit in funzione di MODALITA.
+// Va usato da tutti i moduli che producono file (docs1/docs2/gen_test/gen_scheda)
+// per evitare prefissi cartella hardcoded.
+function kitOutDir() {
+  const prefix = MODALITA === 'aggiornamento'
+    ? 'KIT FORMASUBITO AGGIORNAMENTO'
+    : 'KIT FORMASUBITO';
+  return `/home/claude/kit/OUT/${prefix} - ${CLIENTE.ragioneSocialeBreve}`;
+}
+
 // ─── DEFAULT STYLES ──────────────────────────────────────────────────────────
 const docStyles = {
   default: {
@@ -556,7 +566,7 @@ const MANSIONI = [
 ];
 
 module.exports = {
-  C, FONT, CLIENTE, MANSIONI, MODALITA, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, logoBytes,
   docStyles, A4_P, A4_L, MARGIN_STD, MARGIN_REG,
   makeHeader, makeFooter,
   titoloSezione, corpo, rigaDati, vuoto, cella, salvaDoc,

@@ -3,11 +3,11 @@ const h = require('./helpers');
 const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign, PageOrientation,
-  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, A4_L, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, kitOutDir, docStyles, A4_P, A4_L, logoBytes,
   vuoto, cella, salvaDoc,
 } = h;
 
-const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
+const OUT = kitOutDir();
 
 const BD = {top:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},bottom:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},left:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},right:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'}};
 const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};

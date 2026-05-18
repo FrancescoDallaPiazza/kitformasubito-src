@@ -4,11 +4,11 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField,
-  C, FONT, CLIENTE, MANSIONI, docStyles, A4_P, MARGIN_STD, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, docStyles, A4_P, MARGIN_STD, logoBytes,
   makeHeader, makeFooter, vuoto, cella, salvaDoc,
 } = h;
 
-const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
+const OUT = kitOutDir();
 const W = 9638;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -239,7 +239,10 @@ async function genColloquio(mansione) {
     headers:{default:header},footers:{default:footer},
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/01. AGGIORNAMENTO/Colloquio_${mansione.id}.docx`);
+  const colloquioSubdir = MODALITA === 'aggiornamento'
+    ? '03 - COLLOQUI DI APPRENDIMENTO'
+    : '03 - TEST FINALI DI APPRENDIMENTO/01. AGGIORNAMENTO';
+  await salvaDoc(doc, `${OUT}/${colloquioSubdir}/Colloquio_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -4,14 +4,14 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField, LevelFormat,
-  C, FONT, CLIENTE, MANSIONI, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
+  C, FONT, CLIENTE, MANSIONI, kitOutDir, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
   makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes,
 } = h;
 
 // Import aggiuntivi
 const { PageBreak, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType, TextWrappingSide } = require('docx');
 
-const OUT = `/home/claude/kit/OUT/KIT FORMASUBITO - ${CLIENTE.ragioneSocialeBreve}`;
+const OUT = kitOutDir();
 
 // ── helpers locali ─────────────────────────────────────────────────────────
 const BD = {
@@ -406,54 +406,57 @@ async function genProgettoFormativo() {
     N('4. STRUTTURA DEL CORSO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
     new Paragraph({ children: [] }),
 
-    SUBSEC('4.1 – Formazione Generale'),
-    new Paragraph({ children: [] }),
-    DUR('Durata: 4 ore – Costituisce credito formativo permanente'),
-    new Paragraph({ children: [] }),
-    N('Sono trattati i seguenti argomenti:', { sz: 10 }),
-    new Paragraph({ children: [] }),
-    LP('Concetti di pericolo, rischio e danno (1 ora)'),
-    LP('Prevenzione e protezione (1 ora)'),
-    LP('Organizzazione della prevenzione aziendale e sistema di partecipazione dei lavoratori (1 ora)'),
-    LP('Diritti, doveri e sanzioni dei vari soggetti aziendali; organi di vigilanza, controllo e assistenza (1 ora)'),
-    new Paragraph({ children: [] }),
-    new Paragraph({ children: [] }),
+    // ── 4.1 e 4.2 – Mostrate SOLO in modalità iniziale ───────────────────
+    ...(MODALITA !== 'aggiornamento' ? [
+      SUBSEC('4.1 – Formazione Generale'),
+      new Paragraph({ children: [] }),
+      DUR('Durata: 4 ore – Costituisce credito formativo permanente'),
+      new Paragraph({ children: [] }),
+      N('Sono trattati i seguenti argomenti:', { sz: 10 }),
+      new Paragraph({ children: [] }),
+      LP('Concetti di pericolo, rischio e danno (1 ora)'),
+      LP('Prevenzione e protezione (1 ora)'),
+      LP('Organizzazione della prevenzione aziendale e sistema di partecipazione dei lavoratori (1 ora)'),
+      LP('Diritti, doveri e sanzioni dei vari soggetti aziendali; organi di vigilanza, controllo e assistenza (1 ora)'),
+      new Paragraph({ children: [] }),
+      new Paragraph({ children: [] }),
 
-    SUBSEC('4.2 – Formazione Specifica dei Rischi'),
-    new Paragraph({ children: [] }),
-    // Per ogni livello di rischio distinto tra le mansioni
-    ...(() => {
-      const result = [];
-      livelli.forEach(livello => {
-        const mansioniLiv = MANSIONI.filter(m => m.livello === livello);
-        const oreSpec = mansioniLiv[0].oreSpec;
-        const rischiUnici = [...new Set(mansioniLiv.flatMap(m => m.rischi.map(r => r.nome)))];
-        // Riga mansione/i prima della durata (solo se ci sono più livelli distinti)
-        if (livelli.length > 1) {
-          const nomiMansioni = mansioniLiv.map(m => m.nome.toUpperCase()).join(' / ');
-          result.push(new Paragraph({
-            alignment: AlignmentType.JUSTIFIED,
-            spacing: { before: 6*20, after: 0 },
-            children: [new TextRun({ text: `Mansione: ${nomiMansioni}`, bold: true, font: FONT, size: 20, color: C.ROSSO })],
-          }));
-        }
-        result.push(DUR(`Durata: ${oreSpec} ore – Settore a rischio ${livello} (ATECO ${CLIENTE.atecoCodice})`));
-        result.push(new Paragraph({ children: [] }));
-        result.push(N('La formazione specifica è mirata ai rischi effettivamente presenti nel luogo di lavoro, identificati dalla valutazione dei rischi aziendale (DVR). Per ogni mansione sono trattati i rischi specifici della postazione lavorativa:', { sz: 10 }));
-        result.push(new Paragraph({ children: [] }));
-        result.push(MOD(`Modulo Specifico – Rischio ${livello} (${oreSpec} ore)`));
-        rischiUnici.forEach(r => result.push(LP(r)));
-        result.push(LP('DPI: tipologie, scelta, uso e manutenzione'));
-        result.push(LP('Segnaletica di sicurezza'));
-        result.push(LP('Prevenzione incendi ed evacuazione'));
-        result.push(LP('Segnaletica'));
-        result.push(LP('Procedure organizzative per il primo soccorso'));
-        result.push(LP('Stress lavoro correlato'));
-        result.push(LP('Incidenti, mancati infortuni'));
-        result.push(new Paragraph({ children: [] }));
-      });
-      return result;
-    })(),
+      SUBSEC('4.2 – Formazione Specifica dei Rischi'),
+      new Paragraph({ children: [] }),
+      // Per ogni livello di rischio distinto tra le mansioni
+      ...(() => {
+        const result = [];
+        livelli.forEach(livello => {
+          const mansioniLiv = MANSIONI.filter(m => m.livello === livello);
+          const oreSpec = mansioniLiv[0].oreSpec;
+          const rischiUnici = [...new Set(mansioniLiv.flatMap(m => m.rischi.map(r => r.nome)))];
+          // Riga mansione/i prima della durata (solo se ci sono più livelli distinti)
+          if (livelli.length > 1) {
+            const nomiMansioni = mansioniLiv.map(m => m.nome.toUpperCase()).join(' / ');
+            result.push(new Paragraph({
+              alignment: AlignmentType.JUSTIFIED,
+              spacing: { before: 6*20, after: 0 },
+              children: [new TextRun({ text: `Mansione: ${nomiMansioni}`, bold: true, font: FONT, size: 20, color: C.ROSSO })],
+            }));
+          }
+          result.push(DUR(`Durata: ${oreSpec} ore – Settore a rischio ${livello} (ATECO ${CLIENTE.atecoCodice})`));
+          result.push(new Paragraph({ children: [] }));
+          result.push(N('La formazione specifica è mirata ai rischi effettivamente presenti nel luogo di lavoro, identificati dalla valutazione dei rischi aziendale (DVR). Per ogni mansione sono trattati i rischi specifici della postazione lavorativa:', { sz: 10 }));
+          result.push(new Paragraph({ children: [] }));
+          result.push(MOD(`Modulo Specifico – Rischio ${livello} (${oreSpec} ore)`));
+          rischiUnici.forEach(r => result.push(LP(r)));
+          result.push(LP('DPI: tipologie, scelta, uso e manutenzione'));
+          result.push(LP('Segnaletica di sicurezza'));
+          result.push(LP('Prevenzione incendi ed evacuazione'));
+          result.push(LP('Segnaletica'));
+          result.push(LP('Procedure organizzative per il primo soccorso'));
+          result.push(LP('Stress lavoro correlato'));
+          result.push(LP('Incidenti, mancati infortuni'));
+          result.push(new Paragraph({ children: [] }));
+        });
+        return result;
+      })(),
+    ] : []),
 
     // ── 4.3 – Mostrata SOLO in modalità aggiornamento ────────────────────
     ...(MODALITA === 'aggiornamento' ? [
