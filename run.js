@@ -110,6 +110,31 @@ async function mainAggiornamento() {
 }
 
 async function main() {
+  // ─── PRE-FLIGHT CHECK: 30 domande minime per mansione (SKILL §3.5) ────
+  // Conta auto + extra per ciascuna mansione e fallisce se qualcuna è < 30.
+  // Questo intercetta lo skip dello STEP 3.5b della SKILL (definizione quizExtra
+  // in helpers.js): senza quizExtra, i test specifici hanno solo 2×rischi+3
+  // domande, ben sotto il minimo normativo previsto dall'ASR 17/04/2025.
+  if (MODALITA === 'iniziale' || MODALITA === undefined) {
+    const errori = [];
+    for (const m of MANSIONI) {
+      const auto = 2 * m.rischi.length + 3;
+      const extra = (m.quizExtra || []).length;
+      const totale = auto + extra;
+      if (totale < 30) {
+        errori.push(`  ✗ ${m.id.padEnd(15)} ${m.rischi.length}r → ${auto}auto + ${extra}extra = ${totale} (servono ≥ 30)`);
+      }
+    }
+    if (errori.length > 0) {
+      console.error('\n⛔ PRE-FLIGHT CHECK FALLITO — Test specifici sotto le 30 domande minime (SKILL §3.5):');
+      errori.forEach(e => console.error(e));
+      console.error('\nAzione: torna allo STEP 3.5b della SKILL kitformasubito e popola il campo quizExtra');
+      console.error('per le mansioni indicate. Vedi /mnt/skills/user/kitformasubito/SKILL.md righe 411-580.\n');
+      process.exit(1);
+    }
+    console.log(`✓ Pre-flight check: ${MANSIONI.length} mansioni raggiungono ≥ 30 domande`);
+  }
+
   // Pulisco OUT da eventuali residui di run precedenti per evitare di mischiare
   // documenti di iniziale e aggiornamento.
   try { execSync(`rm -rf "${OUT}"`); } catch (_) {}
@@ -126,7 +151,12 @@ async function main() {
   console.log('\n📦 Creazione ZIP...');
   const nomeZip = NOME_BREVE.replace(/[^a-zA-Z0-9]/g, '_');
   const zipPrefix = MODALITA === 'aggiornamento' ? 'KIT_FORMASUBITO_AGGIORNAMENTO' : 'KIT_FORMASUBITO';
-  execSync(`cd /home/claude/kit/OUT && zip -r "/mnt/user-data/outputs/${zipPrefix}_${nomeZip}.zip" "${KIT_FOLDER_PREFIX} - ${NOME_BREVE}" -q`);
+  const zipPath = `/mnt/user-data/outputs/${zipPrefix}_${nomeZip}.zip`;
+  // Rimuovo eventuale ZIP precedente: 'zip -r' fa append agli archivi esistenti
+  // mantenendo i vecchi entry — comportamento indesiderato se la struttura cartelle
+  // del kit è cambiata tra una run e l'altra.
+  try { execSync(`rm -f "${zipPath}"`); } catch (_) {}
+  execSync(`cd /home/claude/kit/OUT && zip -r "${zipPath}" "${KIT_FOLDER_PREFIX} - ${NOME_BREVE}" -q`);
 
   console.log('\n═══════════════════════════════════════════════════');
   console.log('  ✅ KIT FORMASUBITO COMPLETATO!');
