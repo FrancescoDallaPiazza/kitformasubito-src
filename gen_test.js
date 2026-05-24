@@ -778,9 +778,9 @@ async function genTestGenerale(cliente) {
   }
 
   const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(false)}]});
-  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_Formazione_Generale.docx`);
+  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Generale/Test_Formazione_Generale.docx`);
   const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(true)}]});
-  await salvaDoc(docD, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_Formazione_Generale DOCENTE.docx`);
+  await salvaDoc(docD, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Generale/Test_Formazione_Generale DOCENTE.docx`);
 }
 
 
@@ -807,9 +807,9 @@ async function genTestMansione(mansione) {
   }
 
   const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(false)}]});
-  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Specifica/Test_${mansione.id}.docx`);
   const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(true)}]});
-  await salvaDoc(docD, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/00. GENERALE E SPECIFICA/Test_${mansione.id} DOCENTE.docx`);
+  await salvaDoc(docD, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Specifica/Test_${mansione.id} DOCENTE.docx`);
 }
 
 module.exports = { genTestGenerale, genTestMansione };
