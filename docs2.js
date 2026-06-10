@@ -679,6 +679,82 @@ async function genVerbaleVerifica() {
 // NO header, footer azienda (no pag), una sezione per mansione nello stesso doc
 // Tabella valutazione 11x4, col widths precisi dal modello
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Coniuga un verbo dall'infinito alla 3ª persona singolare presente indicativo.
+// Serve a trasformare le misure di prevenzione (scritte all'infinito, es.
+// "Utilizzare…", "Mantenere…", "Garantire…") in criteri di osservazione
+// comportamentali corretti ("Il lavoratore utilizza…", "…mantiene…", "…garantisce…").
+// Ritorna null se non riesce a coniugare con sicurezza → il chiamante usa un fallback.
+function _coniuga3sing(infRaw) {
+  if (!infRaw) return null;
+  const w = infRaw.toLowerCase().replace(/[^a-zà-ù]/g, '');
+  // Irregolari frequenti nelle misure di sicurezza (chiave = infinito completo)
+  const IRREG = {
+    essere:'è', avere:'ha', fare:'fa', dare:'dà', stare:'sta', andare:'va',
+    sapere:'sa', potere:'può', dovere:'deve', volere:'vuole', rimanere:'rimane',
+    tenere:'tiene', mantenere:'mantiene', contenere:'contiene', sostenere:'sostiene',
+    trattenere:'trattiene', ottenere:'ottiene', astenere:'astiene', appartenere:'appartiene',
+    venire:'viene', provenire:'proviene', intervenire:'interviene', prevenire:'previene', svenire:'sviene',
+    porre:'pone', riporre:'ripone', disporre:'dispone', esporre:'espone', comporre:'compone',
+    apporre:'appone', sovrapporre:'sovrappone', imporre:'impone', proporre:'propone', frapporre:'frappone',
+    salire:'sale', uscire:'esce', riuscire:'riesce',
+    scegliere:'sceglie', raccogliere:'raccoglie', accogliere:'accoglie', togliere:'toglie',
+    cogliere:'coglie', spegnere:'spegne', rimanere:'rimane',
+    condurre:'conduce', produrre:'produce', tradurre:'traduce', ridurre:'riduce', introdurre:'introduce',
+    trarre:'trae', bere:'beve', dire:'dice', contraddire:'contraddice', disdire:'disdice',
+  };
+  if (IRREG[w]) return IRREG[w];
+  // Verbi in -ire che NON prendono l'infisso -isc- (modello "apre/segue")
+  const IRE_PURI = new Set([
+    'aprire','coprire','scoprire','ricoprire','riaprire',
+    'offrire','soffrire',
+    'seguire','eseguire','conseguire','inseguire','proseguire',
+    'sentire','consentire','acconsentire','presentire','risentire','assentire',
+    'servire','vestire','svestire','rivestire','investire',
+    'dormire','partire','ripartire','spartire',
+    'avvertire','divertire','convertire','invertire','pervertire',
+    'bollire','cucire','fuggire','sfuggire','nutrire',
+  ]);
+  if (w.length < 4) return null;
+  if (w.endsWith('care') || w.endsWith('gare')) return w.slice(0, -3) + 'a'; // verifica/collega: ortografia OK alla 3ª sing
+  if (w.endsWith('are')) return w.slice(0, -3) + 'a';
+  if (w.endsWith('ere')) return w.slice(0, -3) + 'e';
+  if (w.endsWith('ire')) return IRE_PURI.has(w) ? w.slice(0, -3) + 'e' : w.slice(0, -3) + 'isce';
+  return null;
+}
+
+// Costruisce il criterio di osservazione comportamentale a partire da una misura.
+// Gestisce la negazione iniziale ("Non …" → "non …"). Se non riesce a coniugare
+// il verbo, restituisce null così il chiamante può ripiegare su una forma sicura.
+function _criterioDaMisura(misura) {
+  if (!misura) return null;
+  const tokens = String(misura).trim().split(/\s+/);
+  let neg = '', idx = 0;
+  if (tokens[0] && tokens[0].toLowerCase() === 'non') { neg = 'non '; idx = 1; }
+  const conj = _coniuga3sing(tokens[idx]);
+  if (!conj) return null;
+  const resto = tokens.slice(idx + 1).join(' ');
+  let frase = `Il lavoratore ${neg}${conj}${resto ? ' ' + resto : ''}`;
+  // Secondo passaggio: coniuga i verbi COORDINATI che seguono una congiunzione
+  // (es. "…mantiene… e conoscere…" → "…e conosce…", "…alterna… e fare…" → "…e fa…").
+  // Sostantivi/aggettivi che escono in -are/-ere/-ire e potrebbero seguire la
+  // congiunzione vengono esclusi per evitare di "coniugarli" per errore.
+  const NON_VERBI = new Set([
+    'mare','gare','fiere','altare','telare','solare','lineare','militare','nucleare',
+    'particolare','popolare','familiare','cellulare','circolare','secolare','molare','polare',
+    'genere','carattere','mestiere','cratere','etere','cantiere','quartiere','sentiere',
+    'infermiere','pompiere','benessere','malessere','parere','piacere','dispiacere','severe',
+  ]);
+  frase = frase.replace(/(\s(?:e|ed|o|od)\s+|;\s+)([a-zà-ù]{4,})/gi, (full, cong, parola) => {
+    const low = parola.toLowerCase();
+    if (NON_VERBI.has(low)) return full;
+    const c = _coniuga3sing(low);
+    return c ? `${cong}${c}` : full;
+  });
+  frase = frase.replace(/\s+([?.,;:])/g, '$1').trim();
+  return `${frase}?`;
+}
+
 async function genVerificaEfficacia() {
   const MARGIN = { top: 1134, right: 1133, bottom: 1134, left: 1134, header: 426, footer: 708 };
   // Master: header logo inline 164×36, footer indirizzo NO pag
@@ -700,12 +776,18 @@ async function genVerificaEfficacia() {
 
 
     // 10 voci fisse dai rischi della mansione (+ trasversali)
-    const voceFromRischio = (r) => ({
-      voce: r.nome,
-      criterio: r.misure && r.misure[0]
-        ? `Il lavoratore ${r.misure[0].charAt(0).toLowerCase()}${r.misure[0].slice(1)}?`
-        : `Il lavoratore applica correttamente le misure di prevenzione per ${r.nome.toLowerCase()}?`,
-    });
+    const voceFromRischio = (r) => {
+      let criterio;
+      if (r.misure && r.misure[0]) {
+        // Verbo della misura coniugato alla 3ª sing. ("Il lavoratore utilizza…").
+        // Fallback sicuro: cita la misura tra virgolette, così non si emette mai un infinito grezzo.
+        criterio = _criterioDaMisura(r.misure[0])
+          || `Il lavoratore rispetta la misura: «${r.misure[0]}»?`;
+      } else {
+        criterio = `Il lavoratore applica correttamente le misure di prevenzione per ${r.nome.toLowerCase()}?`;
+      }
+      return { voce: r.nome, criterio };
+    };
     const voceBase = mansione.rischi.map(voceFromRischio);
     const voceTraversali = [
       {voce:'Movimentazione carichi', criterio:`Il lavoratore utilizza la tecnica corretta per sollevare e spostare carichi, piegando le ginocchia e mantenendo la schiena dritta?`},
