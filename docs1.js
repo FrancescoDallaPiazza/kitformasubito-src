@@ -11,6 +11,15 @@ const {
 // undefined se helpers.js non la esporta → guardia difensiva nei punti d'uso.
 const REGIONALE = h.REGIONALE;
 
+// ── DOCENZA (STEP 1 della skill) ──────────────────────────────────────────────
+// formatoreEsterno valorizzato → docente esterno qualificato ex D.I. 06/03/2013;
+// vuoto → docenza del Datore di Lavoro che svolge il ruolo di RSPP (default).
+function isFormExt() { return !!(CLIENTE.formatoreEsterno && CLIENTE.formatoreEsterno.trim()); }
+function docenteDescr() {
+  if (isFormExt()) return `${CLIENTE.formatoreEsterno.trim()} – Formatore qualificato ai sensi del D.I. 06/03/2013`;
+  return `${CLIENTE.datoreLavoro} – Datore di Lavoro${CLIENTE.rspp ? ' (in possesso dei requisiti ex art. 34 D.Lgs. 81/08)' : ' e RSPP'}`;
+}
+
 // Import aggiuntivi
 const { PageBreak, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType, TextWrappingSide } = require('docx');
 
@@ -326,9 +335,13 @@ async function genProgettoFormativo() {
 
     // ── SEZIONE 1 ─────────────────────────────────────────────────────────
     N('1. PREFAZIONE AL PROGETTO FORMATIVO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
-    SUB('Formazione del Datore di Lavoro che svolge il ruolo di RSPP'),
+    SUB(isFormExt()
+      ? 'Formazione organizzata dal Datore di Lavoro ed erogata da formatore qualificato (D.I. 06/03/2013)'
+      : 'Formazione del Datore di Lavoro che svolge il ruolo di RSPP'),
     new Paragraph({ children: [] }),
-    N('Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro adottato dal Datore di Lavoro che svolge direttamente il ruolo di Responsabile del Servizio di Prevenzione e Protezione (RSPP).', { sz: 10 }),
+    N(isFormExt()
+      ? 'Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro adottato dal Datore di Lavoro, che ne riveste il ruolo di soggetto formatore ai sensi dell\'art. 37 c. 2 del D.Lgs. 81/2008, con docenza affidata a formatore in possesso dei requisiti di qualificazione di cui al D.I. 06/03/2013.'
+      : 'Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro adottato dal Datore di Lavoro che svolge direttamente il ruolo di Responsabile del Servizio di Prevenzione e Protezione (RSPP).', { sz: 10 }),
     new Paragraph({ children: [] }),
     N('La progettazione della formazione è stata sviluppata in conformità al D.Lgs. 81/2008 e s.m.i., nonché agli indirizzi introdotti dall\'Accordo Stato-Regioni del 17 aprile 2025 (entrato in vigore il 24 maggio 2025), che rafforzano il principio secondo cui la formazione non deve essere considerata un adempimento formale, ma uno strumento operativo e funzionale alla gestione reale dei rischi aziendali.', { sz: 10 }),
     new Paragraph({ children: [] }),
@@ -349,7 +362,9 @@ async function genProgettoFormativo() {
     LP('alle modifiche organizzative o produttive dell\'azienda;'),
     LP('all\'esito delle verifiche di efficacia della formazione e degli eventi infortunistici o dei mancati infortuni.'),
     new Paragraph({ children: [] }),
-    N('Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo e una costante presenza del Datore di lavoro RSPP negli interventi formativi e addestrativi del proprio personale.', { sz: 10 }),
+    N(isFormExt()
+      ? 'Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo, avvalendosi di formatori qualificati ai sensi del D.I. 06/03/2013 per l\'erogazione degli interventi formativi e addestrativi del proprio personale.'
+      : 'Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo e una costante presenza del Datore di lavoro RSPP negli interventi formativi e addestrativi del proprio personale.', { sz: 10 }),
     new Paragraph({ children: [] }),
 
     // PAGE BREAK [36] — paragrafo vuoto con pagebreak e spaziatura 14/6
@@ -501,11 +516,13 @@ async function genProgettoFormativo() {
     ]),
     new Paragraph({ children: [] }),
     tKV2([
-      ['Soggetto relatore / docente', `${CLIENTE.datoreLavoro} – Datore di Lavoro${CLIENTE.rspp ? ' (in possesso dei requisiti ex art. 34 D.Lgs. 81/08)' : ' e RSPP'}`],
+      ['Soggetto relatore / docente', docenteDescr()],
       ...(CLIENTE.coDocente ? [['Co-docente', CLIENTE.coDocente]] : []),
-      ['Base normativa docente', CLIENTE.rspp
-        ? 'ASR 17/04/2025, Punto 2 – Parte II e D.M. 06/03/2013 (qualificazione del formatore)'
-        : 'ASR 17/04/2025, Punto 2 – Parte II (deroga per Datore di Lavoro RSPP)'],
+      ['Base normativa docente', isFormExt()
+        ? 'ASR 17/04/2025, Punto 2 – Parte II e D.I. 06/03/2013 (qualificazione del formatore esterno)'
+        : (CLIENTE.rspp
+          ? 'ASR 17/04/2025, Punto 2 – Parte II e D.M. 06/03/2013 (qualificazione del formatore)'
+          : 'ASR 17/04/2025, Punto 2 – Parte II (deroga per Datore di Lavoro RSPP)')],
     ]),
     new Paragraph({ children: [] }),
 

@@ -11,6 +11,14 @@ const {
 const OUT = kitOutDir();
 const W = 9638;
 
+// ── DOCENZA (STEP 1 della skill) ──────────────────────────────────────────────
+// formatoreEsterno valorizzato → docente esterno qualificato ex D.I. 06/03/2013;
+// vuoto → docenza del Datore di Lavoro che svolge il ruolo di RSPP (default).
+function isFormExt() { return !!(CLIENTE.formatoreEsterno && CLIENTE.formatoreEsterno.trim()); }
+function docenteNome() { return isFormExt() ? CLIENTE.formatoreEsterno.trim() : CLIENTE.datoreLavoro; }
+function docenteQualifica() { return isFormExt() ? 'Formatore qualificato ai sensi del D.I. 06/03/2013' : 'Datore di Lavoro / RSPP'; }
+function firmaRelatoreLabel() { return isFormExt() ? 'Firma del Relatore / Docente' : 'Firma del Relatore / Datore di Lavoro / RSPP'; }
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 const BD = {top:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:1,color:'CCCCCC'}};
 const NO = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
@@ -183,8 +191,8 @@ async function genColloquio(mansione) {
     gapSez,
     kvTable([
       ['Denominazione', CLIENTE.ragioneSociale],
-      ['Docente', CLIENTE.datoreLavoro],
-      ['Qualifica', 'Datore di Lavoro / RSPP'],
+      ['Docente', docenteNome()],
+      ['Qualifica', docenteQualifica()],
     ]),
     gapTbl,
 
@@ -397,7 +405,7 @@ async function genAttestato(mansione) {
     width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
     borders:{top:BF.top,bottom:BF.bottom,left:BF.left,right:BF.right,insideH:BF.top,insideV:BF.left},
     rows:[
-      new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol('Firma del Relatore / Datore di Lavoro / RSPP')]}),
+      new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol(firmaRelatoreLabel())]}),
       new TableRow({children:[firmaVuota(), firmaVuota()]}),
     ],
   });
@@ -494,7 +502,7 @@ async function genAttestatiAggiornamento() {
     width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
     borders:{top:BF.top,bottom:BF.bottom,left:BF.left,right:BF.right,insideH:BF.top,insideV:BF.left},
     rows:[
-      new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol('Firma del Relatore / Datore di Lavoro / RSPP')]}),
+      new TableRow({children:[firmaCol('Firma del Soggetto Formatore / Datore di Lavoro'), firmaCol(firmaRelatoreLabel())]}),
       new TableRow({children:[firmaVuota(), firmaVuota()]}),
     ],
   });
@@ -627,7 +635,7 @@ async function genVerbaleVerifica() {
         ['Denominazione',CLIENTE.ragioneSociale],
         ['Codice Fiscale / P.IVA',CLIENTE.piva],
         ['Responsabile progetto formativo',CLIENTE.datoreLavoro],
-        ['Soggetto Formatore / Docente',`${CLIENTE.datoreLavoro} – Datore di Lavoro / RSPP`],
+        ['Soggetto Formatore / Docente','Per la ditta'],
       ].map(([k,v]) => new TableRow({children:[cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),cella(v,{width:wR,color:'000000'})]})),
     }),
     vuoto(30),
