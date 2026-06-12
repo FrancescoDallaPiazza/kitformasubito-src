@@ -44,6 +44,41 @@ function kitOutDir() {
 }
 
 // ─── DEFAULT STYLES ──────────────────────────────────────────────────────────
+// --- NUMERAZIONE CARTELLE (mode-aware) ---
+// In modalita' 'iniziale' lo slot 01 e' SCHEDE MANSIONI; in 'aggiornamento' le
+// schede non esistono, quindi le cartelle successive scalano di una posizione
+// per evitare il buco di numerazione (00 -> 02). Ogni generatore ricava il nome
+// di cartella tramite fld(<chiave logica>): cosi' lo stesso codice condiviso fra
+// le due modalita' produce la numerazione corretta per ciascuna.
+const FOLDER_MAP = {
+  iniziale: {
+    progetto:     '00 - PROGETTO FORMATIVO',
+    schede:       '01 - SCHEDE MANSIONI',
+    registro:     '02 - REGISTRO PRESENZE',
+    test:         '03 - TEST FINALI DI APPRENDIMENTO',
+    colloqui:     '03 - TEST FINALI DI APPRENDIMENTO/01. AGGIORNAMENTO',
+    questionario: '04 - QUESTIONARIO GRADIMENTO',
+    attestati:    '05 - ATTESTATI',
+    verbale:      '06 - VERBALE VERIFICA',
+    efficacia:    '07 - VERIFICA EFFICACIA',
+  },
+  aggiornamento: {
+    progetto:     '00 - PROGETTO FORMATIVO',
+    registro:     '01 - REGISTRO PRESENZE',
+    colloqui:     '02 - COLLOQUI DI APPRENDIMENTO',
+    questionario: '03 - QUESTIONARIO GRADIMENTO',
+    attestati:    '04 - ATTESTATI',
+    verbale:      '05 - VERBALE VERIFICA',
+    efficacia:    '06 - VERIFICA EFFICACIA',
+  },
+};
+function fld(key) {
+  const m = FOLDER_MAP[MODALITA] || FOLDER_MAP.iniziale;
+  const v = m[key];
+  if (!v) throw new Error("fld(): chiave cartella sconosciuta '" + key + "' per modalita' '" + MODALITA + "'");
+  return v;
+}
+
 const docStyles = {
   default: {
     document: { run: { font: FONT, size: 22 } }
@@ -566,7 +601,7 @@ const MANSIONI = [
 ];
 
 module.exports = {
-  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, fld, logoBytes,
   docStyles, A4_P, A4_L, MARGIN_STD, MARGIN_REG,
   makeHeader, makeFooter,
   titoloSezione, corpo, rigaDati, vuoto, cella, salvaDoc,

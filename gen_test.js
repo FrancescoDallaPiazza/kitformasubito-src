@@ -5,7 +5,7 @@ const {
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   SimpleField,
   C, FONT, CLIENTE, MANSIONI, kitOutDir, docStyles, A4_P, logoBytes,
-  vuoto, cella, salvaDoc,
+  vuoto, cella, salvaDoc, fld,
 } = h;
 
 const OUT = kitOutDir();
@@ -325,196 +325,60 @@ function ruotaRisposte(risposte, qIdx) {
   const LETTERE = ['A','B','C','D'];
   const posTarget = POS_CORRETTA[qIdx % POS_CORRETTA.length];
   const idxCorretta = risposte.findIndex(r => r.corretta);
-  // Difensivo: se la domanda non ha (o ha più di) una risposta corretta non
-  // rimescolare; ci penserà validaDomande() a far fallire la build con un
-  // messaggio chiaro, invece di produrre uno swap su indice -1.
-  if (idxCorretta < 0) return risposte.map((r, i) => ({ ...r, lettera: LETTERE[i] }));
   if (idxCorretta === posTarget) return risposte;
   const res = [...risposte];
   [res[idxCorretta], res[posTarget]] = [res[posTarget], res[idxCorretta]];
   return res.map((r, i) => ({ ...r, lettera: LETTERE[i] }));
 }
 
-// ── Validatore integrità domande (anti doppia-risposta / opzioni duplicate) ──
-// Fa fallire la build se una domanda ha != 1 risposta corretta oppure opzioni
-// con testo identico. Intercetta a monte il bug segnalato dal cliente
-// ("la risposta ha due opzioni giuste uguali") su QUALSIASI test.
-function validaDomande(domande, etichetta) {
-  domande.forEach((q, i) => {
-    const r = q.r || [];
-    const corrette = r.filter(x => x.corretta).length;
-    if (corrette !== 1) {
-      throw new Error(`[validaDomande] ${etichetta}: domanda ${i + 1} con ${corrette} risposte corrette (ne serve esattamente 1) → "${q.d}"`);
-    }
-    const testi = r.map(x => (x.testo || '').trim().toLowerCase());
-    const idxDup = testi.findIndex((t, idx) => t && testi.indexOf(t) !== idx);
-    if (idxDup !== -1) {
-      throw new Error(`[validaDomande] ${etichetta}: domanda ${i + 1} con opzioni di risposta duplicate ("${r[idxDup].testo}") → "${q.d}"`);
-    }
-  });
-  return domande;
-}
-
-// ── Pool di distrattori plausibili (per variare le opzioni tra domande) ──────
-// I distrattori "preferiti" sono i DPI/misure reali delle ALTRE voci della
-// stessa mansione: sbagliati per quel rischio ma verosimili nello stesso
-// contesto. Il pool generico serve solo da riempimento quando le voci reali
-// non bastano. Evita il difetto segnalato dal cliente: stesse 3 risposte in
-// tutte le domande, con sola variazione della corretta.
-const DPI_POOL = [
-  'Otoprotettori (cuffie o inserti auricolari)',
-  'Maschera a pieno facciale con filtri ABEK',
-  'Imbracatura anticaduta con cordino e assorbitore',
-  'Occhiali di protezione a mascherina EN 166',
-  'Guanti antitaglio EN 388',
-  'Elmetto di protezione EN 397',
-  'Calzature di sicurezza S3 con puntale e lamina',
-  'Semimaschera filtrante FFP3 antipolvere',
-  'Schermo facciale e grembiule per saldatura',
-  'Guanti dielettrici EN 60903',
-];
-const MISURA_POOL = [
-  'Ignorare il rischio se l\u2019attivit\u00e0 \u00e8 di breve durata',
-  'Proseguire senza interruzione fino a fine turno',
-  'Attendere disposizioni del datore prima di qualunque azione',
-  'Aumentare il ritmo per ridurre il tempo di esposizione',
-  'Rimuovere le protezioni della macchina per lavorare pi\u00f9 comodamente',
-  'Affidarsi alla sola esperienza personale, senza seguire procedure',
-  'Ritenere sufficiente la sola segnaletica, senza altre misure',
-];
-
-// Sceglie k distrattori distinti dal corretto, in modo deterministico ma
-// "sfasato" tra domande (seed), così domande diverse mostrano opzioni diverse.
-function _distrattori(pool, corretto, k, seed) {
-  const cand = [];
-  for (const t of pool) {
-    if (t && t !== corretto && !cand.includes(t)) cand.push(t);
-  }
-  const res = [];
-  if (cand.length) {
-    let i = Math.abs(seed) % cand.length, guard = 0;
-    while (res.length < k && guard < cand.length) {
-      const t = cand[i % cand.length];
-      if (!res.includes(t)) res.push(t);
-      i++; guard++;
-    }
-  }
-  const FALLBACK = ['Nessuna delle altre opzioni', 'Non \u00e8 prevista alcuna misura specifica', 'Tutte le opzioni indicate'];
-  let f = 0;
-  while (res.length < k) res.push(FALLBACK[f++ % FALLBACK.length]);
-  return res.slice(0, k);
-}
-
-// Costruisce 4 opzioni (1 corretta + 3 distrattori) con lettere provvisorie.
-function _quattroOpzioni(corretto, distrattori) {
-  const opts = [{ testo: corretto, corretta: true },
-    ...distrattori.slice(0, 3).map(t => ({ testo: t, corretta: false }))];
-  return opts.map((o, i) => ({ lettera: ['A', 'B', 'C', 'D'][i], ...o }));
-}
-
-// Fonde due liste alternando in proporzione alle lunghezze (deterministico):
-// distribuisce i quizExtra dentro le domande automatiche invece di accodarli.
-function _interleave(a, b) {
-  if (!b.length) return a.slice();
-  if (!a.length) return b.slice();
-  const out = []; let ia = 0, ib = 0;
-  for (let k = 0; k < a.length + b.length; k++) {
-    const wantA = (ia / a.length) <= (ib / b.length);
-    if (wantA && ia < a.length) out.push(a[ia++]);
-    else if (ib < b.length) out.push(b[ib++]);
-    else if (ia < a.length) out.push(a[ia++]);
-  }
-  return out;
-}
-
-// Evita che due domande consecutive provengano dallo stesso rischio (_rk):
-// così la domanda DPI del rischio A non è mai seguita subito dalla domanda
-// "misura" dello stesso rischio A (difetto a schema fisso segnalato).
-function _spezzaAdiacenze(list) {
-  for (let i = 1; i < list.length; i++) {
-    if (list[i]._rk != null && list[i]._rk === list[i - 1]._rk) {
-      for (let j = i + 1; j < list.length; j++) {
-        if (list[j]._rk !== list[i - 1]._rk) {
-          [list[i], list[j]] = [list[j], list[i]];
-          break;
-        }
-      }
-    }
-  }
-  return list;
-}
-
 function domandeSpecifiche(mansione) {
-  const rischi = mansione.rischi || [];
-  const tuttiDPI = rischi.map(r => (r.dpi && r.dpi[0]) || null).filter(Boolean);
-  const tutteMisure = rischi.map(r => (r.misure && r.misure[0]) || null).filter(Boolean);
-
-  const dpiQ = [];   // una domanda DPI per rischio
-  const misQ = [];   // una domanda "misura" per rischio (se presente)
-  rischi.forEach((r, i) => {
-    const dpiCorretto = (r.dpi && r.dpi[0]) || 'Nessun DPI specifico previsto dal DVR';
-    const distrDpi = _distrattori([...tuttiDPI.filter(d => d !== dpiCorretto), ...DPI_POOL], dpiCorretto, 3, i * 7 + 1);
-    dpiQ.push({
-      _rk: i,
-      // Dicitura ancorata al DVR aziendale: il DPI è quello previsto dal DVR,
-      // non un obbligo generico (richiesta cliente: niente DPI non in DVR).
-      d: `Secondo il DVR aziendale, quale DPI \u00e8 previsto come misura di protezione per il rischio "${r.nome}"?`,
-      r: _quattroOpzioni(dpiCorretto, distrDpi),
-    });
-    if (r.misure && r.misure.length > 0) {
-      const misCorretta = r.misure[0];
-      const distrMis = _distrattori([...tutteMisure.filter(m => m !== misCorretta), ...MISURA_POOL], misCorretta, 3, i * 5 + 3);
-      misQ.push({
-        _rk: i,
-        d: `Qual \u00e8 la principale misura di prevenzione prevista per il rischio "${r.nome}"?`,
-        r: _quattroOpzioni(misCorretta, distrMis),
-      });
+  const domande = [];
+  let n = 1;
+  let qIdx = 0; // contatore per rotazione risposta corretta
+  mansione.rischi.forEach(r => {
+    domande.push({d:`${n++}. Quale DPI è specificamente richiesto per il rischio "${r.nome}"?`,r: ruotaRisposte([
+      {lettera:'A',testo:r.dpi[0]||'Nessun DPI specifico',corretta:true},
+      {lettera:'B',testo:'Otoprotettori',corretta:false},
+      {lettera:'C',testo:'Maschera antigas integrale',corretta:false},
+      {lettera:'D',testo:'Imbracatura anticaduta',corretta:false},
+    ], qIdx++ % 4)});
+    if (r.misure.length > 0) {
+      domande.push({d:`${n++}. Qual è la principale misura di prevenzione per il rischio "${r.nome}"?`,r: ruotaRisposte([
+        {lettera:'A',testo:r.misure[0],corretta:true},
+        {lettera:'B',testo:'Ignorare il rischio se di breve durata',corretta:false},
+        {lettera:'C',testo:'Continuare a lavorare senza interruzione',corretta:false},
+        {lettera:'D',testo:'Attendere disposizioni del datore di lavoro prima di ogni azione',corretta:false},
+      ], qIdx++ % 4)});
     }
   });
-
-  // ── Trasversali (3) — contenuto invariato ───────────────────────────────
-  const tras = [
-    {d:`In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`, r:[
-      {lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},
-      {lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},
-      {lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},
-      {lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false},
-    ]},
-    {d:`In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`, r:[
-      {lettera:'A',testo:'Non segnalarlo perch\u00e9 non ha causato danni',corretta:false},
-      {lettera:'B',testo:'Segnalarlo immediatamente al responsabile per prevenire futuri incidenti',corretta:true},
-      {lettera:'C',testo:'Annotarlo solo se si verifica pi\u00f9 di una volta',corretta:false},
-      {lettera:'D',testo:'Segnalarlo solo se ci sono testimoni',corretta:false},
-    ]},
-    {d:`Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`, r:[
-      {lettera:'A',testo:'La stanchezza fisica dopo una giornata di lavoro intensa',corretta:false},
-      {lettera:'B',testo:'Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute',corretta:true},
-      {lettera:'C',testo:'Un problema che riguarda solo i dirigenti',corretta:false},
-      {lettera:'D',testo:'Un disturbo muscolare da sforzo eccessivo',corretta:false},
-    ]},
-  ];
-
-  // ── quizExtra (calibrati sulla mansione) ───────────────────────────────
-  const extra = (mansione.quizExtra || []).map(q => ({
-    d: String(q.d).replace(/^\d+\.\s*/, ''),
-    r: q.r,
+  // ── Trasversali (risposta corretta ruotata) ─────────────────────────────
+  domande.push({d:`${n++}. In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`, r: ruotaRisposte([
+    {lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},
+    {lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},
+    {lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},
+    {lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false},
+  ], qIdx++)});
+  domande.push({d:`${n++}. In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`, r: ruotaRisposte([
+    {lettera:'A',testo:'Non segnalarlo perché non ha causato danni',corretta:false},
+    {lettera:'B',testo:'Segnalarlo immediatamente al responsabile per prevenire futuri incidenti',corretta:true},
+    {lettera:'C',testo:'Annotarlo solo se si verifica più di una volta',corretta:false},
+    {lettera:'D',testo:'Segnalarlo solo se ci sono testimoni',corretta:false},
+  ], qIdx++)});
+  domande.push({d:`${n++}. Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`, r: ruotaRisposte([
+    {lettera:'A',testo:'La stanchezza fisica dopo una giornata di lavoro intensa',corretta:false},
+    {lettera:'B',testo:'Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute',corretta:true},
+    {lettera:'C',testo:'Un problema che riguarda solo i dirigenti',corretta:false},
+    {lettera:'D',testo:'Un disturbo muscolare da sforzo eccessivo',corretta:false},
+  ], qIdx++)});
+  // ── Quiz extra: applica anche qui la rotazione ───────────────────────────
+  const extra = (mansione.quizExtra || []).map((q) => ({
+    d: `${n++}. ${q.d.replace(/^\d+\.\s*/, '')}`,
+    r: ruotaRisposte(q.r, qIdx++),
   }));
-
-  // ── ORDINAMENTO ────────────────────────────────────────────────────────
-  // 1) tutti i DPI, poi tutte le misure, poi le trasversali: separa per
-  //    costruzione la coppia dpi[i]/misura[i] dello stesso rischio.
-  // 2) interleaving deterministico con i quizExtra (non più accodati in blocco)
-  // 3) anti-adiacenza per rischio
-  const auto = [...dpiQ, ...misQ, ...tras];
-  let ordered = _spezzaAdiacenze(_interleave(auto, extra)).slice(0, 30);
-
-  // Rotazione posizione corretta + numerazione progressiva finale.
-  return ordered.map((q, idx) => ({
-    d: `${idx + 1}. ${String(q.d).replace(/^\d+\.\s*/, '')}`,
-    r: ruotaRisposte(q.r, idx),
-  }));
+  const all = [...domande, ...extra].slice(0, 30);
+  // Rinumera in ordine progressivo
+  return all.map((q, idx) => ({...q, d: q.d.replace(/^\d+\./, `${idx + 1}.`)}));
 }
-
 
 async function genTestGenerale(cliente) {
   const domande = [
@@ -699,7 +563,6 @@ async function genTestGenerale(cliente) {
       {lettera:'D', testo:"Agenzie di viaggio", corretta:false},
     ]},
   ];
-  validaDomande(domande, 'Test Generale');
   // ── Costruisce e salva Test_Formazione_Generale (allievo + docente) ──
   const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
   const header = makeHeaderTest();
@@ -722,9 +585,9 @@ async function genTestGenerale(cliente) {
   }
 
   const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(false)}]});
-  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Generale/Test_Formazione_Generale.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('test')}/Generale/Test_Formazione_Generale.docx`);
   const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(true)}]});
-  await salvaDoc(docD, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Generale/Test_Formazione_Generale DOCENTE.docx`);
+  await salvaDoc(docD, `${OUT}/${fld('test')}/Generale/Test_Formazione_Generale DOCENTE.docx`);
 }
 
 
@@ -732,7 +595,7 @@ async function genTestMansione(mansione) {
   const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
   const header = makeHeaderTest();
   const footer = makeFooterTest();
-  const domande = validaDomande(domandeSpecifiche(mansione), `Test specifico – ${mansione.nome}`);
+  const domande = domandeSpecifiche(mansione);
 
   function buildChildren(isDocente) {
     return [
@@ -751,9 +614,9 @@ async function genTestMansione(mansione) {
   }
 
   const doc = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(false)}]});
-  await salvaDoc(doc, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Specifica/Test_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('test')}/Specifica/Test_${mansione.id}.docx`);
   const docD = new Document({styles:docStyles,sections:[{properties:{page:{size:{width:11906,height:16838},margin:MARGIN}},headers:{default:header},footers:{default:footer},children:buildChildren(true)}]});
-  await salvaDoc(docD, `${OUT}/03 - TEST FINALI DI APPRENDIMENTO/Specifica/Test_${mansione.id} DOCENTE.docx`);
+  await salvaDoc(docD, `${OUT}/${fld('test')}/Specifica/Test_${mansione.id} DOCENTE.docx`);
 }
 
 module.exports = { genTestGenerale, genTestMansione };

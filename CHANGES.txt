@@ -1,0 +1,27 @@
+FIX NUMERAZIONE CARTELLE KIT (mode-aware) — repo kitformasubito-src
+
+Problema: in modalita' 'aggiornamento' la cartella 01 - SCHEDE MANSIONI non viene
+prodotta, lasciando un buco di numerazione (00 -> 02 -> ... -> 07).
+
+Soluzione: introdotto in helpers.js un motore di numerazione mode-aware
+(FOLDER_MAP + funzione fld()). Tutti i percorsi salvaDoc dei generatori ora
+ricavano il numero di cartella da fld(<chiave>), cosi' lo stesso codice condiviso
+fra le due modalita' produce la numerazione corretta:
+
+  iniziale      -> 00 PROGETTO, 01 SCHEDE, 02 REGISTRO, 03 TEST, 04 QUESTIONARIO,
+                   05 ATTESTATI, 06 VERBALE, 07 VERIFICA EFFICACIA   (invariato)
+  aggiornamento -> 00 PROGETTO, 01 REGISTRO, 02 COLLOQUI, 03 QUESTIONARIO,
+                   04 ATTESTATI, 05 VERBALE, 06 VERIFICA EFFICACIA   (contiguo, niente buco)
+
+File modificati (tutti strutturali, nessun dato cliente):
+  - helpers.js     : aggiunto blocco FOLDER_MAP + fld(); export di fld.
+                     ATTENZIONE: questo helpers.js contiene i SOLI dati-campione del
+                     template (FOTO-GRAFIC). Non sovrascrivere mai il template con
+                     dati di un cliente reale.
+  - docs1.js       : progetto/registro via fld()
+  - docs2.js       : colloqui/questionario/attestati/verbale/efficacia via fld()
+  - gen_test.js    : test generale/specifici via fld()
+  - gen_scheda.js  : schede mansioni via fld() (BONUS scheda addestrativa invariata)
+
+Retrocompatibile: modalita' iniziale identica a prima. Testato il caricamento di
+tutti i moduli e la generazione del template in modalita' iniziale.

@@ -5,7 +5,7 @@ const {
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField,
   C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, docStyles, A4_P, MARGIN_STD, logoBytes,
-  makeHeader, makeFooter, vuoto, cella, salvaDoc,
+  makeHeader, makeFooter, vuoto, cella, salvaDoc, fld,
 } = h;
 
 const OUT = kitOutDir();
@@ -239,10 +239,7 @@ async function genColloquio(mansione) {
     headers:{default:header},footers:{default:footer},
     children,
   }]});
-  const colloquioSubdir = MODALITA === 'aggiornamento'
-    ? '03 - COLLOQUI DI APPRENDIMENTO'
-    : '03 - TEST FINALI DI APPRENDIMENTO/01. AGGIORNAMENTO';
-  await salvaDoc(doc, `${OUT}/${colloquioSubdir}/Colloquio_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('colloqui')}/Colloquio_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,7 +357,7 @@ async function genGradimento() {
     footers:{default:footer},
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/04 - QUESTIONARIO GRADIMENTO/Questionario di Gradimento.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('questionario')}/Questionario di Gradimento.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -460,7 +457,7 @@ async function genAttestato(mansione) {
     {properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children:sec1},
     {properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children:sec2},
   ]});
-  await salvaDoc(doc, `${OUT}/05 - ATTESTATI/00_Attestato_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('attestati')}/00_Attestato_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -544,7 +541,7 @@ async function genAttestatiAggiornamento() {
   const doc = new Document({styles:docStyles,sections:[{
     properties:{page:{size:A4_P,margin:MARGIN}},headers:{default:header},footers:{default:footer},children,
   }]});
-  await salvaDoc(doc, `${OUT}/05 - ATTESTATI/01_Attestato_Aggiornamento.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('attestati')}/01_Attestato_Aggiornamento.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -671,7 +668,7 @@ async function genVerbaleVerifica() {
     headers:{default:header},footers:{default:footer},
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/06 - VERBALE VERIFICA/Verbale_Verifica_Finale.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('verbale')}/Verbale_Verifica_Finale.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -872,7 +869,7 @@ async function genVerificaEfficacia() {
   }));
 
   const doc = new Document({styles:docStyles, sections});
-  await salvaDoc(doc, `${OUT}/07 - VERIFICA EFFICACIA/Verifica_Efficacia.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('efficacia')}/Verifica_Efficacia.docx`);
 }
 
 module.exports = { genColloquio, genGradimento, genAttestato, genAttestatiAggiornamento, genVerbaleVerifica, genVerificaEfficacia };

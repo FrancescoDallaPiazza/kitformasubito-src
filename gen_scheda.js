@@ -4,7 +4,7 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign, PageOrientation,
   C, FONT, CLIENTE, MANSIONI, kitOutDir, docStyles, A4_P, A4_L, logoBytes,
-  vuoto, cella, salvaDoc,
+  vuoto, cella, salvaDoc, fld,
 } = h;
 
 const OUT = kitOutDir();
@@ -238,7 +238,7 @@ async function genSchedaMansione(mansione) {
     }],
   });
 
-  await salvaDoc(doc, `${OUT}/01 - SCHEDE MANSIONI/${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('schede')}/${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

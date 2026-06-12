@@ -5,7 +5,7 @@ const {
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField, LevelFormat,
   C, FONT, CLIENTE, MANSIONI, kitOutDir, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
-  makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes,
+  makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes, fld,
 } = h;
 
 // Import aggiuntivi
@@ -522,7 +522,7 @@ async function genProgettoFormativo() {
       children,
     }],
   });
-  await salvaDoc(doc, `${OUT}/00 - PROGETTO FORMATIVO/ProgettoFormativo.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('progetto')}/ProgettoFormativo.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -721,7 +721,7 @@ async function genRegistroFormIniziale(mansione) {
     footers: { default: footer },
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/00.Registro_FormIniziale_${mansione.id}.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('registro')}/00.Registro_FormIniziale_${mansione.id}.docx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -900,7 +900,7 @@ async function genRegistroAggiornamento() {
     footers: { default: footer },
     children,
   }]});
-  await salvaDoc(doc, `${OUT}/02 - REGISTRO PRESENZE/01.Registro_Aggiornamento.docx`);
+  await salvaDoc(doc, `${OUT}/${fld('registro')}/01.Registro_Aggiornamento.docx`);
 }
 
 module.exports = { genProgettoFormativo, genRegistroFormIniziale, genRegistroAggiornamento };
