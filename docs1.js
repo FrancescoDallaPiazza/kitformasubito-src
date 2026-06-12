@@ -16,9 +16,16 @@ const REGIONALE = h.REGIONALE;
 // vuoto → docenza del Datore di Lavoro che svolge il ruolo di RSPP (default).
 function isFormExt() { return !!(CLIENTE.formatoreEsterno && CLIENTE.formatoreEsterno.trim()); }
 function docenteDescr() {
-  if (isFormExt()) return `${CLIENTE.formatoreEsterno.trim()} – Formatore qualificato ai sensi del D.I. 06/03/2013`;
+  if (isFormExt()) {
+    const q = (CLIENTE.formatoreQualifica && CLIENTE.formatoreQualifica.trim())
+      ? CLIENTE.formatoreQualifica.trim()
+      : 'Formatore qualificato ai sensi del D.I. 06/03/2013';
+    return `${CLIENTE.formatoreEsterno.trim()} – ${q}`;
+  }
   return `${CLIENTE.datoreLavoro} – Datore di Lavoro${CLIENTE.rspp ? ' (in possesso dei requisiti ex art. 34 D.Lgs. 81/08)' : ' e RSPP'}`;
 }
+// Solo nome/i del docente (per i campi "Relatore / Docente" del Registro).
+function docenteNome() { return isFormExt() ? CLIENTE.formatoreEsterno.trim() : CLIENTE.datoreLavoro; }
 
 // Import aggiuntivi
 const { PageBreak, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType, TextWrappingSide } = require('docx');
@@ -508,7 +515,7 @@ async function genProgettoFormativo() {
     ...(MODALITA === 'aggiornamento' ? [
       SUBSEC('4.1 – Aggiornamento della formazione specifica'),
       new Paragraph({ children: [] }),
-      DUR('Durata: 6 ore ogni 5 anni (Accordo Stato-Regioni 17/04/2025, Parte III).'),
+      DUR('Durata: 6 ore ogni 5 anni (Accordo Stato-Regioni 17/04/2025, Parte II, Punto 3).'),
       new Paragraph({ children: [] }),
       N('Modalità: colloquio individuale o test scritto a risposta multipla.', { sz: 10 }),
       new Paragraph({ children: [] }),
@@ -533,7 +540,9 @@ async function genProgettoFormativo() {
       ['Soggetto relatore / docente', docenteDescr()],
       ...(CLIENTE.coDocente ? [['Co-docente', CLIENTE.coDocente]] : []),
       ['Base normativa docente', isFormExt()
-        ? 'ASR 17/04/2025, Punto 2 – Parte II e D.I. 06/03/2013 (qualificazione del formatore esterno)'
+        ? ((CLIENTE.formatoreBaseNorm && CLIENTE.formatoreBaseNorm.trim())
+          ? CLIENTE.formatoreBaseNorm.trim()
+          : 'ASR 17/04/2025, Punto 2 – Parte II e D.I. 06/03/2013 (qualificazione del formatore esterno)')
         : (CLIENTE.rspp
           ? 'ASR 17/04/2025, Punto 2 – Parte II e D.M. 06/03/2013 (qualificazione del formatore)'
           : 'ASR 17/04/2025, Punto 2 – Parte II (deroga per Datore di Lavoro RSPP)')],
@@ -712,7 +721,7 @@ async function genRegistroFormIniziale(mansione) {
         new TableRow({ children: [
           cellaAA(new Paragraph({ children: [
             new TextRun({ text: 'Relatore / Docente: ', bold: true, font: FONT, size: 20 }),
-            new TextRun({ text: CLIENTE.datoreLavoro, font: FONT, size: 20 }),
+            new TextRun({ text: docenteNome(), font: FONT, size: 20 }),
           ]}), { width: wL }),
           cellaAA(new Paragraph({ children: [
             new TextRun({ text: 'Firma Relatore / Docente', bold: true, font: FONT, size: 20 }),
@@ -892,7 +901,7 @@ async function genRegistroAggiornamento() {
         new TableRow({ children: [
           cellaAA(new Paragraph({ children: [
             new TextRun({ text: 'Relatore / Docente: ', bold: true, font: FONT, size: 20 }),
-            new TextRun({ text: CLIENTE.datoreLavoro, font: FONT, size: 20 }),
+            new TextRun({ text: docenteNome(), font: FONT, size: 20 }),
           ]}), { width: wL }),
           cellaAA(new Paragraph({ children: [
             new TextRun({ text: 'Firma Relatore / Docente', bold: true, font: FONT, size: 20 }),

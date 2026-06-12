@@ -16,7 +16,7 @@ const W = 9638;
 // vuoto → docenza del Datore di Lavoro che svolge il ruolo di RSPP (default).
 function isFormExt() { return !!(CLIENTE.formatoreEsterno && CLIENTE.formatoreEsterno.trim()); }
 function docenteNome() { return isFormExt() ? CLIENTE.formatoreEsterno.trim() : CLIENTE.datoreLavoro; }
-function docenteQualifica() { return isFormExt() ? 'Formatore qualificato ai sensi del D.I. 06/03/2013' : 'Datore di Lavoro / RSPP'; }
+function docenteQualifica() { return isFormExt() ? ((CLIENTE.formatoreQualifica && CLIENTE.formatoreQualifica.trim()) ? CLIENTE.formatoreQualifica.trim() : 'Formatore qualificato ai sensi del D.I. 06/03/2013') : 'Datore di Lavoro / RSPP'; }
 function firmaRelatoreLabel() { return isFormExt() ? 'Firma del Relatore / Docente' : 'Firma del Relatore / Datore di Lavoro / RSPP'; }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
