@@ -7,6 +7,9 @@ const {
   C, FONT, CLIENTE, MANSIONI, kitOutDir, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
   makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes, fld,
 } = h;
+// Nota regionale opzionale (popolata dallo STEP 0.5 della skill in helpers.js).
+// undefined se helpers.js non la esporta → guardia difensiva nei punti d'uso.
+const REGIONALE = h.REGIONALE;
 
 // Import aggiuntivi
 const { PageBreak, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType, TextWrappingSide } = require('docx');
@@ -390,6 +393,18 @@ async function genProgettoFormativo() {
         new TextRun({ text: 'Punto 1: le indicazioni metodologiche per l\'organizzazione e la gestione dei corsi, fatta eccezione dei punti 3.2, 3.3, 3.4, 3.5, 6.3 e 7, non si applicano ai Datori di Lavoro che organizzano ed erogano autonomamente, all\'interno delle proprie aziende, la formazione sulla salute e sicurezza sul lavoro, ma esse possono trovare indicazioni utili per la gestione dei percorsi formativi di cui al presente accordo.', font: FONT, size: 20, color: '000000', italics: true }),
       ],
     }),
+
+    // ── NOTA REGIONALE (opzionale, in coda alla sez. 2 — popolata dallo STEP 0.5 della skill) ──
+    ...(REGIONALE && REGIONALE.enabled && REGIONALE.testoNota && REGIONALE.testoNota.trim() ? [
+      new Paragraph({ children: [] }),
+      SUB(`Disposizioni regionali (${REGIONALE.regione || ''})`),
+      new Paragraph({ children: [] }),
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { before: 0, after: 0 },
+        children: [new TextRun({ text: REGIONALE.testoNota, font: FONT, size: 20, color: '000000' })],
+      }),
+    ] : []),
     new Paragraph({ children: [] }),
 
     // ── SEZIONE 3 ─────────────────────────────────────────────────────────
