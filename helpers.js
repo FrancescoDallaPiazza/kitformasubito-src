@@ -88,6 +88,50 @@ const docStyles = {
 // ─── LOGO BYTES ─────────────────────────────────────────────────────────────
 const logoBytes = fs.readFileSync(LOGO_PATH);
 
+// ─── DIMENSIONI INTRINSECHE LOGO (anti-deformazione) ─────────────────────────
+// Legge le dimensioni native (px) dal buffer dell'immagine senza dipendenze npm.
+// Supporta PNG, JPEG, GIF. Ritorna {w,h} oppure null se non riconosciuto.
+function _imgSize(buf) {
+  if (!buf || buf.length < 10) return null;
+  // PNG: signature 0x89 'PNG'… poi IHDR width/height (BE) a offset 16/20
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+    return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+  }
+  // GIF: 'GIF', width/height (LE) a offset 6/8
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) {
+    return { w: buf.readUInt16LE(6), h: buf.readUInt16LE(8) };
+  }
+  // JPEG: scansione marker SOFn per height/width (BE)
+  if (buf[0] === 0xFF && buf[1] === 0xD8) {
+    let off = 2;
+    while (off + 9 < buf.length) {
+      if (buf[off] !== 0xFF) { off++; continue; }
+      let marker = buf[off + 1];
+      while (marker === 0xFF && off + 1 < buf.length) { off++; marker = buf[off + 1]; }
+      // SOF0..SOF15 (0xC0–0xCF) escluso DHT(0xC4), JPG(0xC8), DAC(0xCC)
+      if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+        if (off + 7 >= buf.length) break;
+        return { h: buf.readUInt16BE(off + 5), w: buf.readUInt16BE(off + 7) };
+      }
+      if (off + 3 >= buf.length) break;
+      off += 2 + buf.readUInt16BE(off + 2);
+    }
+  }
+  return null;
+}
+
+// Calcola {width,height} in px per inserire il logo dentro la bounding box
+// maxW×maxH PRESERVANDO le proporzioni native (niente schiacciamento).
+// Se le dimensioni non sono leggibili, fallback prudente alla box quadrata vecchia.
+function logoFit(maxW, maxH) {
+  const sz = _imgSize(logoBytes);
+  if (!sz || !sz.w || !sz.h) return { width: maxW, height: maxH };
+  const r = sz.w / sz.h;
+  let w = maxW, h = Math.round(maxW / r);
+  if (h > maxH) { h = maxH; w = Math.round(maxH * r); }
+  return { width: Math.max(1, w), height: Math.max(1, h) };
+}
+
 // ─── HEADER ─────────────────────────────────────────────────────────────────
 function makeHeader(ragioneSociale, titoloDoc, atecoCodice, atecoDesc) {
   const tbl = new Table({
@@ -112,7 +156,7 @@ function makeHeader(ragioneSociale, titoloDoc, atecoCodice, atecoDesc) {
               alignment: AlignmentType.LEFT,
               children: [new ImageRun({
                 data: logoBytes, type: 'jpg',
-                transformation: { width: 70, height: 70 },
+                transformation: logoFit(160, 70),
               })],
             })],
           }),
@@ -601,7 +645,7 @@ const MANSIONI = [
 ];
 
 module.exports = {
-  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, fld, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, fld, logoBytes, logoFit,
   docStyles, A4_P, A4_L, MARGIN_STD, MARGIN_REG,
   makeHeader, makeFooter,
   titoloSezione, corpo, rigaDati, vuoto, cella, salvaDoc,

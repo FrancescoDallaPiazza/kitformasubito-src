@@ -4,7 +4,7 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   SimpleField,
-  C, FONT, CLIENTE, MANSIONI, kitOutDir, docStyles, A4_P, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, kitOutDir, docStyles, A4_P, logoBytes, logoFit,
   vuoto, cella, salvaDoc, fld,
 } = h;
 
@@ -19,7 +19,7 @@ function makeHeaderTest() {
       children: [new ImageRun({
         data: logoBytes,
         type: 'jpg',
-        transformation: { width: 70, height: 70 },
+        transformation: logoFit(160, 70),
       })],
     })],
   });

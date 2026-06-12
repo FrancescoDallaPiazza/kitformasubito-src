@@ -4,7 +4,7 @@ const {
   Document, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField,
-  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, docStyles, A4_P, MARGIN_STD, logoBytes,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, docStyles, A4_P, MARGIN_STD, logoBytes, logoFit,
   makeHeader, makeFooter, vuoto, cella, salvaDoc, fld,
 } = h;
 
@@ -265,7 +265,7 @@ async function genGradimento() {
       borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},insideH:{style:BorderStyle.NONE},insideV:{style:BorderStyle.NONE}},
       rows:[new TableRow({children:[
         new TableCell({width:{size:1800,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,children:[
-          new Paragraph({children:[new ImageRun({data:logoBytes,type:'jpg',transformation:{width:55,height:55}})]}),
+          new Paragraph({children:[new ImageRun({data:logoBytes,type:'jpg',transformation:logoFit(164,60)})]}),
         ]}),
         new TableCell({width:{size:W-1800,type:WidthType.DXA},borders:NO,verticalAlign:VerticalAlign.CENTER,children:[
           new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:20,color:C.BLU_DARK})]}),
@@ -377,7 +377,7 @@ async function genAttestato(mansione) {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
   // Master: header con logo inline 164x36, footer indirizzo NO pag
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(164, 60) })],
   })]});
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
@@ -475,7 +475,7 @@ async function genAttestatiAggiornamento() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 708, footer: 708 };
   const wL = 2698; const wR = W - wL;
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(164, 60) })],
   })]});
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
@@ -559,7 +559,7 @@ async function genAttestatiAggiornamento() {
 async function genVerbaleVerifica() {
   const MARGIN = { top: 1134, right: 1134, bottom: 1134, left: 1134, header: 426 };
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(164, 60) })],
   })]});
   const footer = footerAziendaPag();
   const wL = 3539; const wR = W - wL; // 6099
@@ -764,7 +764,7 @@ async function genVerificaEfficacia() {
   const MARGIN = { top: 1134, right: 1133, bottom: 1134, left: 1134, header: 426, footer: 708 };
   // Master: header logo inline 164×36, footer indirizzo NO pag
   const header = new Header({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })],
+    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(164, 60) })],
   })]});
   const footer = new Footer({ children: [new Paragraph({
     border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: '2E75B6' } },
@@ -806,9 +806,8 @@ async function genVerificaEfficacia() {
     const voci = vociAll.slice(0, 10);
     // Col widths valutazione calibrate sul numero voci e sulla mansione
     const wVoce = 3000;
-    const wNote = 1238;
     const wEs_m = 1600;
-    const wCrit = W - wVoce - wEs_m - wNote; // adatta criterio al layout
+    const wCrit = W - wVoce - wEs_m; // 3 colonne: Voce | Criterio di osservazione | Esito
 
     const tableFirme = new Table({
       width:{size:W,type:WidthType.DXA}, columnWidths:[wFirma,wFirma],
@@ -840,14 +839,13 @@ async function genVerificaEfficacia() {
       }),
       vuoto(20),
       new Paragraph({spacing:{before:160,after:80},children:[new TextRun({text:`VALUTAZIONE COMPORTAMENTALE – MANSIONE: ${mansione.nome.toUpperCase()}`,bold:true,font:FONT,color:C.BLU_DARK})]}),
-      new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wVoce,wCrit,wEs_m,wNote],
+      new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wVoce,wCrit,wEs_m],
         borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
         rows:[
           new TableRow({tableHeader:true,children:[
             cella('Voce',{width:wVoce,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
             cella('Criterio di osservazione',{width:wCrit,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
             cella('Esito',{width:wEs_m,bold:true,fill:C.BLU_HEADER,color:C.BIANCO,align:'center'}),
-            cella('Note',{width:wNote,bold:true,fill:C.BLU_HEADER,color:C.BIANCO}),
           ]}),
           ...voci.map((v,i) => new TableRow({height:{value:650,rule:'atLeast'},children:[
             cella(v.voce,{width:wVoce}),
@@ -856,7 +854,6 @@ async function genVerificaEfficacia() {
               new Paragraph({children:[new TextRun({text:'☐ Adeguato',font:FONT,size:18})]}),
               new Paragraph({children:[new TextRun({text:'☐ Non adeguato',font:FONT,size:18})]}),
             ]}),
-            cella('',{width:wNote}),
           ]})),
         ],
       }),

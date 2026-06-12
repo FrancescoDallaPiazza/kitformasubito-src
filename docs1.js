@@ -5,7 +5,7 @@ const {
   Header, Footer, AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign,
   TabStopType, SimpleField, LevelFormat,
   C, FONT, CLIENTE, MANSIONI, kitOutDir, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
-  makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes, fld,
+  makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes, logoFit, fld,
 } = h;
 // Nota regionale opzionale (popolata dallo STEP 0.5 della skill in helpers.js).
 // undefined se helpers.js non la esporta → guardia difensiva nei punti d'uso.
@@ -203,11 +203,15 @@ async function genProgettoFormativo() {
         ]
       : [['Datore di Lavoro / RSPP', CLIENTE.datoreLavoro]]),
     ['Livello di rischio', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${l} (ATECO ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc})`; }).join(' / ')],
-    ['Ore formazione specifica', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${m.oreSpec} ore (Rischio ${l})`; }).join(' / ')],
+    ...(MODALITA === 'aggiornamento'
+      ? [['Ore formazione aggiornamento', '6 ore']]
+      : [['Ore formazione specifica', livelli.map(l => { const m = MANSIONI.find(m2=>m2.livello===l); return `${m.oreSpec} ore (Rischio ${l})`; }).join(' / ')]]),
     ['Numero max partecipanti per sessione', '30'],
     ['Soglia di presenza minima', '90% delle ore previste'],
     ['Metodologia didattica', 'Lezioni frontali sul campo ed esempi pratici'],
-    ['Verifica finale', 'Test a risposta multipla – superamento con almeno 70% di risposte corrette'],
+    ['Verifica finale', MODALITA === 'aggiornamento'
+      ? 'Colloquio individuale'
+      : 'Test a risposta multipla – superamento con almeno 70% di risposte corrette'],
   ];
   const keyFills = ['D5E8F0','EBF3FB'];
   const valFills = ['FFFFFF','F2F2F2'];
@@ -233,24 +237,31 @@ async function genProgettoFormativo() {
     ]})),
   });
 
-  // ── MANSIONI TABLE 3×4 ───────────────────────────────────────────────
-  const wM = 3680; const wR = 2980; const wL2 = 1840; const wO = W - wM - wR - wL2;
+  // ── MANSIONI TABLE — 4 col (iniziale) / 2 col MANSIONE|REPARTO (aggiornamento) ──
+  const _agg = MODALITA === 'aggiornamento';
+  const wL2 = 1840; const wO = W - 3680 - 2980 - wL2;
+  const wM = _agg ? 3200 : 3680;
+  const wR = _agg ? (W - 3200) : 2980;
   const mansioniTable = new Table({
     width: { size: W, type: WidthType.DXA },
-    columnWidths: [wM, wR, wL2, wO],
+    columnWidths: _agg ? [wM, wR] : [wM, wR, wL2, wO],
     borders: { top: BD.top, bottom: BD.bottom, left: BD.left, right: BD.right, insideH: BD.top, insideV: BD.top },
     rows: [
       new TableRow({ tableHeader: true, children: [
         cella('MANSIONE', { width: wM, bold: true, fill: C.BLU_HEADER, color: C.BIANCO }),
         cella('REPARTO', { width: wR, bold: true, fill: C.BLU_HEADER, color: C.BIANCO }),
-        cella('LIVELLO RISCHIO', { width: wL2, bold: true, fill: C.BLU_HEADER, color: C.BIANCO, align: 'center' }),
-        cella('ORE TOT.', { width: wO, bold: true, fill: C.BLU_HEADER, color: C.BIANCO, align: 'center' }),
+        ...(_agg ? [] : [
+          cella('LIVELLO RISCHIO', { width: wL2, bold: true, fill: C.BLU_HEADER, color: C.BIANCO, align: 'center' }),
+          cella('ORE TOT.', { width: wO, bold: true, fill: C.BLU_HEADER, color: C.BIANCO, align: 'center' }),
+        ]),
       ]}),
       ...MANSIONI.map(m => new TableRow({ children: [
         cella(m.nome, { width: wM }),
         cella(m.reparto, { width: wR }),
-        cella(m.livello, { width: wL2, bold: true, fill: livFill[m.livello] || C.VERDE, color: C.BIANCO, align: 'center' }),
-        cella(`${m.oreSpec + 4}h`, { width: wO, align: 'center' }),
+        ...(_agg ? [] : [
+          cella(m.livello, { width: wL2, bold: true, fill: livFill[m.livello] || C.VERDE, color: C.BIANCO, align: 'center' }),
+          cella(`${m.oreSpec + 4}h`, { width: wO, align: 'center' }),
+        ]),
       ]})),
     ],
   });
@@ -318,6 +329,9 @@ async function genProgettoFormativo() {
           margins: { top: 80, bottom: 80, left: 120, right: 120 }, borders: BD,
           children: [
             new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: [new TextRun({ text: 'PROGETTO FORMATIVO AZIENDALE', bold: true, font: FONT, size: 26, color: C.BIANCO })] }),
+            ...(MODALITA === 'aggiornamento' ? [
+              new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: [new TextRun({ text: 'AGGIORNAMENTO FORMAZIONE SPECIFICA LAVORATORI', bold: true, font: FONT, size: 22, color: C.BIANCO })] }),
+            ] : []),
             new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 20 }, children: [new TextRun({ text: 'Formazione sulla Salute e Sicurezza sul Lavoro', font: FONT, size: 22, color: 'D5E8F0' })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 0 }, children: [new TextRun({ text: 'D.Lgs. 81/2008 e s.m.i. – Accordo Stato-Regioni 17/04/2025', font: FONT, size: 20, color: 'D5E8F0' })] }),
           ],
@@ -591,7 +605,7 @@ async function genRegistroFormIniziale(mansione) {
           width: { size: 2400, type: WidthType.DXA },
           borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })] })],
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(150, 64) })] })],
         }),
         new TableCell({
           width: { size: W - 2400, type: WidthType.DXA },
@@ -788,7 +802,7 @@ async function genRegistroAggiornamento() {
           width: { size: 2400, type: WidthType.DXA },
           borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: { width: 60, height: 60 } })] })],
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(150, 64) })] })],
         }),
         new TableCell({
           width: { size: W - 2400, type: WidthType.DXA },
