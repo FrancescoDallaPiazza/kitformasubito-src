@@ -107,7 +107,7 @@ function makeQuestion(domanda, risposte, isDocente) {
           shading:corrFill?{fill:corrFill,type:ShadingType.CLEAR}:undefined,
           margins:{top:80,bottom:80,left:120,right:120},
           borders:BD,
-          children:[new Paragraph({children:[new TextRun({text:isDocente&&r.corretta?`${r.testo}  ✓`:r.testo,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
+          children:[new Paragraph({children:[new TextRun({text:r.testo,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
         }),
       ]});
     }),
@@ -331,53 +331,138 @@ function ruotaRisposte(risposte, qIdx) {
   return res.map((r, i) => ({ ...r, lettera: LETTERE[i] }));
 }
 
-function domandeSpecifiche(mansione) {
-  const domande = [];
-  let n = 1;
-  let qIdx = 0; // contatore per rotazione risposta corretta
-  mansione.rischi.forEach(r => {
-    domande.push({d:`${n++}. Quale DPI è specificamente richiesto per il rischio "${r.nome}"?`,r: ruotaRisposte([
-      {lettera:'A',testo:r.dpi[0]||'Nessun DPI specifico',corretta:true},
-      {lettera:'B',testo:'Otoprotettori',corretta:false},
-      {lettera:'C',testo:'Maschera antigas integrale',corretta:false},
-      {lettera:'D',testo:'Imbracatura anticaduta',corretta:false},
-    ], qIdx++ % 4)});
-    if (r.misure.length > 0) {
-      domande.push({d:`${n++}. Qual è la principale misura di prevenzione per il rischio "${r.nome}"?`,r: ruotaRisposte([
-        {lettera:'A',testo:r.misure[0],corretta:true},
-        {lettera:'B',testo:'Ignorare il rischio se di breve durata',corretta:false},
-        {lettera:'C',testo:'Continuare a lavorare senza interruzione',corretta:false},
-        {lettera:'D',testo:'Attendere disposizioni del datore di lavoro prima di ogni azione',corretta:false},
-      ], qIdx++ % 4)});
-    }
+// ── v4.0: pool distrattori + helper per i test specifici ─────────────────────
+const _DPI_POOL = [
+  "Otoprotettori (cuffie o inserti auricolari)",
+  "Casco di protezione (UNI EN 397)",
+  "Imbracatura anticaduta (UNI EN 361)",
+  "Maschera a pieno facciale con filtri (UNI EN 136)",
+  "Gilet ad alta visibilita' (UNI EN ISO 20471)",
+  "Grembiule di protezione resistente",
+  "Ginocchiere di protezione",
+  "Schermo facciale di protezione",
+];
+const _MIS_POOL = [
+  "Ignorare il rischio se l'attivita' e' di breve durata",
+  "Proseguire l'attivita' senza alcuna interruzione",
+  "Attendere disposizioni del datore di lavoro prima di qualsiasi azione",
+  "Rimuovere le protezioni per lavorare piu' rapidamente",
+  "Affidarsi esclusivamente all'esperienza personale",
+  "Intervenire solo dopo che si e' verificato un infortunio",
+  "Segnalare il problema soltanto a fine turno",
+];
+
+function _pickDistrattori(corretta, pool, offset, n) {
+  const cand = [];
+  const seen = new Set([String(corretta || "").trim().toLowerCase()]);
+  const P = pool.filter(Boolean);
+  for (let k = 0; k < P.length && cand.length < n; k++) {
+    const item = P[(offset + k) % P.length];
+    const key = item.trim().toLowerCase();
+    if (!seen.has(key)) { seen.add(key); cand.push(item); }
+  }
+  return cand;
+}
+
+function _spezzaAdiacenze(domande) {
+  const out = [];
+  const pool = [...domande];
+  let lastTag = null;
+  while (pool.length) {
+    let idx = pool.findIndex(q => q._r == null || q._r !== lastTag);
+    if (idx === -1) idx = 0;
+    const [q] = pool.splice(idx, 1);
+    out.push(q);
+    lastTag = q._r;
+  }
+  return out;
+}
+
+function _interlaccia(base, extra) {
+  if (!extra.length) return base;
+  const out = [];
+  const ratio = base.length / extra.length;
+  let ei = 0, soglia = ratio;
+  for (let i = 0; i < base.length; i++) {
+    out.push(base[i]);
+    while (ei < extra.length && (i + 1) >= soglia) { out.push(extra[ei++]); soglia += ratio; }
+  }
+  while (ei < extra.length) out.push(extra[ei++]);
+  return out;
+}
+
+function _opzioni(corretta, distr) {
+  const arr = [{ testo: corretta, corretta: true }, ...distr.slice(0, 3).map(t => ({ testo: t, corretta: false }))];
+  return arr.map((o, i) => ({ lettera: "ABCD"[i], ...o }));
+}
+
+function _domandeTemplateDaRischi(mansione) {
+  const rischi = mansione.rischi;
+  const dpiQs = rischi.map((r, ri) => {
+    const corretta = (r.dpi && r.dpi[0]) ? r.dpi[0] : "Nessun DPI specifico previsto dal DVR";
+    const altri = rischi.filter((_, j) => j !== ri).map(x => (x.dpi && x.dpi[0]) ? x.dpi[0] : null).filter(Boolean);
+    let distr = _pickDistrattori(corretta, [...altri, ..._DPI_POOL], ri + 1, 3);
+    while (distr.length < 3) distr.push(_DPI_POOL[(ri + distr.length + 1) % _DPI_POOL.length]);
+    return { _r: ri, d: `Secondo il DVR aziendale, quale DPI e' previsto come misura di protezione per il rischio "${r.nome}"?`, r: _opzioni(corretta, distr) };
   });
-  // ── Trasversali (risposta corretta ruotata) ─────────────────────────────
-  domande.push({d:`${n++}. In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`, r: ruotaRisposte([
-    {lettera:'A',testo:'Continuare a lavorare e segnalare a fine turno',corretta:false},
-    {lettera:'B',testo:'Informare immediatamente il responsabile e ricevere le cure necessarie',corretta:true},
-    {lettera:'C',testo:'Recarsi autonomamente in ospedale senza avvisare nessuno',corretta:false},
-    {lettera:'D',testo:'Compilare il registro presenze e proseguire',corretta:false},
-  ], qIdx++)});
-  domande.push({d:`${n++}. In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`, r: ruotaRisposte([
-    {lettera:'A',testo:'Non segnalarlo perché non ha causato danni',corretta:false},
-    {lettera:'B',testo:'Segnalarlo immediatamente al responsabile per prevenire futuri incidenti',corretta:true},
-    {lettera:'C',testo:'Annotarlo solo se si verifica più di una volta',corretta:false},
-    {lettera:'D',testo:'Segnalarlo solo se ci sono testimoni',corretta:false},
-  ], qIdx++)});
-  domande.push({d:`${n++}. Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`, r: ruotaRisposte([
-    {lettera:'A',testo:'La stanchezza fisica dopo una giornata di lavoro intensa',corretta:false},
-    {lettera:'B',testo:'Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute',corretta:true},
-    {lettera:'C',testo:'Un problema che riguarda solo i dirigenti',corretta:false},
-    {lettera:'D',testo:'Un disturbo muscolare da sforzo eccessivo',corretta:false},
-  ], qIdx++)});
-  // ── Quiz extra: applica anche qui la rotazione ───────────────────────────
-  const extra = (mansione.quizExtra || []).map((q) => ({
-    d: `${n++}. ${q.d.replace(/^\d+\.\s*/, '')}`,
-    r: ruotaRisposte(q.r, qIdx++),
+  const misQs = rischi.map((r, ri) => {
+    if (!r.misure || r.misure.length === 0) return null;
+    const corretta = r.misure[0];
+    const altri = rischi.filter((_, j) => j !== ri).map(x => (x.misure && x.misure[0]) ? x.misure[0] : null).filter(Boolean);
+    let distr = _pickDistrattori(corretta, [...altri, ..._MIS_POOL], ri + 2, 3);
+    while (distr.length < 3) distr.push(_MIS_POOL[(ri + distr.length + 2) % _MIS_POOL.length]);
+    return { _r: ri, d: `Qual e' la principale misura di prevenzione per il rischio "${r.nome}"?`, r: _opzioni(corretta, distr) };
+  }).filter(Boolean);
+  const trasv = [
+    { _r: null, d: `In caso di infortunio durante la mansione di ${mansione.nome}, il lavoratore deve:`, r: [
+      {lettera:"A",testo:"Continuare a lavorare e segnalare a fine turno",corretta:false},
+      {lettera:"B",testo:"Informare immediatamente il responsabile e ricevere le cure necessarie",corretta:true},
+      {lettera:"C",testo:"Recarsi autonomamente in ospedale senza avvisare nessuno",corretta:false},
+      {lettera:"D",testo:"Compilare il registro presenze e proseguire",corretta:false},
+    ]},
+    { _r: null, d: `In caso di mancato infortunio (near miss) nella mansione di ${mansione.nome}, il lavoratore deve:`, r: [
+      {lettera:"A",testo:"Non segnalarlo perche' non ha causato danni",corretta:false},
+      {lettera:"B",testo:"Segnalarlo immediatamente al responsabile per prevenire futuri incidenti",corretta:true},
+      {lettera:"C",testo:"Annotarlo solo se si verifica piu' di una volta",corretta:false},
+      {lettera:"D",testo:"Segnalarlo solo se ci sono testimoni",corretta:false},
+    ]},
+    { _r: null, d: `Cosa si intende per stress lavoro-correlato nella mansione di ${mansione.nome}?`, r: [
+      {lettera:"A",testo:"La stanchezza fisica dopo una giornata di lavoro intensa",corretta:false},
+      {lettera:"B",testo:"Una condizione derivante da fattori di rischio psicosociali che possono nuocere alla salute",corretta:true},
+      {lettera:"C",testo:"Un problema che riguarda solo i dirigenti",corretta:false},
+      {lettera:"D",testo:"Un disturbo muscolare da sforzo eccessivo",corretta:false},
+    ]},
+  ];
+  return [...dpiQs, ...misQs, ...trasv];
+}
+
+function domandeSpecifiche(mansione) {
+  // Banco autorale (quizExtra): domande variate e non schematiche ancorate ai
+  // rischi del DVR. Il template per-rischio resta solo come riempimento se il
+  // banco autorale non raggiunge le 30 domande.
+  const authored = (mansione.quizExtra || []).map((q, i) => ({
+    _r: "a" + i,
+    d: q.d.replace(/^\d+\.\s*/, ""),
+    r: q.r.map(o => ({ ...o })),
   }));
-  const all = [...domande, ...extra].slice(0, 30);
-  // Rinumera in ordine progressivo
-  return all.map((q, idx) => ({...q, d: q.d.replace(/^\d+\./, `${idx + 1}.`)}));
+  let all;
+  if (authored.length >= 30) {
+    all = authored.slice(0, 30);
+  } else {
+    all = _spezzaAdiacenze(_interlaccia(authored, _domandeTemplateDaRischi(mansione))).slice(0, 30);
+  }
+  all = all.map((q, idx) => ({ d: (idx + 1) + ". " + q.d, r: ruotaRisposte(q.r, idx) }));
+  return all;
+}
+
+function validaDomande(domande, contesto) {
+  domande.forEach((q, i) => {
+    const nc = q.r.filter(o => o.corretta).length;
+    if (nc !== 1) throw new Error("[validaDomande] " + contesto + ": domanda " + (i + 1) + " ha " + nc + " risposte corrette (atteso 1)");
+    const testi = q.r.map(o => String(o.testo || "").trim().toLowerCase());
+    if (new Set(testi).size !== testi.length) throw new Error("[validaDomande] " + contesto + ": domanda " + (i + 1) + " ha opzioni con testo duplicato");
+  });
+  return domande;
 }
 
 async function genTestGenerale(cliente) {
@@ -563,6 +648,7 @@ async function genTestGenerale(cliente) {
       {lettera:'D', testo:"Agenzie di viaggio", corretta:false},
     ]},
   ];
+  validaDomande(domande, 'Test Generale');
   // ── Costruisce e salva Test_Formazione_Generale (allievo + docente) ──
   const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
   const header = makeHeaderTest();
@@ -595,7 +681,7 @@ async function genTestMansione(mansione) {
   const MARGIN = { top: 709, right: 1134, bottom: 1134, left: 1134 };
   const header = makeHeaderTest();
   const footer = makeFooterTest();
-  const domande = domandeSpecifiche(mansione);
+  const domande = validaDomande(domandeSpecifiche(mansione), 'Test ' + mansione.id);
 
   function buildChildren(isDocente) {
     return [
