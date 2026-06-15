@@ -17,7 +17,7 @@ const OUT = `/home/claude/kit/OUT/${KIT_FOLDER_PREFIX} - ${NOME_BREVE}`;
 // per la Scheda Addestrativa, che viene generata per UNA sola mansione.
 function mansionePiuRischiosa() {
   const score = { BASSO: 1, MEDIO: 2, ALTO: 3 };
-  return MANSIONI.reduce((a, b) => (score[b.livello] || 0) >= (score[a.livello] || 0) ? b : a);
+  return MANSIONI.reduce((a, b) => (score[b.livello] || 0) > (score[a.livello] || 0) ? b : a);
 }
 
 async function mainIniziale() {
