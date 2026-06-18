@@ -356,17 +356,17 @@ async function genProgettoFormativo() {
 
     // ── SEZIONE 1 ─────────────────────────────────────────────────────────
     N('1. PREFAZIONE AL PROGETTO FORMATIVO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
-    SUB(isFormExt()
-      ? 'Formazione organizzata dal Datore di Lavoro ed erogata da formatore qualificato (D.I. 06/03/2013)'
-      : 'Formazione del Datore di Lavoro che svolge il ruolo di RSPP'),
+    SUB('Formazione organizzata direttamente dal Datore di Lavoro quale soggetto formatore'),
     new Paragraph({ children: [] }),
-    N(isFormExt()
-      ? 'Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro adottato dal Datore di Lavoro, che ne riveste il ruolo di soggetto formatore ai sensi dell\'art. 37 c. 2 del D.Lgs. 81/2008, con docenza affidata a formatore in possesso dei requisiti di qualificazione di cui al D.I. 06/03/2013.'
-      : 'Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro adottato dal Datore di Lavoro che svolge direttamente il ruolo di Responsabile del Servizio di Prevenzione e Protezione (RSPP).', { sz: 10 }),
+    N('Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro che il Datore di Lavoro organizza direttamente nei confronti dei propri lavoratori, preposti e dirigenti, in qualità di soggetto formatore ai sensi dell\'art. 37, comma 2, del D.Lgs. 81/2008.', { sz: 10 }),
     new Paragraph({ children: [] }),
     N('La progettazione della formazione è stata sviluppata in conformità al D.Lgs. 81/2008 e s.m.i., nonché agli indirizzi introdotti dall\'Accordo Stato-Regioni del 17 aprile 2025 (entrato in vigore il 24 maggio 2025), che rafforzano il principio secondo cui la formazione non deve essere considerata un adempimento formale, ma uno strumento operativo e funzionale alla gestione reale dei rischi aziendali.', { sz: 10 }),
     new Paragraph({ children: [] }),
-    N('In tale contesto, il Datore di Lavoro assume un ruolo centrale non solo come destinatario della formazione, ma anche come soggetto responsabile della pianificazione, organizzazione e verifica del processo formativo, garantendo che i contenuti siano coerenti con:', { sz: 10 }),
+    N('In tale contesto, la docenza dei percorsi formativi può essere assicurata:', { sz: 10 }),
+    LP('direttamente dal Datore di Lavoro, qualora sia in possesso dei requisiti per lo svolgimento dei compiti del servizio di prevenzione e protezione di cui all\'art. 34 del D.Lgs. 81/2008 (Datore di Lavoro-RSPP), esclusivamente nei confronti dei propri lavoratori, preposti e dirigenti;'),
+    LP('da uno o più formatori in possesso della qualificazione prevista dal Decreto Interministeriale 06/03/2013, individuati dal Datore di Lavoro nella sua veste di soggetto organizzatore del corso.'),
+    new Paragraph({ children: [] }),
+    N('Il Datore di Lavoro assume pertanto un ruolo centrale quale soggetto responsabile della pianificazione, organizzazione, erogazione e verifica del processo formativo, garantendo che i contenuti siano coerenti con:', { sz: 10 }),
     LP('la specifica attività aziendale;'),
     LP('i rischi effettivamente presenti nei luoghi di lavoro;'),
     LP('l\'organizzazione interna e le modalità operative adottate.'),
@@ -383,9 +383,7 @@ async function genProgettoFormativo() {
     LP('alle modifiche organizzative o produttive dell\'azienda;'),
     LP('all\'esito delle verifiche di efficacia della formazione e degli eventi infortunistici o dei mancati infortuni.'),
     new Paragraph({ children: [] }),
-    N(isFormExt()
-      ? 'Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo, avvalendosi di formatori qualificati ai sensi del D.I. 06/03/2013 per l\'erogazione degli interventi formativi e addestrativi del proprio personale.'
-      : 'Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo e una costante presenza del Datore di lavoro RSPP negli interventi formativi e addestrativi del proprio personale.', { sz: 10 }),
+    N('Attraverso questo progetto, l\'azienda intende dimostrare una gestione consapevole e responsabile della formazione, orientata alla prevenzione reale dei rischi e alla tutela della salute e sicurezza dei lavoratori, nel rispetto del principio di miglioramento continuo e del costante presidio, da parte del Datore di Lavoro quale soggetto organizzatore, degli interventi formativi e addestrativi del proprio personale.', { sz: 10 }),
     new Paragraph({ children: [] }),
 
     // PAGE BREAK [36] — paragrafo vuoto con pagebreak e spaziatura 14/6
@@ -396,7 +394,7 @@ async function genProgettoFormativo() {
 
     // ── SEZIONE 2 ─────────────────────────────────────────────────────────
     N('2. RIFERIMENTO NORMATIVO', { bold: true, sz: 13, col: C.BLU_DARK, spB: 14, spA: 6 }),
-    SUB('Accordo Stato-Regioni del 17 aprile 2025 – Parte II, Punto 2 e Parte IV, Punto 1'),
+    SUB('Accordo Stato-Regioni del 17 aprile 2025 – Parte II, Punto 2 e Parte IV, Punto 1 – D.I. 06/03/2013 (qualificazione del formatore)'),
     new Paragraph({ children: [] }),
     // Paragrafo 1: "Parte II dell'Accordo – Punto 2" sottolineato + testo in corsivo
     new Paragraph({
@@ -405,7 +403,7 @@ async function genProgettoFormativo() {
       children: [
         new TextRun({ text: 'Parte II dell\'Accordo – Punto 2', font: FONT, size: 20, color: '000000', underline: { type: 'single' } }),
         new TextRun({ text: ': ', font: FONT, size: 20, color: '000000' }),
-        new TextRun({ text: 'i datori di lavoro possono organizzare direttamente i corsi di formazione ex art. 37, comma 2, del D.Lgs. n. 81/2008 nei confronti dei propri lavoratori, preposti e dirigenti, a condizione che venga rispettato quanto previsto dal presente Accordo. In questo caso il datore di lavoro riveste il ruolo di soggetto formatore cui spettano gli adempimenti del presente accordo', font: FONT, size: 20, color: '000000', italics: true }),
+        new TextRun({ text: 'i datori di lavoro possono organizzare direttamente i corsi di formazione ex art. 37, comma 2, del D.Lgs. n. 81/2008 nei confronti dei propri lavoratori, preposti e dirigenti, a condizione che venga rispettato quanto previsto dall\'Accordo Stato-Regioni 17/04/2025. In questo caso il datore di lavoro riveste il ruolo di soggetto formatore, cui spettano gli adempimenti previsti dall\'Accordo', font: FONT, size: 20, color: '000000', italics: true }),
         new TextRun({ text: '.', font: FONT, size: 20, color: '000000' }),
       ],
     }),
@@ -416,6 +414,15 @@ async function genProgettoFormativo() {
       spacing: { before: 0, after: 0 },
       children: [
         new TextRun({ text: 'Il datore di lavoro in possesso dei requisiti per lo svolgimento diretto dei compiti del servizio di prevenzione e protezione di cui all\'articolo 34 del D.Lgs. n. 81/2008, può svolgere anche in qualità di docente, esclusivamente nei riguardi dei propri lavoratori, preposti e dirigenti, la formazione di cui ai paragrafi: 2.1, 2.2 e 2.3.', font: FONT, size: 20, color: '000000', italics: true }),
+      ],
+    }),
+    new Paragraph({ children: [] }),
+    // Paragrafo 2-bis: chiarimento docenza esterna ex D.I. 06/03/2013 — commento dello studio, NON testo dell'Accordo → tondo (non corsivo)
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 0, after: 0 },
+      children: [
+        new TextRun({ text: 'Qualora il Datore di Lavoro, pur agendo quale soggetto organizzatore del corso, non svolga personalmente la docenza — ovvero non sia in possesso dei requisiti di cui all\'art. 34 del D.Lgs. 81/2008 — la formazione è affidata a formatori-docenti in possesso della qualificazione prevista dal Decreto Interministeriale 06/03/2013, che individua i criteri di qualificazione del formatore in materia di salute e sicurezza sul lavoro.', font: FONT, size: 20, color: '000000' }),
       ],
     }),
     new Paragraph({ children: [] }),
