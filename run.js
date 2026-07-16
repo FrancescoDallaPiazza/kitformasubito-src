@@ -1,10 +1,11 @@
 'use strict';
-const { MANSIONI, CLIENTE, MODALITA } = require('./helpers');
+const { MANSIONI, CLIENTE, MODALITA, logoBytes } = require('./helpers');
 const { genProgettoFormativo, genRegistroFormIniziale, genRegistroAggiornamento } = require('./docs1');
 const { genColloquio, genGradimento, genAttestato, genAttestatiAggiornamento, genVerbaleVerifica, genVerificaEfficacia } = require('./docs2');
 const { genTestGenerale, genTestMansione } = require('./gen_test');
 const { genSchedaMansione, genSchedaAddestrativa } = require('./gen_scheda');
 const { execSync } = require('child_process');
+const { analizzaLogo } = require('./logo_util');
 
 const NOME_BREVE = CLIENTE.ragioneSocialeBreve;
 // Nome della cartella radice del kit: cambia in base a MODALITA.
@@ -133,6 +134,25 @@ async function main() {
       process.exit(1);
     }
     console.log(`✓ Pre-flight check: ${MANSIONI.length} mansioni raggiungono ≥ 30 domande`);
+  }
+
+  // ── Pre-flight logo cliente ───────────────────────────────────────────────
+  // Blocca la build se il logo non lascia segno su carta bianca. Patch motivata
+  // dall'incidente del 16/07/2026: 17 documenti consegnati con il logo presente
+  // in word/media/ ma invisibile (versione "inchiostro bianco" appiattita su
+  // fondo bianco). Il controllo "il file c'è" non intercetta questo caso: qui
+  // si guarda il CONTENUTO, non i byte.
+  try {
+    const esito = analizzaLogo(logoBytes);
+    esito.warnings.forEach(w => console.log(`⚠️  Logo: ${w}`));
+    if (esito.analizzato) {
+      console.log(`✓ Pre-flight logo: tipo ${esito.tipo}, ${(esito.frazioneVisibile * 100).toFixed(1)}% di pixel visibili su fondo bianco`);
+    } else {
+      console.log(`✓ Pre-flight logo: tipo ${esito.tipo} riconosciuto`);
+    }
+  } catch (e) {
+    console.error(`\n⛔ PRE-FLIGHT CHECK FALLITO — ${e.message}\n`);
+    process.exit(1);
   }
 
   // Pulisco OUT da eventuali residui di run precedenti per evitare di mischiare

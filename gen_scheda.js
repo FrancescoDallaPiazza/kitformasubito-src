@@ -7,6 +7,10 @@ const {
   vuoto, cella, salvaDoc, fld,
 } = h;
 
+
+const { imgType } = require('./logo_util');
+const LOGO_TYPE = imgType(h.logoBytes);   // sniffato dai magic bytes, non hardcoded
+
 const OUT = kitOutDir();
 
 const BD = {top:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},bottom:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},left:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'},right:{style:BorderStyle.SINGLE,size:1,color:'BBBBBB'}};
@@ -80,7 +84,7 @@ async function genSchedaMansione(mansione) {
     borders: BDt,
     rows: [new TableRow({ children: [
       tc(new Paragraph({
-        children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(120, 56) })],
+        children: [new ImageRun({ data: logoBytes, type: LOGO_TYPE, transformation: logoFit(120, 56) })],
       }), { w: wL, borders: NO_BDR }),
       tc([
         p('SCHEDA MANSIONE', { sz: 18, bold: true, color: C.BLU_HEADER, align: AlignmentType.CENTER }),
@@ -256,7 +260,7 @@ async function genSchedaAddestrativa(mansione) {
   // Header: logo inline 131×29 px
   const { Header: HdrCls, Footer: FtrCls, SimpleField } = require('docx');
   const header = new HdrCls({ children: [new Paragraph({
-    children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(150, 55) })],
+    children: [new ImageRun({ data: logoBytes, type: LOGO_TYPE, transformation: logoFit(150, 55) })],
   })]});
   // Footer: Pag. X right-aligned, no border
   const footer = new FtrCls({ children: [new Paragraph({

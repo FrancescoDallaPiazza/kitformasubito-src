@@ -8,6 +8,10 @@ const {
   vuoto, cella, salvaDoc, fld,
 } = h;
 
+
+const { imgType } = require('./logo_util');
+const LOGO_TYPE = imgType(h.logoBytes);   // sniffato dai magic bytes, non hardcoded
+
 const OUT = kitOutDir();
 
 // W = 9638 DXA portrait content width
@@ -16,9 +20,13 @@ const OUT = kitOutDir();
 function makeHeaderTest() {
   return new Header({
     children: [new Paragraph({
+      // spacing.after: stacca il logo dal corpo del test. Senza questo valore il
+      // primo elemento della pagina (tabella domanda o risposte) risulta
+      // attaccato al bordo inferiore dell'immagine.
+      spacing: { after: 240 },
       children: [new ImageRun({
         data: logoBytes,
-        type: 'jpg',
+        type: LOGO_TYPE,
         transformation: logoFit(160, 70),
       })],
     })],
@@ -79,35 +87,45 @@ function makeQuestion(domanda, risposte, isDocente) {
   const wR = W - wL; // 9223
   const BD = {top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},bottom:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},left:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'},right:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}};
 
+  // ── Blocco domanda+risposte indivisibile fra due pagine ──────────────────
+  // Due meccanismi combinati, entrambi necessari:
+  //  • cantSplit sulla TableRow  → impedisce che la SINGOLA riga si spezzi;
+  //  • keepNext sui paragrafi    → tiene unite le righe FRA loro.
+  // keepNext va applicato a tutte le righe TRANNE l'ultima: sull'ultima
+  // incollerebbe la domanda al blocco successivo, propagandosi a catena su
+  // tutte le domande del test.
+  const nR = risposte.length;
+
   const rows = [
     // Riga 0: domanda full-width, fill D5E8F0, bold=true, sz=20, color=000000, margins 80/120
-    new TableRow({children:[
+    new TableRow({cantSplit:true,children:[
       new TableCell({
         columnSpan: 2,
         width:{size:W,type:WidthType.DXA},
         shading:{fill:C.BLU_LIGHT,type:ShadingType.CLEAR},
         margins:{top:80,bottom:80,left:120,right:120},
         borders:BD,
-        children:[new Paragraph({children:[new TextRun({text:domanda,font:FONT,size:20,bold:true,color:'000000'})]})]
+        children:[new Paragraph({keepNext:true,children:[new TextRun({text:domanda,font:FONT,size:20,bold:true,color:'000000'})]})]
       }),
     ]}),
     // Righe risposte: lettera sz=18 center color=000000, testo sz=18 color=000000, margins 80/120
-    ...risposte.map(r => {
+    ...risposte.map((r, i) => {
       const corrFill = isDocente && r.corretta ? C.VERDE : undefined;
-      return new TableRow({children:[
+      const kn = i < nR - 1;   // false solo sull'ultima risposta
+      return new TableRow({cantSplit:true,children:[
         new TableCell({
           width:{size:wL,type:WidthType.DXA},
           shading:corrFill?{fill:corrFill,type:ShadingType.CLEAR}:undefined,
           margins:{top:80,bottom:80,left:120,right:120},
           borders:BD,
-          children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:`${r.lettera}.`,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
+          children:[new Paragraph({keepNext:kn,alignment:AlignmentType.CENTER,children:[new TextRun({text:`${r.lettera}.`,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
         }),
         new TableCell({
           width:{size:wR,type:WidthType.DXA},
           shading:corrFill?{fill:corrFill,type:ShadingType.CLEAR}:undefined,
           margins:{top:80,bottom:80,left:120,right:120},
           borders:BD,
-          children:[new Paragraph({children:[new TextRun({text:r.testo,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
+          children:[new Paragraph({keepNext:kn,children:[new TextRun({text:r.testo,font:FONT,size:18,color:'000000',bold:isDocente&&r.corretta})]})]
         }),
       ]});
     }),

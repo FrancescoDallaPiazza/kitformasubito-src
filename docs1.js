@@ -7,6 +7,10 @@ const {
   C, FONT, CLIENTE, MANSIONI, kitOutDir, MODALITA, docStyles, A4_P, A4_L, MARGIN_STD,
   makeHeader, makeFooter, vuoto, cella, salvaDoc, logoBytes, logoFit, fld,
 } = h;
+
+const { imgType } = require('./logo_util');
+const LOGO_TYPE = imgType(h.logoBytes);   // sniffato dai magic bytes, non hardcoded
+
 // Nota regionale opzionale (popolata dallo STEP 0.5 della skill in helpers.js).
 // undefined se helpers.js non la esporta → guardia difensiva nei punti d'uso.
 const REGIONALE = h.REGIONALE;
@@ -621,7 +625,7 @@ async function genRegistroFormIniziale(mansione) {
           width: { size: 2400, type: WidthType.DXA },
           borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(150, 64) })] })],
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: LOGO_TYPE, transformation: logoFit(150, 64) })] })],
         }),
         new TableCell({
           width: { size: W - 2400, type: WidthType.DXA },
@@ -818,7 +822,7 @@ async function genRegistroAggiornamento() {
           width: { size: 2400, type: WidthType.DXA },
           borders: { top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE}, left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE} },
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: 'jpg', transformation: logoFit(150, 64) })] })],
+          children: [new Paragraph({ children: [new ImageRun({ data: logoBytes, type: LOGO_TYPE, transformation: logoFit(150, 64) })] })],
         }),
         new TableCell({
           width: { size: W - 2400, type: WidthType.DXA },

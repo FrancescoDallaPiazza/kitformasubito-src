@@ -87,6 +87,12 @@ const docStyles = {
 
 // ─── LOGO BYTES ─────────────────────────────────────────────────────────────
 const logoBytes = fs.readFileSync(LOGO_PATH);
+// Tipo reale del logo, sniffato dai magic bytes (vedi logo_util.js).
+// MAI hardcodare 'jpg': LOGO_PATH ha estensione fissa .png ma puo' contenere
+// qualsiasi formato, e un mismatch fra l'estensione scritta in word/media e il
+// contenuto reale impedisce a Word di renderizzare l'immagine.
+const { imgType } = require('./logo_util');
+const LOGO_TYPE = imgType(logoBytes);
 
 // ─── DIMENSIONI INTRINSECHE LOGO (anti-deformazione) ─────────────────────────
 // Legge le dimensioni native (px) dal buffer dell'immagine senza dipendenze npm.
@@ -155,7 +161,7 @@ function makeHeader(ragioneSociale, titoloDoc, atecoCodice, atecoDesc) {
             children: [new Paragraph({
               alignment: AlignmentType.LEFT,
               children: [new ImageRun({
-                data: logoBytes, type: 'jpg',
+                data: logoBytes, type: LOGO_TYPE,
                 transformation: logoFit(160, 70),
               })],
             })],
@@ -645,7 +651,7 @@ const MANSIONI = [
 ];
 
 module.exports = {
-  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, fld, logoBytes, logoFit,
+  C, FONT, CLIENTE, MANSIONI, MODALITA, kitOutDir, fld, logoBytes, logoType: LOGO_TYPE, logoFit,
   docStyles, A4_P, A4_L, MARGIN_STD, MARGIN_REG,
   makeHeader, makeFooter,
   titoloSezione, corpo, rigaDati, vuoto, cella, salvaDoc,
