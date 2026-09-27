@@ -364,7 +364,7 @@ async function genProgettoFormativo() {
     new Paragraph({ children: [] }),
     N('Il presente Progetto Formativo Aziendale definisce in modo strutturato e coerente il percorso di formazione in materia di salute e sicurezza sul lavoro che il Datore di Lavoro organizza direttamente nei confronti dei propri lavoratori, preposti e dirigenti, in qualità di soggetto formatore ai sensi dell\'art. 37, comma 2, del D.Lgs. 81/2008.', { sz: 10 }),
     new Paragraph({ children: [] }),
-    N('La progettazione della formazione è stata sviluppata in conformità al D.Lgs. 81/2008 e s.m.i., nonché agli indirizzi introdotti dall\'Accordo Stato-Regioni del 17 aprile 2025 (entrato in vigore il 24 maggio 2025), che rafforzano il principio secondo cui la formazione non deve essere considerata un adempimento formale, ma uno strumento operativo e funzionale alla gestione reale dei rischi aziendali.', { sz: 10 }),
+    N('La progettazione della formazione è stata sviluppata in conformità al D.Lgs. 81/2008 e s.m.i., nonché agli indirizzi introdotti dall\'Accordo Stato-Regioni del 17 aprile 2025 (efficace dal 19 maggio 2025), che rafforzano il principio secondo cui la formazione non deve essere considerata un adempimento formale, ma uno strumento operativo e funzionale alla gestione reale dei rischi aziendali.', { sz: 10 }),
     new Paragraph({ children: [] }),
     N('In tale contesto, la docenza dei percorsi formativi può essere assicurata:', { sz: 10 }),
     LP('direttamente dal Datore di Lavoro, qualora sia in possesso dei requisiti per lo svolgimento dei compiti del servizio di prevenzione e protezione di cui all\'art. 34 del D.Lgs. 81/2008 (Datore di Lavoro-RSPP), esclusivamente nei confronti dei propri lavoratori, preposti e dirigenti;'),
