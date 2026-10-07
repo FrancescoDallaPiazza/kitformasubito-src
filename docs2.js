@@ -223,10 +223,10 @@ async function genColloquio(mansione) {
     gapSez,
     CHECK(`Rischi specifici della mansione (${mansione.nome})`),
     CHECK('Procedure aziendali di sicurezza'),
-    CHECK('Gestione emergenze e evacuazione'),
+    CHECK('Gestione emergenze ed evacuazione'),
     CHECK('Uso corretto dei DPI'),
     CHECK('Segnalazione pericoli / near miss'),
-    CHECK('Addestramento specifico'),
+    CHECK('Addestramento specifico (da annotare nel registro dell\'addestramento – art. 37, c. 5, D.Lgs. 81/2008)'),
     new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'☐  Altro: _______________________________',font:FONT,size:20,color:'000000'})]}),
     gapTbl,
 
@@ -359,7 +359,7 @@ async function genGradimento() {
     ossTbl,
     new Paragraph({spacing:{before:10,after:6},children:[new TextRun({text:'Cosa ha apprezzato maggiormente?',font:FONT,size:20})]}),
     emptyTbl(),
-    new Paragraph({spacing:{before:10,after:6},children:[new TextRun({text:'Cosa migliorereste?',font:FONT,size:20})]}),
+    new Paragraph({spacing:{before:10,after:6},children:[new TextRun({text:'Cosa migliorerebbe?',font:FONT,size:20})]}),
     emptyTbl(),
   ];
 
@@ -641,7 +641,7 @@ async function genVerbaleVerifica() {
       borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
       rows:[
         ['Denominazione',CLIENTE.ragioneSociale],
-        ['Codice Fiscale / P.IVA',CLIENTE.piva],
+        ['Codice Fiscale / P.IVA',((CLIENTE.cf && CLIENTE.cf.trim()) && CLIENTE.cf.trim()!==CLIENTE.piva) ? `${CLIENTE.cf.trim()} / ${CLIENTE.piva}` : CLIENTE.piva],
         ['Responsabile progetto formativo',CLIENTE.datoreLavoro],
         ['Soggetto Formatore / Docente','Per la ditta'],
       ].map(([k,v]) => new TableRow({children:[cella(k,{width:wL,bold:true,fill:C.BLU_LIGHT,color:C.BLU_HEADER}),cella(v,{width:wR,color:'000000'})]})),
@@ -802,12 +802,15 @@ async function genVerificaEfficacia() {
       return { voce: r.nome, criterio };
     };
     const voceBase = mansione.rischi.map(voceFromRischio);
+    // Ordine: prima le voci trasversali valide per QUALSIASI mansione, poi quelle legate
+    // a rischi che il DVR potrebbe non prevedere (MMC, postura): così il riempimento fino a
+    // 10 voci non introduce rischi assenti dal DVR della mansione (rilievo B2 verifica indipendente 07/10/2026).
     const voceTraversali = [
-      {voce:'Movimentazione carichi', criterio:`Il lavoratore utilizza la tecnica corretta per sollevare e spostare carichi, piegando le ginocchia e mantenendo la schiena dritta?`},
-      {voce:'Postura',                criterio:`Il lavoratore mantiene una postura corretta durante le lavorazioni prolungate e sfrutta le pause previste?`},
       {voce:'Procedure emergenza',    criterio:`Il lavoratore conosce ed applica le procedure di emergenza ed evacuazione e sa usare gli estintori?`},
       {voce:'Segnalazione rischi',    criterio:`Il lavoratore segnala tempestivamente situazioni di pericolo, anomalie o near miss al responsabile?`},
       {voce:'Ordine e pulizia',       criterio:`Il lavoratore mantiene l'area di lavoro in ordine e pulisce regolarmente le attrezzature?`},
+      {voce:'Movimentazione carichi', criterio:`Il lavoratore utilizza la tecnica corretta per sollevare e spostare carichi, piegando le ginocchia e mantenendo la schiena dritta?`},
+      {voce:'Postura',                criterio:`Il lavoratore mantiene una postura corretta durante le lavorazioni prolungate e sfrutta le pause previste?`},
     ];
     // Combina fino a 10 voci
     const vociAll = [...voceBase, ...voceTraversali];
@@ -838,7 +841,7 @@ async function genVerificaEfficacia() {
       new Table({width:{size:W,type:WidthType.DXA},columnWidths:[wDati,wVal],
         borders:{top:BD.top,bottom:BD.bottom,left:BD.left,right:BD.right,insideH:BD.top,insideV:BD.top},
         rows:[
-          ['Corso di riferimento:',`Formazione Generale e Specifica – ${mansione.nome}`],
+          ['Corso di riferimento:', MODALITA === 'aggiornamento' ? `Aggiornamento della formazione specifica (6 ore) – ${mansione.nome}` : `Formazione Generale e Specifica – ${mansione.nome}`],
           ['Data verifica:','___/___/______'],
           ['Lavoratore verificato:',''],
           ['Reparto / Area:',mansione.reparto],

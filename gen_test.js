@@ -211,9 +211,9 @@ function domandeGenerali() {
     ]},
     {d:"11. Nell'ordine delle priorità della prevenzione qual è la prima scelta?", r:[
       {lettera:'A', testo:"Fornire DPI", corretta:false},
-      {lettera:'B', testo:"Eliminare il pericolo alla fonte", corretta:false},
+      {lettera:'B', testo:"Eliminare il pericolo alla fonte", corretta:true},
       {lettera:'C', testo:"Mettere cartelli", corretta:false},
-      {lettera:'D', testo:"Formare i lavoratori", corretta:true},
+      {lettera:'D', testo:"Formare i lavoratori", corretta:false},
     ]},
     {d:"12. Che cos'è una procedura di lavoro sicuro?", r:[
       {lettera:'A', testo:"Una nota informale tra colleghi", corretta:false},
@@ -547,9 +547,9 @@ async function genTestGenerale(cliente) {
     ]},
     {d:"11. Nell'ordine delle priorità della prevenzione qual è la prima scelta?", r:[
       {lettera:'A', testo:"Fornire DPI", corretta:false},
-      {lettera:'B', testo:"Eliminare il pericolo alla fonte", corretta:false},
+      {lettera:'B', testo:"Eliminare il pericolo alla fonte", corretta:true},
       {lettera:'C', testo:"Mettere cartelli", corretta:false},
-      {lettera:'D', testo:"Formare i lavoratori", corretta:true},
+      {lettera:'D', testo:"Formare i lavoratori", corretta:false},
     ]},
     {d:"12. Che cos'è una procedura di lavoro sicuro?", r:[
       {lettera:'A', testo:"Una nota informale tra colleghi", corretta:false},

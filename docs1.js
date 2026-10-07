@@ -14,10 +14,15 @@ const LOGO_TYPE = imgType(h.logoBytes);   // sniffato dai magic bytes, non hardc
 // Nota regionale opzionale (popolata dallo STEP 0.5 della skill in helpers.js).
 // undefined se helpers.js non la esporta → guardia difensiva nei punti d'uso.
 const REGIONALE = h.REGIONALE;
+const NOTA_STATO_NORMATIVO = h.NOTA_STATO_NORMATIVO; // opzionale: nota tracciabile STEP 0.4 (Database Normativo Sicurezza)
 
 // ── DOCENZA (STEP 1 della skill) ──────────────────────────────────────────────
 // formatoreEsterno valorizzato → docente esterno qualificato ex D.I. 06/03/2013;
 // vuoto → docenza del Datore di Lavoro che svolge il ruolo di RSPP (default).
+// Codice fiscale: CLIENTE.cf se valorizzato (es. impresa individuale, dove C.F. ≠ P.IVA),
+// altrimenti coincide con la P.IVA (società). Retrocompatibile con helpers.js senza 'cf'.
+function codFisc() { return (CLIENTE.cf && CLIENTE.cf.trim()) || CLIENTE.piva; }
+function pivaCf() { const cf = codFisc(); return cf === CLIENTE.piva ? CLIENTE.piva : `${CLIENTE.piva} / ${cf}`; }
 function isFormExt() { return !!(CLIENTE.formatoreEsterno && CLIENTE.formatoreEsterno.trim()); }
 function docenteDescr() {
   if (isFormExt()) {
@@ -155,7 +160,7 @@ async function genProgettoFormativo() {
     livelli.forEach(liv => {
       const m = MANSIONI.find(m2 => m2.livello === liv);
       children.push(new Paragraph({ children: [new TextRun({ text: liv, bold: true, font: FONT, color: C.ROSSO })] }));
-      children.push(new Paragraph({ children: [new TextRun({ text: `(4 ore formazione generale + ${m.oreSpec} ore formazione specifica)`, bold: true, font: FONT, size: 18, color: C.ROSSO })] }));
+      children.push(new Paragraph({ children: [new TextRun({ text: MODALITA === 'aggiornamento' ? '(aggiornamento: 6 ore ogni 5 anni)' : `(4 ore formazione generale + ${m.oreSpec} ore formazione specifica)`, bold: true, font: FONT, size: 18, color: C.ROSSO })] }));
     });
     return children;
   }
@@ -205,7 +210,7 @@ async function genProgettoFormativo() {
   const corsoRows = [
     ['Soggetto formatore', CLIENTE.ragioneSociale],
     ['Codice ATECO', `${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`],
-    ['P.IVA / C.F.', CLIENTE.piva],
+    ['P.IVA / C.F.', pivaCf()],
     ['Sede', CLIENTE.indirizzo],
     ...(CLIENTE.rspp
       ? [
@@ -326,7 +331,7 @@ async function genProgettoFormativo() {
     N(CLIENTE.ragioneSociale, { bold: true, sz: 18, col: C.BLU_DARK, spA: 4 }),
     N(CLIENTE.indirizzo, { col: C.GRIGIO, spA: 4 }),
     N(`P.IVA: ${CLIENTE.piva}`, { col: C.GRIGIO, spA: 4 }),
-    N(`Codice Fiscale: ${CLIENTE.piva}`, { col: C.GRIGIO, spA: 4 }),
+    N(`Codice Fiscale: ${codFisc()}`, { col: C.GRIGIO, spA: 4 }),
     new Paragraph({ children: [] }), // empty [4]
 
     // Title table 1×1
@@ -441,6 +446,20 @@ async function genProgettoFormativo() {
       ],
     }),
 
+    new Paragraph({ children: [] }),
+    // Paragrafo 4: art. 37 D.Lgs. 81/2008 come modificato dalla L. 34/2026 (in vigore dal 07/04/2026).
+    // Etichetta sottolineata + testo della lett. b-bis in corsivo (citazione) + commento in tondo.
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 0, after: 0 },
+      children: [
+        new TextRun({ text: 'Art. 37 del D.Lgs. n. 81/2008, come modificato dalla L. 11 marzo 2026, n. 34', font: FONT, size: 20, color: '000000', underline: { type: 'single' } }),
+        new TextRun({ text: ': la formazione e, ove previsto, l\'addestramento specifico devono avvenire anche in occasione dei ', font: FONT, size: 20, color: '000000' }),
+        new TextRun({ text: 'periodi di cassa integrazione guadagni, sia in caso di sospensione che in caso di riduzione dell\'orario di lavoro', font: FONT, size: 20, color: '000000', italics: true }),
+        new TextRun({ text: ' (comma 4, lett. b-bis). L\'addestramento è effettuato da persona esperta e sul luogo di lavoro, anche con tecnologie di simulazione in ambiente reale o virtuale, e deve essere tracciato in apposito registro, anche informatizzato (comma 5). Gli eventuali interventi di addestramento svolti nel corso del presente percorso sono pertanto annotati nel registro dell\'addestramento aziendale.', font: FONT, size: 20, color: '000000' }),
+      ],
+    }),
+
     // ── NOTA REGIONALE (opzionale, in coda alla sez. 2 — popolata dallo STEP 0.5 della skill) ──
     ...(REGIONALE && REGIONALE.enabled && REGIONALE.testoNota && REGIONALE.testoNota.trim() ? [
       new Paragraph({ children: [] }),
@@ -450,6 +469,18 @@ async function genProgettoFormativo() {
         alignment: AlignmentType.JUSTIFIED,
         spacing: { before: 0, after: 0 },
         children: [new TextRun({ text: REGIONALE.testoNota, font: FONT, size: 20, color: '000000' })],
+      }),
+    ] : []),
+
+    // ── NOTA STATO NORMATIVO (opzionale, in coda alla sez. 2 — nota tracciabile dello STEP 0.4 della skill) ──
+    ...(NOTA_STATO_NORMATIVO && NOTA_STATO_NORMATIVO.enabled && NOTA_STATO_NORMATIVO.testoNota && NOTA_STATO_NORMATIVO.testoNota.trim() ? [
+      new Paragraph({ children: [] }),
+      SUB('Stato normativo verificato'),
+      new Paragraph({ children: [] }),
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { before: 0, after: 0 },
+        children: [new TextRun({ text: NOTA_STATO_NORMATIVO.testoNota, font: FONT, size: 20, color: '000000' })],
       }),
     ] : []),
     new Paragraph({ children: [] }),
@@ -941,6 +972,11 @@ async function genRegistroAggiornamento() {
       ],
     }),
     spacer,
+    // ── Casella CIG – art. 37, c. 4, lett. b-bis (L. 34/2026) ──────────────
+    new Paragraph({
+      spacing: { after: 100 },
+      children: [new TextRun({ text: '☐  Intervento erogato durante un periodo di cassa integrazione guadagni (CIG) – art. 37, c. 4, lett. b-bis, D.Lgs. 81/2008', font: FONT, size: 20 })],
+    }),
     // ── Argomenti trattati: label + 3 righe libere con underscore ──────────
     new Paragraph({
       spacing: { after: 60 },
