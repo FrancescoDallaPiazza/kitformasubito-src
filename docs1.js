@@ -441,6 +441,20 @@ async function genProgettoFormativo() {
       ],
     }),
 
+    new Paragraph({ children: [] }),
+    // Paragrafo 4: art. 37 D.Lgs. 81/2008 come modificato dalla L. 34/2026 (in vigore dal 07/04/2026).
+    // Etichetta sottolineata + testo della lett. b-bis in corsivo (citazione) + commento in tondo.
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 0, after: 0 },
+      children: [
+        new TextRun({ text: 'Art. 37 del D.Lgs. n. 81/2008, come modificato dalla L. 11 marzo 2026, n. 34', font: FONT, size: 20, color: '000000', underline: { type: 'single' } }),
+        new TextRun({ text: ': la formazione e, ove previsto, l\'addestramento specifico devono avvenire anche in occasione dei ', font: FONT, size: 20, color: '000000' }),
+        new TextRun({ text: 'periodi di cassa integrazione guadagni, sia in caso di sospensione che in caso di riduzione dell\'orario di lavoro', font: FONT, size: 20, color: '000000', italics: true }),
+        new TextRun({ text: ' (comma 4, lett. b-bis). L\'addestramento è effettuato da persona esperta e sul luogo di lavoro, anche con tecnologie di simulazione in ambiente reale o virtuale, e deve essere tracciato in apposito registro, anche informatizzato (comma 5). Gli eventuali interventi di addestramento svolti nel corso del presente percorso sono pertanto annotati nel registro dell\'addestramento aziendale.', font: FONT, size: 20, color: '000000' }),
+      ],
+    }),
+
     // ── NOTA REGIONALE (opzionale, in coda alla sez. 2 — popolata dallo STEP 0.5 della skill) ──
     ...(REGIONALE && REGIONALE.enabled && REGIONALE.testoNota && REGIONALE.testoNota.trim() ? [
       new Paragraph({ children: [] }),
@@ -941,6 +955,11 @@ async function genRegistroAggiornamento() {
       ],
     }),
     spacer,
+    // ── Casella CIG – art. 37, c. 4, lett. b-bis (L. 34/2026) ──────────────
+    new Paragraph({
+      spacing: { after: 100 },
+      children: [new TextRun({ text: '☐  Intervento erogato durante un periodo di cassa integrazione guadagni (CIG) – art. 37, c. 4, lett. b-bis, D.Lgs. 81/2008', font: FONT, size: 20 })],
+    }),
     // ── Argomenti trattati: label + 3 righe libere con underscore ──────────
     new Paragraph({
       spacing: { after: 60 },

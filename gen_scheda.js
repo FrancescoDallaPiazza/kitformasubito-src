@@ -340,7 +340,7 @@ async function genSchedaAddestrativa(mansione) {
     ]})]),
     fullRow([
       new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Motivazioni addestramento:',bold:true,italics:true,font:FONT,size:20})]}),
-      new Paragraph({children:[new TextRun({text:'☐ Nuova assunzione   ☐ Cambio mansione   ☐ Interinale   ☐ Altra attività di addestramento',font:FONT,size:20})]}),
+      new Paragraph({children:[new TextRun({text:'☐ Nuova assunzione   ☐ Cambio mansione   ☐ Interinale   ☐ Periodo di CIG   ☐ Altra attività di addestramento',font:FONT,size:20})]}),
     ]),
     hdrFull('ATTIVITÀ DI ADDESTRAMENTO DEI LAVORATORI', SALMON),
     fullRow([
@@ -349,7 +349,7 @@ async function genSchedaAddestrativa(mansione) {
         new TextRun({text:CLIENTE.datoreLavoro,font:FONT,size:20}),
       ]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({
-        text:`Ruolo: (☐ Datore di Lavoro / ☐ Preposto / ☐ Lavoratore / ☐ Resp. Produz. / ☐ RSPP / ☐ Altro____________________), il quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto a all'attività specifica di:`,
+        text:`Ruolo: (☐ Datore di Lavoro / ☐ Preposto / ☐ Lavoratore / ☐ Resp. Produz. / ☐ RSPP / ☐ Altro____________________), persona esperta ai sensi dell'art. 37, c. 5, D.Lgs. 81/2008, la quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto a all'attività specifica di:`,
         font:FONT,size:20,
       })]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({text:attPrincipale,bold:true,font:FONT,size:20})]}),
@@ -362,7 +362,7 @@ async function genSchedaAddestrativa(mansione) {
         new TextRun({text:'Durata addestramento ____ ☐ mesi - ☐ ____settimana/e - ☐ ____giorno/i – per un totale di ________ore - ',font:FONT,size:20}),
         new TextRun({text:'10 min',bold:true,font:FONT,size:20}),
       ]}),
-      new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta.',font:FONT,size:20})]}),
+      new Paragraph({children:[new TextRun({text:'Al termine dell\'attività si rilascia copia della presente a comprova dell\'attività svolta. La presente scheda costituisce registrazione dell\'intervento di addestramento ai sensi dell\'art. 37, c. 5, D.Lgs. 81/2008 (come modificato dalla L. 34/2026) ed è conservata nel registro dell\'addestramento aziendale, anche informatizzato.',font:FONT,size:20})]}),
     ]),
     // ── R7: header "Al lavoratore..." — C1 vuota, C2 span3 SALMON italic bold ──
     new TableRow({children:[

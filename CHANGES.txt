@@ -1,3 +1,34 @@
+RECEPIMENTO L. 11 marzo 2026, n. 34 (art. 37 c. 4 lett. b-bis e c. 5 D.Lgs. 81/08) — 07/10/2026
+
+Origine: Database Normativo Sicurezza, S-001 "variazione rilevata e non recepita"
+(controlla.js exit=1). Fonte usata: nota INL prot. 780 del 15/04/2026 (testo del
+nuovo c. 5 e della lett. b-bis), parere Ufficio legislativo MLPS prot. 3729/2026.
+Durata, periodicita' e contenuti minimi della formazione/aggiornamento invariati.
+
+File modificati (solo strutturali, nessun dato cliente):
+  - docs1.js     : Progetto Formativo, sez. 2 RIFERIMENTO NORMATIVO -> nuovo paragrafo
+                   "Art. 37 come modificato dalla L. 34/2026" (formazione e addestramento
+                   anche in CIG, c. 4 lett. b-bis; addestramento da persona esperta, sul
+                   luogo di lavoro, tracciato in registro anche informatizzato, c. 5).
+                   Attivo in entrambe le modalita'. Precede la nota regionale opzionale.
+                   Registro Aggiornamento -> casella "Intervento erogato durante un
+                   periodo di CIG – art. 37, c. 4, lett. b-bis".
+  - docs2.js     : Colloquio aggiornamento, voce "Addestramento specifico" con rinvio
+                   al registro dell'addestramento ex art. 37 c. 5.
+  - gen_scheda.js: Scheda Addestrativa (KIT iniziale) -> motivazione "Periodo di CIG";
+                   istruttore qualificato "persona esperta ai sensi dell'art. 37, c. 5";
+                   la scheda dichiara di costituire registrazione dell'addestramento
+                   ex art. 37 c. 5 da conservare nel registro aziendale.
+
+Collaudo: generazione con i dati-campione del template in modalita' aggiornamento
+(8 docx) e iniziale (25 docx), exit 0; testi nuovi presenti in tutti i file attesi;
+controllo visivo PDF di Progetto Formativo e Registro.
+
+Fuori perimetro (non toccati): art. 3 c. 7-bis/art. 55 (lavoro agile), all. VII (PLE).
+Le azioni A-010…A-012 del Database vanno chiuse dopo il push.
+
+================================================================================
+
 FIX NUMERAZIONE CARTELLE KIT (mode-aware) — repo kitformasubito-src
 
 Problema: in modalita' 'aggiornamento' la cartella 01 - SCHEDE MANSIONI non viene

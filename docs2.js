@@ -226,7 +226,7 @@ async function genColloquio(mansione) {
     CHECK('Gestione emergenze e evacuazione'),
     CHECK('Uso corretto dei DPI'),
     CHECK('Segnalazione pericoli / near miss'),
-    CHECK('Addestramento specifico'),
+    CHECK('Addestramento specifico (da annotare nel registro dell\'addestramento – art. 37, c. 5, D.Lgs. 81/2008)'),
     new Paragraph({spacing:{before:60,after:60},children:[new TextRun({text:'☐  Altro: _______________________________',font:FONT,size:20,color:'000000'})]}),
     gapTbl,
 
