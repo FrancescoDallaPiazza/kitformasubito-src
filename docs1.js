@@ -14,6 +14,7 @@ const LOGO_TYPE = imgType(h.logoBytes);   // sniffato dai magic bytes, non hardc
 // Nota regionale opzionale (popolata dallo STEP 0.5 della skill in helpers.js).
 // undefined se helpers.js non la esporta → guardia difensiva nei punti d'uso.
 const REGIONALE = h.REGIONALE;
+const NOTA_STATO_NORMATIVO = h.NOTA_STATO_NORMATIVO; // opzionale: nota tracciabile STEP 0.4 (Database Normativo Sicurezza)
 
 // ── DOCENZA (STEP 1 della skill) ──────────────────────────────────────────────
 // formatoreEsterno valorizzato → docente esterno qualificato ex D.I. 06/03/2013;
@@ -155,7 +156,7 @@ async function genProgettoFormativo() {
     livelli.forEach(liv => {
       const m = MANSIONI.find(m2 => m2.livello === liv);
       children.push(new Paragraph({ children: [new TextRun({ text: liv, bold: true, font: FONT, color: C.ROSSO })] }));
-      children.push(new Paragraph({ children: [new TextRun({ text: `(4 ore formazione generale + ${m.oreSpec} ore formazione specifica)`, bold: true, font: FONT, size: 18, color: C.ROSSO })] }));
+      children.push(new Paragraph({ children: [new TextRun({ text: MODALITA === 'aggiornamento' ? '(aggiornamento: 6 ore ogni 5 anni)' : `(4 ore formazione generale + ${m.oreSpec} ore formazione specifica)`, bold: true, font: FONT, size: 18, color: C.ROSSO })] }));
     });
     return children;
   }
@@ -464,6 +465,18 @@ async function genProgettoFormativo() {
         alignment: AlignmentType.JUSTIFIED,
         spacing: { before: 0, after: 0 },
         children: [new TextRun({ text: REGIONALE.testoNota, font: FONT, size: 20, color: '000000' })],
+      }),
+    ] : []),
+
+    // ── NOTA STATO NORMATIVO (opzionale, in coda alla sez. 2 — nota tracciabile dello STEP 0.4 della skill) ──
+    ...(NOTA_STATO_NORMATIVO && NOTA_STATO_NORMATIVO.enabled && NOTA_STATO_NORMATIVO.testoNota && NOTA_STATO_NORMATIVO.testoNota.trim() ? [
+      new Paragraph({ children: [] }),
+      SUB('Stato normativo verificato'),
+      new Paragraph({ children: [] }),
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { before: 0, after: 0 },
+        children: [new TextRun({ text: NOTA_STATO_NORMATIVO.testoNota, font: FONT, size: 20, color: '000000' })],
       }),
     ] : []),
     new Paragraph({ children: [] }),

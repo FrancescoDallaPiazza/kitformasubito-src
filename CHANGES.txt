@@ -1,3 +1,24 @@
+FIX DA VERIFICA INDIPENDENTE (KIT aggiornamento Carrozzerie Veronello) — 07/10/2026
+
+  - docs1.js : nuovo blocco opzionale NOTA_STATO_NORMATIVO (h.NOTA_STATO_NORMATIVO,
+               lettura difensiva come REGIONALE) in coda alla sez. 2 del Progetto
+               Formativo, titolo "Stato normativo verificato": accoglie la nota
+               tracciabile richiesta dallo STEP 0.4 delle skill kit (Database
+               Normativo Sicurezza), finora senza meccanismo nel codice.
+               Copertina: in modalita' aggiornamento sotto il livello di rischio
+               "(aggiornamento: 6 ore ogni 5 anni)" invece di "4 ore generale + N specifica".
+  - docs2.js : Verifica Efficacia, "Corso di riferimento" mode-aware
+               ("Aggiornamento della formazione specifica (6 ore)" in aggiornamento).
+               Voci trasversali di riempimento riordinate: prima emergenza,
+               segnalazione rischi, ordine e pulizia; MMC e postura in coda, per non
+               introdurre rischi assenti dal DVR della mansione.
+               Template: "Gestione emergenze ed evacuazione" (Colloquio),
+               "Cosa migliorerebbe?" (Questionario, coerente con il Lei).
+  helpers.js NON modificato nel repo (blocco NOTA_STATO_NORMATIVO solo di sessione,
+  da aggiungere ed esportare quando serve, come REGIONALE).
+
+================================================================================
+
 RECEPIMENTO L. 11 marzo 2026, n. 34 (art. 37 c. 4 lett. b-bis e c. 5 D.Lgs. 81/08) — 07/10/2026
 
 Origine: Database Normativo Sicurezza, S-001 "variazione rilevata e non recepita"
