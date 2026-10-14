@@ -349,7 +349,7 @@ async function genSchedaAddestrativa(mansione) {
         new TextRun({text:CLIENTE.datoreLavoro,font:FONT,size:20}),
       ]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({
-        text:`Ruolo: (☐ Datore di Lavoro / ☐ Preposto / ☐ Lavoratore / ☐ Resp. Produz. / ☐ RSPP / ☐ Altro____________________), persona esperta ai sensi dell'art. 37, c. 5, D.Lgs. 81/2008, la quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto a all'attività specifica di:`,
+        text:`Ruolo: (☐ Datore di Lavoro / ☐ Preposto / ☐ Lavoratore / ☐ Resp. Produz. / ☐ RSPP / ☐ Altro____________________), persona esperta ai sensi dell'art. 37, c. 5, D.Lgs. 81/2008, la quale ha provveduto a fornire adeguato addestramento teorico-pratico, specifico e con riferimenti alla sicurezza e salute sul lavoro all'operatore di cui sopra, rispetto all'attività specifica di:`,
         font:FONT,size:20,
       })]}),
       new Paragraph({spacing:{after:6},children:[new TextRun({text:attPrincipale,bold:true,font:FONT,size:20})]}),

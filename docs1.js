@@ -541,9 +541,8 @@ async function genProgettoFormativo() {
           result.push(LP('DPI: tipologie, scelta, uso e manutenzione'));
           result.push(LP('Segnaletica di sicurezza'));
           result.push(LP('Prevenzione incendi ed evacuazione'));
-          result.push(LP('Segnaletica'));
           result.push(LP('Procedure organizzative per il primo soccorso'));
-          result.push(LP('Stress lavoro correlato'));
+          result.push(LP('Stress lavoro-correlato'));
           result.push(LP('Incidenti, mancati infortuni'));
           result.push(new Paragraph({ children: [] }));
         });
