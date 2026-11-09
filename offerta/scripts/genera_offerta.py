@@ -282,12 +282,17 @@ def _tabella_prezzi(doc, info):
 # ============================================================
 VERDE = "0E3A27"
 FONT = "Gill Sans MT"
+GIALLO, CREMA, ROSSO, GRIGIO = "F5B700", "F6F5EE", "B3261E", "6B6B6B"
 PROSSIMI_PASSI = [
-    ("Firmate l'offerta", "e rimandatela a formasubito@overallgroup.info."),
-    ("Inviateci il DVR", "senza dati personali dei lavoratori, con l'elenco delle mansioni."),
-    ("Consulenza in videocall", "per definire insieme il progetto formativo."),
-    ("Ricevete il KIT", "intestato alla Vostra azienda, pronto da usare."),
+    ("Firmate", "l'offerta e rimandatela a formasubito@overallgroup.info"),
+    ("Inviateci il DVR", "con l'elenco delle mansioni, senza dati personali dei lavoratori"),
+    ("Consulenza", "in videocall: definiamo insieme il progetto formativo"),
 ]
+DESCRIZIONI = {
+    "lavoratori": ("KIT Lavoratori", "Formazione iniziale generale + specifica · fino a 3 mansioni da DVR"),
+    "preposti": ("KIT Preposti", "Formazione iniziale preposti"),
+    "aggiornamenti": ("KIT Aggiornamenti", "Lavoratori 6 h ogni 5 anni · preposti 6 h ogni 2 anni"),
+}
 
 
 def _run(p, testo, bold=False, italic=False, size=None, colore=None):
@@ -378,51 +383,162 @@ def _blocco_firme(doc, sinistra, destra=None):
 
 
 # ============================================================
-# PAGINA 1 — LETTERA E RIEPILOGO
+# PAGINA 1 — LETTERA E RIEPILOGO (impaginazione B)
 # ============================================================
-def pagina_lettera(doc, cliente, info, spec, data_str):
-    _immagine(doc, ASSETS / "logo_formasubito.png", 3.0)
+def _margini(cell, alto=80, basso=80, sx=140, dx=140):
+    """Margini interni della cella in twip."""
+    tcpr = cell._tc.get_or_add_tcPr()
+    mar = OxmlElement("w:tcMar")
+    for lato, v in (("top", alto), ("bottom", basso), ("left", sx), ("right", dx)):
+        el = OxmlElement(f"w:{lato}"); el.set(qn("w:w"), str(v)); el.set(qn("w:type"), "dxa")
+        mar.append(el)
+    tcpr.append(mar)
 
-    t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.5), Cm(8.5)))
-    _cella_testo(t.cell(0, 0), [
-        f"Villafranca di Verona, lì **{data_str}**",
-        "Rif. Offerta KIT FORMASUBITO",
-        "Contatto Overall: **Tazio Pradella**",
-        "045 2050597 · formasubito@overallgroup.info",
-    ])
-    righe_ind = [r.strip() for r in cliente["indirizzo"].split("\n") if r.strip()]
-    _cella_testo(t.cell(0, 1), ["Spett.le", f"**{cliente['ragione'].upper()}**", *righe_ind,
-                                f"P.IVA/C.F. {cliente['piva']}", f"Mail: {cliente['mail']}"])
 
-    _par(doc, "**Oggetto: offerta KIT FORMASUBITO – formazione obbligatoria D.Lgs. 81/08 erogata in azienda**",
-         prima=14, align=WD_ALIGN_PARAGRAPH.LEFT)
-    _par(doc, "In seguito ai colloqui intercorsi, siamo con la presente a formularVi la nostra migliore offerta "
-              "per l'esecuzione dei servizi di seguito indicati, relativi all'attuazione degli adempimenti "
-              "previsti dal D.Lgs. 81/08 e s.m.i. Con il KIT FORMASUBITO il Datore di lavoro eroga direttamente "
-              "in azienda la formazione obbligatoria: progetto formativo e documenti li predisponiamo noi, "
-              "sulle mansioni del Vostro DVR.", prima=6)
+def _bordi(cell, sopra=None, sotto=None, sx=None, dx=None):
+    """Ogni lato: None = nessun bordo, oppure (colore, spessore in ottavi di punto)."""
+    tcpr = cell._tc.get_or_add_tcPr()
+    b = OxmlElement("w:tcBorders")
+    for lato, v in (("top", sopra), ("left", sx), ("bottom", sotto), ("right", dx)):
+        el = OxmlElement(f"w:{lato}")
+        if v:
+            el.set(qn("w:val"), "single"); el.set(qn("w:color"), v[0]); el.set(qn("w:sz"), str(v[1]))
+        else:
+            el.set(qn("w:val"), "nil")
+        b.append(el)
+    tcpr.append(b)
 
-    _striscia(doc, "La vostra proposta in sintesi")
-    _tabella_prezzi(doc, info)
-    _par(doc, "Corrispettivi annui, IVA esclusa. Condizioni di vendita alla pagina seguente.", size=8, prima=2,
-         align=WD_ALIGN_PARAGRAPH.LEFT)
-    if spec.get("nota"):
-        _par(doc, spec["nota"], size=8, prima=2, align=WD_ALIGN_PARAGRAPH.LEFT)
 
-    _striscia(doc, "Prossimi passi")
-    gid = spec.get("grafica", "tu-formi")
-    passi = [f"**{i}. {titolo}** {testo}" for i, (titolo, testo) in enumerate(PROSSIMI_PASSI, 1)]
-    if gid:
-        if gid not in GRAFICHE:
-            raise ValueError(f"Grafica ignota {gid!r}; disponibili: {list(GRAFICHE)}")
-        g = _tabella_senza_bordi(doc, 1, 2, (Cm(10.5), Cm(6.5)))
-        largh = 7.0 if gid == "infografica" else 10.2
-        _immagine(g.cell(0, 0), ASSETS / "grafiche" / GRAFICHE[gid]["file"], largh)
-        _cella_testo(g.cell(0, 1), passi)
-        g.cell(0, 1).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+def _p(cell_o_doc, prima=0, dopo=0, align=WD_ALIGN_PARAGRAPH.LEFT, nuovo=True):
+    if not nuovo:
+        p = cell_o_doc.paragraphs[0]
     else:
-        for riga in passi:
-            _par(doc, riga, align=WD_ALIGN_PARAGRAPH.LEFT)
+        p = cell_o_doc.add_paragraph()
+    p.alignment = align
+    pf = p.paragraph_format
+    pf.space_before, pf.space_after, pf.line_spacing = Pt(prima), Pt(dopo), 1.0
+    return p
+
+
+def _righe_riepilogo(info):
+    out = []
+    for r in info["righe"]:
+        k = r["chiave"]
+        if k in DESCRIZIONI:
+            nome, descr = DESCRIZIONI[k]
+            out.append((nome, descr, r["importo"], False))
+        elif k == "mansioni_aggiuntive":
+            out.append(("Mansioni aggiuntive KIT Lavoratori", f"{r['qta']} oltre la 3ª × {formatta_eur(EXTRA_PER_MANSIONE)}",
+                        r["importo"], False))
+        else:
+            out.append((r["voce"], None, r["importo"], True))
+    return out
+
+
+def _box_riepilogo(doc, info):
+    righe = _righe_riepilogo(info)
+    t = _tabella_senza_bordi(doc, len(righe) + 2, 2, (Cm(12.0), Cm(5.0)))
+    grigio = ("D9D9D9", 4)
+    # intestazione verde
+    h0, h1 = t.cell(0, 0), t.cell(0, 1)
+    for c in (h0, h1):
+        _set_cell_shading(c, VERDE); _margini(c, 120, 120); _bordi(c, sopra=(VERDE, 8), sx=(VERDE, 8) if c is h0 else None,
+                                                                    dx=(VERDE, 8) if c is h1 else None)
+        c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    _run(_p(h0, nuovo=False), "LA VOSTRA PROPOSTA IN SINTESI", bold=True, size=12, colore="FFFFFF")
+    _run(_p(h1, nuovo=False, align=WD_ALIGN_PARAGRAPH.RIGHT), "canone annuo · IVA esclusa", size=8, colore="DDE5E0")
+    # voci
+    for i, (nome, descr, importo, sconto) in enumerate(righe, start=1):
+        c0, c1 = t.cell(i, 0), t.cell(i, 1)
+        for c in (c0, c1):
+            _margini(c, 90, 90); c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        _bordi(c0, sotto=grigio, sx=grigio); _bordi(c1, sotto=grigio, dx=grigio)
+        colore = ROSSO if sconto else None
+        _run(_p(c0, nuovo=False), nome, size=10, colore=colore)
+        if descr:
+            _run(_p(c0), descr, size=8, colore=GRIGIO)
+        _run(_p(c1, nuovo=False, align=WD_ALIGN_PARAGRAPH.RIGHT), formatta_eur(importo), size=10, colore=colore)
+    # totale
+    n = len(righe) + 1
+    t0, t1 = t.cell(n, 0), t.cell(n, 1)
+    for c in (t0, t1):
+        _set_cell_shading(c, CREMA); _margini(c, 140, 140); c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    _bordi(t0, sotto=grigio, sx=grigio); _bordi(t1, sotto=grigio, dx=grigio)
+    _run(_p(t0, nuovo=False), "Totale annuo", bold=True, size=11)
+    _run(_p(t1, nuovo=False, align=WD_ALIGN_PARAGRAPH.RIGHT), formatta_eur(info["totale"]), bold=True, size=18, colore=VERDE)
+    for r in t.rows:
+        r._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
+    return t
+
+
+def _badge(p, numero):
+    r = _run(p, f" {numero} ", bold=True, size=9)
+    shd = OxmlElement("w:shd"); shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), GIALLO)
+    r._r.get_or_add_rPr().append(shd)
+
+
+def _passi(container_cell):
+    """Tre schede crema con numero giallo, una sotto l'altra."""
+    n = container_cell.add_table(rows=len(PROSSIMI_PASSI), cols=1)
+    n.autofit = False
+    for i, (titolo, testo) in enumerate(PROSSIMI_PASSI):
+        c = n.cell(i, 0)
+        c.width = Cm(6.4)
+        _set_cell_shading(c, CREMA); _margini(c, 110, 110, 160, 160)
+        _bordi(c, sopra=("FFFFFF", 24) if i else None, sotto=("FFFFFF", 24) if i < len(PROSSIMI_PASSI) - 1 else None)
+        p = _p(c, nuovo=False)
+        _badge(p, i + 1)
+        _run(p, "  " + titolo.upper(), bold=True, size=10, colore=VERDE)
+        _run(_p(c, prima=2), testo, size=9)
+    return n
+
+
+def pagina_lettera(doc, cliente, info, spec, data_str):
+    # data, riferimenti e destinatario
+    t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.8), Cm(8.2)))
+    sx, dx = t.cell(0, 0), t.cell(0, 1)
+    for i, (etichetta, valore, coda) in enumerate((
+            ("Villafranca di Verona, ", data_str, ""),
+            ("Rif. ", "Offerta KIT FORMASUBITO", ""),
+            ("Il suo referente: ", "Tazio Pradella", " · 045 2050597"))):
+        p = _p(sx, nuovo=(i > 0), dopo=2)
+        _run(p, etichetta, size=9, colore=GRIGIO); _run(p, valore, size=9); _run(p, coda, size=9, colore=GRIGIO)
+    _run(_p(dx, nuovo=False, dopo=2), "Spett.le", size=8, colore=GRIGIO)
+    _run(_p(dx, dopo=2), cliente["ragione"].upper(), bold=True, size=12)
+    for riga in [r.strip() for r in cliente["indirizzo"].split("\n") if r.strip()]:
+        _run(_p(dx), riga, size=10)
+    _run(_p(dx), f"P.IVA {cliente['piva']}", size=10)
+    _run(_p(dx, prima=3), cliente["mail"], size=8.5, colore=GRIGIO)
+
+    # oggetto e apertura
+    _run(_p(doc, prima=16), "Oggetto: offerta KIT FORMASUBITO – formazione obbligatoria D.Lgs. 81/08 erogata in azienda",
+         bold=True, size=10.5)
+    p = _p(doc, prima=4, dopo=10, align=WD_ALIGN_PARAGRAPH.JUSTIFY)
+    _run(p, "In seguito ai colloqui intercorsi, Vi proponiamo i KIT FORMASUBITO: il Datore di Lavoro eroga direttamente "
+            "la formazione obbligatoria ai propri lavoratori e preposti, con progetto formativo e documenti già "
+            "predisposti da noi sulle mansioni del Vostro DVR.", size=10)
+
+    _box_riepilogo(doc, info)
+    if spec.get("nota"):
+        _run(_p(doc, prima=3), spec["nota"], size=8, colore=GRIGIO)
+
+    # grafica e prossimi passi
+    _p(doc, prima=0, dopo=0)
+    gid = spec.get("grafica", "tu-formi")
+    if gid and gid not in GRAFICHE:
+        raise ValueError(f"Grafica ignota {gid!r}; disponibili: {list(GRAFICHE)}")
+    g = _tabella_senza_bordi(doc, 1, 2, (Cm(10.4), Cm(6.6)))
+    sxg, dxg = g.cell(0, 0), g.cell(0, 1)
+    if gid:
+        _set_cell_shading(sxg, CREMA); _margini(sxg, 120, 120, 120, 120)
+        sxg.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        largh = 6.5 if gid == "infografica" else 9.8
+        p = _p(sxg, nuovo=False, align=WD_ALIGN_PARAGRAPH.CENTER)
+        p.add_run().add_picture(str(ASSETS / "grafiche" / GRAFICHE[gid]["file"]), width=Cm(largh))
+    _margini(dxg, 0, 0, 200, 0)
+    dxg.paragraphs[0].paragraph_format.space_after = Pt(0)
+    _passi(dxg)
+    _run(_p(doc, prima=4), "Contenuti del servizio e condizioni complete alla pagina 2.", size=8, colore=GRIGIO)
 
 
 # ============================================================
