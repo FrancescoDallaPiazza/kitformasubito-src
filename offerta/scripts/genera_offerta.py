@@ -66,7 +66,7 @@ ORDINE_KIT = ["lavoratori", "preposti", "aggiornamenti"]
 # da confrontare con l'offerta (STEP della SKILL).
 GRAFICHE = {
     "infografica": {"file": "infografica.png", "titolo": "Vantaggi + Cosa comprende il KIT", "prezzi": None},
-    "tu-formi": {"file": "tu-formi.png", "titolo": "Tu formi. Al resto pensiamo noi", "prezzi": None},
+    "tu-formi": {"file": "tu-formi.png", "titolo": "Tu formi. Al resto pensiamo noi (sorgente in grafiche/sorgenti/)", "prezzi": None},
     "cosa-ricevi": {"file": "cosa-ricevi.png", "titolo": "Tutto in una cartella, pronto da usare", "prezzi": None},
     "scegli-kit": {"file": "scegli-kit.png", "titolo": "Scegli il tuo KIT",
                    "prezzi": "Lavoratori 249 €/anno fino a 3 mansioni poi 19 €/mansione; Preposti 149 €; Aggiornamenti 149 €"},
@@ -499,34 +499,6 @@ def _passi(container_cell, info, data_str):
     return n
 
 
-TU_FORMI = [
-    ("Consulenza iniziale", "Progetto formativo definito insieme in videocall. Bonus: vale come aggiornamento RSPP/DDL."),
-    ("6 documenti pronti", "Progetto formativo, registro presenze, test finale, attestato, verifica efficacia, verbale."),
-    ("Assistenza", "Supporto su ogni passaggio e sulla corretta compilazione del KIT."),
-]
-
-
-def _tu_formi(cell):
-    """Riquadro "Tu formi. Al resto pensiamo noi." in testo Word (stessi contenuti della slide)."""
-    _set_cell_shading(cell, CREMA); _margini(cell, 160, 160, 200, 200)
-    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _run(_p(cell, nuovo=False), "LA SOLUZIONE: KIT FORMASUBITO", bold=True, size=7, colore="2A7F8F")
-    _run(_p(cell, prima=2, dopo=6), "TU FORMI. AL RESTO PENSIAMO NOI.", bold=True, size=13, colore=VERDE)
-    t = cell.add_table(rows=1, cols=len(TU_FORMI))
-    t.autofit = False
-    for i, (titolo, testo) in enumerate(TU_FORMI):
-        c = t.cell(0, i)
-        c.width = Cm(3.0)
-        _set_cell_shading(c, "FFFFFF"); _margini(c, 100, 100, 100, 100)
-        _bordi(c, sx=(CREMA, 24) if i else None, dx=(CREMA, 24) if i < len(TU_FORMI) - 1 else None)
-        _run(_p(c, nuovo=False), titolo, bold=True, size=8.5, colore=VERDE)
-        _run(_p(c, prima=2), testo, size=7.5, colore="444444")
-    p = _p(cell, prima=8)
-    r = _run(p, "  Predisposizione tutta a carico nostro.  ", bold=True, size=8)
-    shd = OxmlElement("w:shd"); shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), GIALLO)
-    r._r.get_or_add_rPr().append(shd)
-
-
 def pagina_lettera(doc, cliente, info, spec, data_str):
     # data, riferimenti e destinatario
     t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.8), Cm(8.2)))
@@ -563,9 +535,7 @@ def pagina_lettera(doc, cliente, info, spec, data_str):
         raise ValueError(f"Grafica ignota {gid!r}; disponibili: {list(GRAFICHE)}")
     g = _tabella_senza_bordi(doc, 1, 2, (Cm(10.4), Cm(6.6)))
     sxg, dxg = g.cell(0, 0), g.cell(0, 1)
-    if gid == "tu-formi":
-        _tu_formi(sxg)
-    elif gid:
+    if gid:
         _set_cell_shading(sxg, CREMA); _margini(sxg, 120, 120, 120, 120)
         sxg.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         largh = 6.5 if gid == "infografica" else 9.8
