@@ -1,0 +1,23 @@
+## Informativa sul trattamento dei dati personali (artt. 13-14 Reg. UE 2016/679)
+Informativa per i clienti del KIT FORMASUBITO e per i loro referenti. Aggiornata a novembre 2026.
+**1. Titolare.** OVERALL GROUP S.r.l., Via A. Volta 36/1, 37062 Dossobuono di Villafranca di Verona (VR), C.F./P.IVA 04534450236 – overall@overallgroup.info – PEC overallgroup@arubapec.it – tel. 045 2050597. Responsabile della protezione dei dati (DPO): non designato, non ricorrendo i presupposti dell'art. 37 GDPR.
+**2. Dati trattati.** Dati identificativi e di contatto (nome, ruolo, e-mail e telefono aziendali) del legale rappresentante e dei referenti del Cliente; dati di fatturazione e di pagamento; comunicazioni intercorse. Sono forniti da Lei o dall'azienda per cui lavora. Overall non tratta dati personali dei lavoratori del Cliente: il DVR e gli altri documenti necessari al KIT sono trasmessi senza tali dati (art. 11 delle Condizioni di vendita).
+**3. Finalità, basi giuridiche e conservazione.**
+|Finalità|Base giuridica|Conservazione|
+|a) Offerta, stipula ed esecuzione del contratto, assistenza|art. 6.1.b GDPR; per i referenti di persone giuridiche art. 6.1.f (interesse a gestire il rapporto con il Cliente)|durata del contratto e 10 anni dalla sua cessazione (art. 2946 c.c.)|
+|b) Obblighi contabili e fiscali|art. 6.1.c GDPR|10 anni (art. 2220 c.c.)|
+|c) Tutela dei diritti in giudizio|art. 6.1.f GDPR|durata del contenzioso, fino a sentenza definitiva|
+|d) E-mail su servizi analoghi a quelli acquistati|art. 130 c. 4 D.Lgs. 196/2003 e art. 6.1.f GDPR|fino all'opposizione|
+|e) Newsletter e comunicazioni promozionali su altri servizi, via e-mail e WhatsApp|consenso: art. 6.1.a GDPR e art. 130 c. 1-2 D.Lgs. 196/2003|fino alla revoca del consenso|
+|f) Questionari di soddisfazione|consenso: art. 6.1.a GDPR|fino alla revoca del consenso|
+**4. Conferimento.** È necessario per le finalità a) e b): senza i dati non possiamo formulare l'offerta né eseguire il contratto. Per le finalità e) e f) è facoltativo e il rifiuto non ha conseguenze sul servizio.
+**5. Destinatari.** Personale autorizzato di Overall (art. 29 GDPR; art. 2-quaterdecies D.Lgs. 196/2003); collaboratori esterni e fornitori nominati responsabili del trattamento ex art. 28 GDPR (consulenza fiscale e amministrativa; servizi informatici e cloud di posta elettronica, archiviazione e applicazioni gestionali; piattaforme di invio delle comunicazioni); banche, professionisti, autorità e altri soggetti che li ricevono come titolari autonomi per obbligo di legge o per eseguire il contratto. I dati non sono diffusi. L'elenco aggiornato dei responsabili è disponibile su richiesta.
+**6. Trasferimenti fuori dall'UE.** Alcuni fornitori di servizi cloud possono trattare dati fuori dall'Unione europea, in particolare negli Stati Uniti. Il trasferimento avviene sulla base della decisione di adeguatezza UE-USA (Decisione (UE) 2023/1606, Data Privacy Framework) per i fornitori certificati, oppure delle clausole contrattuali standard (Decisione (UE) 2021/914). Copia delle garanzie è disponibile ai contatti del punto 1.
+**7. Diritti.** Può chiedere accesso, rettifica, cancellazione, limitazione e portabilità dei dati (artt. 15-20 GDPR) e revocare in ogni momento il consenso, senza effetti sul trattamento già svolto (art. 7.3). **Può opporsi in ogni momento al trattamento basato sul legittimo interesse e, senza motivazione, all'invio di comunicazioni commerciali (art. 21 GDPR; art. 130 c. 4 D.Lgs. 196/2003), anche con il link presente in ogni e-mail.** Scriva a overall@overallgroup.info o alla PEC. Può proporre reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it; art. 77 GDPR) o ricorrere all'autorità giudiziaria (art. 79).
+**8. Decisioni automatizzate.** Non sono adottate decisioni basate unicamente su trattamenti automatizzati, compresa la profilazione (art. 22 GDPR).
+## Consenso facoltativo
+Il/La sottoscritto/a ________________________________, per conto proprio e in qualità di ________________ del Cliente, letta l'informativa:
+☐ acconsento   ☐ non acconsento   a ricevere newsletter e comunicazioni promozionali di OVERALL GROUP S.r.l. su servizi diversi da quelli acquistati, via e-mail e WhatsApp (finalità e)
+☐ acconsento   ☐ non acconsento   a ricevere questionari di soddisfazione (finalità f)
+Il consenso non è condizione del contratto e si può revocare in ogni momento (art. 7.3-7.4 GDPR).
+[FIRMA_CONSENSO]

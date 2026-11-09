@@ -2,19 +2,24 @@
 
 La skill li scarica all'avvio (`git clone --depth 1` di questo repo) e usa:
 
-- `scripts/genera_offerta.py` — genera l'offerta Word: intestazione cliente, data,
-  grafica di prima pagina, tabella prezzi con KIT, sconti e totale.
+- `scripts/genera_offerta.py` — compone l'offerta (3 pagine) su carta intestata Overall:
+  1. lettera: logo FORMASUBITO, data/riferimenti e destinatario, oggetto, riepilogo
+     "La vostra proposta in sintesi" (KIT, sconti, totale), grafica ridotta facoltativa
+     e prossimi passi;
+  2. condizioni di vendita (`assets/testi/condizioni.txt`);
+  3. approvazione specifica, informativa privacy e consenso (`assets/testi/informativa.txt`).
   Input: dati cliente da riga di comando + `--spec offerta.json` (formato nel docstring).
   `python3 scripts/genera_offerta.py --test` esegue l'autoverifica dei calcoli.
-- `assets/template_offerta.docx` — fac-simile uniformato (Gill Sans MT, titoli su
-  striscia verde FORMASUBITO #0E3A27, data e piè di pagina come testo fisso).
-  Ancore usate dallo script: Tabella 0 ("Spett.le", 6 paragrafi vuoti, "Mail:",
-  data "Villafranca di Verona, lì 00/00/0000"), Tabella 1 (sostituita dalla
-  tabella prezzi), prima immagine del corpo (sostituita dalla grafica scelta).
-- `assets/grafiche/` — grafiche selezionabili per la prima pagina
-  (id in `GRAFICHE` dello script): infografica, tu-formi, cosa-ricevi,
-  scegli-kit, tre-kit. Le ultime due riportano prezzi stampati.
+- `assets/carta_intestata.docx` — intestazione, piè di pagina e stili (Gill Sans MT).
+- `assets/testi/*.txt` — testi di pag. 2 e 3, modificabili senza toccare lo script:
+  `## Titolo` = striscia verde; `**grassetto**`, `*corsivo*`; `|a|b|c|` = tabella;
+  `[FIRMA]`, `[FIRMA_CLIENTE]`, `[FIRMA_CONSENSO]` = blocchi firma.
+- `assets/grafiche/` — grafiche per la pag. 1 (id in `GRAFICHE`): infografica,
+  tu-formi (default), cosa-ricevi, scegli-kit, tre-kit. Le ultime due hanno prezzi stampati.
+- `assets/logo_formasubito.png`, `assets/firma_overall.jpeg` — logo e timbro/firma Overall.
 
-Listino nel catalogo dello script (IVA esclusa, canoni annui): KIT Lavoratori
-249,00 € fino a 3 mansioni + 19,99 € per mansione oltre la 3ª; KIT Preposti
-149,00 €; KIT Aggiornamenti 149,00 €; i 3 KIT insieme: sconto 100,00 € (447,00 €).
+Listino (IVA esclusa, canoni annui): KIT Lavoratori 249,00 € fino a 3 mansioni
++ 19,99 € per mansione oltre la 3ª; KIT Preposti 149,00 €; KIT Aggiornamenti 149,00 €;
+i 3 KIT insieme: sconto 100,00 € (447,00 €), ripartito 45,52 / 27,24 / 27,24 €.
+
+Testi di pag. 2 e 3: bozza novembre 2026 da far rivedere a un avvocato prima dell'uso.

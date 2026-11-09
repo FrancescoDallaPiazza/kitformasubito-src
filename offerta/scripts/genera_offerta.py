@@ -1,29 +1,33 @@
 #!/usr/bin/env python3
 """
-Genera l'offerta KIT FORMASUBITO dal fac-simile Word ufficiale
-(assets/template_offerta.docx) popolando:
-- intestazione cliente (Spett.le + indirizzo + Mail) nella Tabella 0
-- data dell'offerta nella Tabella 0
-- grafica riassuntiva in prima pagina (scelta tra assets/grafiche/)
-- tabella "Corrispettivo economico" con i KIT scelti, gli sconti e il totale
+Genera l'offerta KIT FORMASUBITO su carta intestata Overall (assets/carta_intestata.docx).
 
-Il resto del documento (articoli A1-A11, GDPR, firme) NON viene modificato.
+Struttura del documento:
+  pag. 1  lettera: logo FORMASUBITO, data/riferimenti e destinatario, oggetto,
+          riepilogo "La vostra proposta in sintesi" (tabella prezzi),
+          grafica ridotta facoltativa e prossimi passi
+  pag. 2  Condizioni di vendita        (assets/testi/condizioni.txt)
+  pag. 3  Informativa privacy + consenso (assets/testi/informativa.txt)
+
+I testi di pag. 2 e 3 si modificano nei .txt, senza toccare lo script:
+  "## Titolo"      striscia verde di sezione
+  "**grassetto**"  e "*corsivo*" in linea
+  "|a|b|c|"        righe di tabella (la prima e' l'intestazione)
+  "[FIRMA]" "[FIRMA_CLIENTE]" "[FIRMA_CONSENSO]"  blocchi firma
 
 USO:
-  genera_offerta.py --template T --out O --ragione R --indirizzo I --piva P
-                    --mail M --spec offerta.json [--data gg/mm/aaaa]
+  genera_offerta.py --out O --ragione R --indirizzo I --piva P --mail M
+                    --spec offerta.json [--data gg/mm/aaaa]
 
 offerta.json:
 {
   "kit": ["lavoratori", "preposti", "aggiornamenti"],   # almeno uno
-  "mansioni": 4,                     # obbligatorio se c'e' "lavoratori"
-  "bundle": true,                    # sconto "Tutto e subito" se ci sono tutti e 3 i KIT (default true)
-  "sconti": [                        # facoltativi, decisi dal compilatore
-    {"descrizione": "Sconto mansione aggiuntiva", "su": "mansioni_aggiuntive", "percentuale": 100},
-    {"descrizione": "Sconto commerciale", "importo": 20.00}
-  ],
-  "grafiche": ["infografica"],       # id in GRAFICHE, una o piu', in ordine (default: infografica)
-  "nota": "testo facoltativo sotto la tabella prezzi"
+  "mansioni": 4,                     # obbligatorio con "lavoratori"
+  "bundle": true,                    # sconto "Tutto e subito" con i 3 KIT (default true)
+  "sconti": [{"descrizione": "...", "su": "mansioni_aggiuntive", "percentuale": 100},
+             {"descrizione": "...", "importo": 20.00}],
+  "grafica": "tu-formi",             # id in GRAFICHE oppure null (nessuna grafica)
+  "nota": "testo facoltativo sotto il riepilogo"
 }
 "su" ammette: lavoratori, mansioni_aggiuntive, preposti, aggiornamenti, totale.
 """
@@ -37,10 +41,10 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_ALIGN_VERTICAL
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt, Cm
+from docx.shared import Pt, Cm, RGBColor
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
@@ -124,44 +128,6 @@ def calcola_righe(spec: dict) -> dict:
     return {"kit": kit, "righe": righe, "totale": totale}
 
 
-# ============================================================
-# HELPER docx — ereditare lo stile dei run di ancora
-# ============================================================
-def _clona_run_pr(run_sorgente, run_destinazione):
-    """
-    Copia il blocco <w:rPr> (run properties) da run_sorgente a run_destinazione.
-    Garantisce che il nuovo testo erediti font, dimensione, colore esatti.
-    """
-    sorgente_pr = run_sorgente._element.find(qn("w:rPr"))
-    if sorgente_pr is None:
-        return
-    # Rimuovi eventuale rPr già presente nel destinatario
-    dest_pr_existing = run_destinazione._element.find(qn("w:rPr"))
-    if dest_pr_existing is not None:
-        run_destinazione._element.remove(dest_pr_existing)
-    # Clona e inserisci all'inizio (rPr deve precedere il <w:t>)
-    nuovo_pr = copy.deepcopy(sorgente_pr)
-    run_destinazione._element.insert(0, nuovo_pr)
-
-
-def _aggiungi_run_ereditando_stile(paragrafo, testo, run_modello, bold=None):
-    """
-    Aggiunge un run al paragrafo, clonando lo stile da run_modello.
-    Se bold è specificato (True/False), sovrascrive il bold ereditato.
-    """
-    nuovo = paragrafo.add_run(testo)
-    _clona_run_pr(run_modello, nuovo)
-    if bold is not None:
-        nuovo.bold = bold
-    return nuovo
-
-
-def _svuota_paragrafo_tieni_pPr(paragrafo):
-    """Rimuove tutti i run del paragrafo (lascia il pPr / formattazione)."""
-    for run in list(paragrafo.runs):
-        run._element.getparent().remove(run._element)
-
-
 def _set_cell_shading(cell, color_hex):
     """Imposta lo sfondo di una cella (color_hex senza '#', es. '404040')."""
     tc_pr = cell._tc.get_or_add_tcPr()
@@ -210,78 +176,12 @@ def _set_cell_border_top_thick(cell, size="12", color="404040"):
     tc_borders.append(top)
 
 
-# ============================================================
-# PATCH INTESTAZIONE (Tabella 0)
-# ============================================================
-def patch_intestazione(doc, ragione, indirizzo, piva, mail):
-    """
-    T0/R0/C1 (== T0/R1/C1, cella verticalmente unita):
-      para[0] = "Spett.le"   -> aggiungo ragione sociale
-      para[1..6] = vuoti     -> riempio con indirizzo + P.IVA
-      para[7] = "Mail: "     -> aggiungo email/PEC
-      para[8] = vuoto
-
-    Strategia chiave: NON forzare font Calibri o size custom.
-    Clonare lo stile (w:rPr) dei run modello "Spett.le" e "Mail: "
-    per ereditare font e corpo esattamente come nel template.
-    """
-    t0 = doc.tables[0]
-    cell = t0.rows[0].cells[1]
-    paragraphs = cell.paragraphs
-
-    if not paragraphs[0].text.strip().startswith("Spett.le"):
-        raise RuntimeError(
-            f"Template inatteso: T0/R0/C1 para[0] = {paragraphs[0].text!r} (atteso 'Spett.le')"
-        )
-    if not paragraphs[7].text.strip().startswith("Mail:"):
-        raise RuntimeError(
-            f"Template inatteso: T0/R0/C1 para[7] = {paragraphs[7].text!r} (atteso 'Mail:')"
-        )
-
-    # Modelli di stile dai run originali
-    run_modello_spettle = paragraphs[0].runs[0]   # "Spett.le"
-    run_modello_mail = paragraphs[7].runs[0]      # "Mail: "
-
-    # 1) "Spett.le" rimane da solo nel para[0] (NIENTE break/ragione attaccata).
-    #    Il para[1] resta VUOTO come spaziatura voluta dal cliente.
-    #    Ragione sociale + indirizzo + P.IVA partono dal para[2] in giù.
-    righe_indirizzo = [r.strip() for r in indirizzo.split("\n") if r.strip()]
-    righe_extra = [ragione.upper()] + righe_indirizzo + [f"P.IVA/C.F.: {piva}"]
-
-    # Slot disponibili: dal para[2] al para[6] = 5 paragrafi
-    # (para[1] resta vuoto come spaziatura; para[7] è "Mail: ")
-    slot_disponibili = paragraphs[2:7]
-    for i, testo in enumerate(righe_extra[:len(slot_disponibili)]):
-        p = slot_disponibili[i]
-        _svuota_paragrafo_tieni_pPr(p)
-        # La prima riga (ragione sociale) è in bold, le altre no
-        is_ragione = (i == 0)
-        _aggiungi_run_ereditando_stile(
-            p, testo, run_modello_spettle, bold=is_ragione
-        )
-
-    # 3) Email/PEC accanto a "Mail: "
-    _aggiungi_run_ereditando_stile(paragraphs[7], mail, run_modello_mail, bold=True)
 
 
-# ============================================================
-# PATCH DATA (Tabella 0 - cella in basso a sinistra)
-# ============================================================
-def patch_data(doc, data_str):
-    """
-    T0/R1/C0: 'Villafranca di Verona, lì <DATA>'.
-    Sostituisco la data esistente con regex sul testo dei run.
-    """
-    t0 = doc.tables[0]
-    cell = t0.rows[1].cells[0]
-    p = cell.paragraphs[0]
-
-    pattern_data = re.compile(r"\d{1,2}/\d{1,2}/\d{4}|gg/mm/aaaa")
-    for run in p.runs:
-        if pattern_data.search(run.text):
-            run.text = pattern_data.sub(data_str, run.text)
-            return
-    raise RuntimeError(f"Template inatteso: data segnaposto non trovata in {p.text!r}")
+def _svuota_paragrafo_tieni_pPr(paragrafo):
+    """Rimuove tutti i run del paragrafo (lascia il pPr / formattazione)."""
+    for run in list(paragrafo.runs):
+        run._element.getparent().remove(run._element)
 
 
 def _crea_paragrafo_in_cella(cell, testo, bold=False, size_pt=10, allineamento=None, color_hex=None):
@@ -317,59 +217,6 @@ def _crea_paragrafo_in_cella(cell, testo, bold=False, size_pt=10, allineamento=N
         from docx.shared import RGBColor
         run.font.color.rgb = RGBColor.from_string(color_hex)
     return run
-
-
-# ============================================================
-# GRAFICA DI PRIMA PAGINA
-# ============================================================
-def patch_grafiche(doc, ids):
-    """
-    Sostituisce l'immagine della sezione "Descrizione del servizio" (la prima
-    immagine del corpo) con le grafiche scelte, una sotto l'altra, a tutta
-    larghezza disponibile mantenendo le proporzioni.
-    """
-    from PIL import Image
-
-    ids = ids or ["infografica"]
-    ignoti = [g for g in ids if g not in GRAFICHE]
-    if ignoti:
-        raise ValueError(f"Grafiche ignote {ignoti}; disponibili: {list(GRAFICHE)}")
-
-    blip = doc.element.body.find(".//" + qn("a:blip"))
-    if blip is None:
-        raise RuntimeError("Template inatteso: nessuna immagine nel corpo del documento")
-    drawing = blip
-    while drawing.tag != qn("w:drawing"):
-        drawing = drawing.getparent()
-    run_el = drawing.getparent()
-    para_el = run_el
-    while para_el.tag != qn("w:p"):
-        para_el = para_el.getparent()
-
-    extent = drawing.find(".//" + qn("wp:extent"))
-    larghezza = int(extent.get("cx"))          # EMU: larghezza del riquadro originale
-    sezione = doc.sections[0]
-    utile = int(sezione.page_width - sezione.left_margin - sezione.right_margin)
-    larghezza = min(max(larghezza, utile), utile)
-
-    ultimo = para_el
-    for i, gid in enumerate(ids):
-        path = ASSETS / "grafiche" / GRAFICHE[gid]["file"]
-        w, h = Image.open(path).size
-        altezza = int(larghezza * h / w)
-        p_el = para_el if i == 0 else copy.deepcopy(para_el)
-        if i:
-            ultimo.addnext(p_el)
-            ultimo = p_el
-        rid, _ = doc.part.get_or_add_image(str(path))
-        p_el.find(".//" + qn("a:blip")).set(qn("r:embed"), rid)
-        for tag in ("wp:extent", "a:ext"):
-            for el in p_el.iter(qn(tag)):
-                el.set("cx", str(larghezza))
-                el.set("cy", str(altezza))
-        for el in p_el.iter(qn("wp:docPr")):
-            el.set("id", str(9000 + i))
-            el.set("name", f"Grafica {gid}")
 
 
 # ============================================================
@@ -430,37 +277,215 @@ def _tabella_prezzi(doc, info):
     return tbl
 
 
-def patch_prezzo(doc, info, nota=None):
-    """Sostituisce la Tabella 1 del template con la tabella prezzi (+ nota facoltativa)."""
-    t1 = doc.tables[1]
-    parent = t1._element.getparent()
-    indice = list(parent).index(t1._element)
-    nuova = _tabella_prezzi(doc, info)
-    parent.insert(indice, nuova._element)
-    dopo = OxmlElement("w:p")  # spaziatura prima dell'art. A2
-    parent.insert(indice + 1, dopo)
-    if nota:
-        from docx.text.paragraph import Paragraph
-        p_el = OxmlElement("w:p")
-        dopo.addprevious(p_el)
-        p = Paragraph(p_el, t1._parent)
-        run = p.add_run(nota)
-        run.font.name = "Gill Sans MT"
-        run.font.size = Pt(8)
-    parent.remove(t1._element)
+# ============================================================
+# MATTONI DI IMPAGINAZIONE
+# ============================================================
+VERDE = "0E3A27"
+FONT = "Gill Sans MT"
+PROSSIMI_PASSI = [
+    ("Firmate l'offerta", "e rimandatela a formasubito@overallgroup.info."),
+    ("Inviateci il DVR", "senza dati personali dei lavoratori, con l'elenco delle mansioni."),
+    ("Consulenza in videocall", "per definire insieme il progetto formativo."),
+    ("Ricevete il KIT", "intestato alla Vostra azienda, pronto da usare."),
+]
+
+
+def _run(p, testo, bold=False, italic=False, size=None, colore=None):
+    r = p.add_run(testo)
+    r.bold, r.italic = bold, italic
+    r.font.name = FONT
+    if size:
+        r.font.size = Pt(size)
+    if colore:
+        r.font.color.rgb = RGBColor.from_string(colore)
+    return r
+
+
+def _inline(p, testo, size=None):
+    """Testo con **grassetto** e *corsivo*."""
+    for parte in re.split(r"(\*\*[^*]+\*\*|\*[^*]+\*)", testo):
+        if parte.startswith("**"):
+            _run(p, parte[2:-2], bold=True, size=size)
+        elif parte.startswith("*") and len(parte) > 1:
+            _run(p, parte[1:-1], italic=True, size=size)
+        elif parte:
+            _run(p, parte, size=size)
+
+
+def _par(container, testo="", size=9, align=WD_ALIGN_PARAGRAPH.JUSTIFY, prima=3, dopo=0):
+    p = container.add_paragraph()
+    p.alignment = align
+    pf = p.paragraph_format
+    pf.space_before, pf.space_after, pf.line_spacing = Pt(prima), Pt(dopo), 1.0
+    if testo:
+        _inline(p, testo, size=size)
+    return p
+
+
+def _striscia(doc, titolo):
+    """Titolo di sezione su striscia verde FORMASUBITO."""
+    p = _par(doc, align=WD_ALIGN_PARAGRAPH.CENTER, prima=10, dopo=6)
+    p.paragraph_format.keep_with_next = True
+    ppr = p._p.get_or_add_pPr()
+    shd = OxmlElement("w:shd")
+    shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), VERDE)
+    ppr.append(shd)
+    r = _run(p, titolo.upper(), bold=True, size=9, colore="FFFFFF")
+    sp = OxmlElement("w:spacing"); sp.set(qn("w:val"), "20")
+    r._r.get_or_add_rPr().append(sp)
+    return p
+
+
+def _interruzione_pagina(doc):
+    doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+
+
+def _tabella_senza_bordi(doc, righe, colonne, larghezze):
+    t = doc.add_table(rows=righe, cols=colonne)
+    t.autofit = False
+    t.style = None
+    for col, w in zip(t.columns, larghezze):
+        col.width = w
+        for c in col.cells:
+            c.width = w
+    return t
+
+
+def _cella_testo(cell, righe, size=9, align=WD_ALIGN_PARAGRAPH.LEFT):
+    """righe: lista di stringhe con markup in linea; la prima sostituisce il paragrafo vuoto."""
+    cell.paragraphs[0]._p.getparent().remove(cell.paragraphs[0]._p)
+    for testo in righe:
+        _par(cell, testo, size=size, align=align, prima=0)
+
+
+def _immagine(container, path, larghezza_cm):
+    ps = getattr(container, "paragraphs", [])
+    vuoto = ps and not ps[-1].runs and hasattr(container, "_tc")
+    p = ps[-1] if vuoto else container.add_paragraph()
+    p.add_run().add_picture(str(path), width=Cm(larghezza_cm))
+    return p
+
+
+def _blocco_firme(doc, sinistra, destra=None):
+    """Una riga: firma del Cliente a sinistra, timbro e firma Overall a destra."""
+    t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.5), Cm(8.5)))
+    _cella_testo(t.cell(0, 0), [sinistra, "", "________________________________"], size=8)
+    if destra:
+        _cella_testo(t.cell(0, 1), [destra], size=8)
+        _immagine(t.cell(0, 1), ASSETS / "firma_overall.jpeg", 2.4)
+    t.rows[0]._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
+    return t
+
+
+# ============================================================
+# PAGINA 1 — LETTERA E RIEPILOGO
+# ============================================================
+def pagina_lettera(doc, cliente, info, spec, data_str):
+    _immagine(doc, ASSETS / "logo_formasubito.png", 3.0)
+
+    t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.5), Cm(8.5)))
+    _cella_testo(t.cell(0, 0), [
+        f"Villafranca di Verona, lì **{data_str}**",
+        "Rif. Offerta KIT FORMASUBITO",
+        "Contatto Overall: **Tazio Pradella**",
+        "045 2050597 · formasubito@overallgroup.info",
+    ])
+    righe_ind = [r.strip() for r in cliente["indirizzo"].split("\n") if r.strip()]
+    _cella_testo(t.cell(0, 1), ["Spett.le", f"**{cliente['ragione'].upper()}**", *righe_ind,
+                                f"P.IVA/C.F. {cliente['piva']}", f"Mail: {cliente['mail']}"])
+
+    _par(doc, "**Oggetto: offerta KIT FORMASUBITO – formazione obbligatoria D.Lgs. 81/08 erogata in azienda**",
+         prima=14, align=WD_ALIGN_PARAGRAPH.LEFT)
+    _par(doc, "In seguito ai colloqui intercorsi, siamo con la presente a formularVi la nostra migliore offerta "
+              "per l'esecuzione dei servizi di seguito indicati, relativi all'attuazione degli adempimenti "
+              "previsti dal D.Lgs. 81/08 e s.m.i. Con il KIT FORMASUBITO il Datore di lavoro eroga direttamente "
+              "in azienda la formazione obbligatoria: progetto formativo e documenti li predisponiamo noi, "
+              "sulle mansioni del Vostro DVR.", prima=6)
+
+    _striscia(doc, "La vostra proposta in sintesi")
+    _tabella_prezzi(doc, info)
+    _par(doc, "Corrispettivi annui, IVA esclusa. Condizioni di vendita alla pagina seguente.", size=8, prima=2,
+         align=WD_ALIGN_PARAGRAPH.LEFT)
+    if spec.get("nota"):
+        _par(doc, spec["nota"], size=8, prima=2, align=WD_ALIGN_PARAGRAPH.LEFT)
+
+    _striscia(doc, "Prossimi passi")
+    gid = spec.get("grafica", "tu-formi")
+    passi = [f"**{i}. {titolo}** {testo}" for i, (titolo, testo) in enumerate(PROSSIMI_PASSI, 1)]
+    if gid:
+        if gid not in GRAFICHE:
+            raise ValueError(f"Grafica ignota {gid!r}; disponibili: {list(GRAFICHE)}")
+        g = _tabella_senza_bordi(doc, 1, 2, (Cm(10.5), Cm(6.5)))
+        largh = 7.0 if gid == "infografica" else 10.2
+        _immagine(g.cell(0, 0), ASSETS / "grafiche" / GRAFICHE[gid]["file"], largh)
+        _cella_testo(g.cell(0, 1), passi)
+        g.cell(0, 1).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    else:
+        for riga in passi:
+            _par(doc, riga, align=WD_ALIGN_PARAGRAPH.LEFT)
+
+
+# ============================================================
+# PAGINE 2 E 3 — TESTI DA FILE
+# ============================================================
+def pagina_da_testo(doc, path, size=8):
+    tabella = []
+
+    def chiudi_tabella():
+        if not tabella:
+            return
+        n = len(tabella[0])
+        t = doc.add_table(rows=len(tabella), cols=n)
+        t.autofit = False
+        larg = [Cm(5.5), Cm(6.5), Cm(5.0)] if n == 3 else [Cm(17 / n)] * n
+        for ri, riga in enumerate(tabella):
+            for ci, testo in enumerate(riga):
+                c = t.cell(ri, ci)
+                c.width = larg[ci]
+                _set_cell_borders(c, size="4", color="BFBFBF")
+                if ri == 0:
+                    _set_cell_shading(c, VERDE)
+                    c.paragraphs[0]._p.getparent().remove(c.paragraphs[0]._p)
+                    _run(_par(c, prima=0, align=WD_ALIGN_PARAGRAPH.LEFT), testo, bold=True, size=8, colore="FFFFFF")
+                else:
+                    _cella_testo(c, [testo], size=8)
+        t.style = None
+        tabella.clear()
+
+    for riga in Path(path).read_text(encoding="utf-8").splitlines():
+        riga = riga.rstrip()
+        if riga.startswith("|"):
+            tabella.append([c.strip() for c in riga.strip("|").split("|")])
+            continue
+        chiudi_tabella()
+        if not riga:
+            continue
+        if riga.startswith("## "):
+            _striscia(doc, riga[3:])
+        elif riga == "[FIRMA]":
+            _blocco_firme(doc, "Luogo e data, il Cliente (timbro e firma)", "OVERALL GROUP S.r.l.")
+        elif riga == "[FIRMA_CLIENTE]":
+            _blocco_firme(doc, "Il Cliente (timbro e firma)")
+        elif riga == "[FIRMA_CONSENSO]":
+            _blocco_firme(doc, "Data e firma")
+        else:
+            _par(doc, riga, size=size, prima=2)
+    chiudi_tabella()
 
 
 # ============================================================
 # ORCHESTRAZIONE
 # ============================================================
-def genera_offerta(template_path, out_path, ragione, indirizzo, piva, mail, spec, data_str=None):
+def genera_offerta(out_path, cliente, spec, data_str=None):
     data_str = data_str or date.today().strftime("%d/%m/%Y")
     info = calcola_righe(spec)
-    doc = Document(template_path)
-    patch_intestazione(doc, ragione=ragione, indirizzo=indirizzo, piva=piva, mail=mail)
-    patch_data(doc, data_str=data_str)
-    patch_grafiche(doc, spec.get("grafiche"))
-    patch_prezzo(doc, info, nota=spec.get("nota"))
+    doc = Document(str(ASSETS / "carta_intestata.docx"))
+    sect = doc.element.body[-1]           # sectPr con intestazione e piè di pagina
+    pagina_lettera(doc, cliente, info, spec, data_str)
+    _interruzione_pagina(doc)
+    pagina_da_testo(doc, ASSETS / "testi" / "condizioni.txt")
+    pagina_da_testo(doc, ASSETS / "testi" / "informativa.txt")
+    doc.element.body.append(sect)         # il sectPr deve restare in fondo
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     doc.save(out_path)
     return {**info, "data": data_str, "out_path": out_path}
@@ -468,18 +493,19 @@ def genera_offerta(template_path, out_path, ragione, indirizzo, piva, mail, spec
 
 def main():
     ap = argparse.ArgumentParser()
-    for a in ("--template", "--out", "--ragione", "--indirizzo", "--piva", "--mail", "--spec"):
+    for a in ("--out", "--ragione", "--indirizzo", "--piva", "--mail", "--spec"):
         ap.add_argument(a, required=True)
     ap.add_argument("--data", default=None)
     args = ap.parse_args()
     spec = json.loads(Path(args.spec).read_text(encoding="utf-8"))
-    info = genera_offerta(args.template, args.out, args.ragione, args.indirizzo.replace("\\n", "\n"),
-                          args.piva, args.mail, spec, args.data)
+    cliente = {"ragione": args.ragione, "indirizzo": args.indirizzo.replace("\\n", "\n"),
+               "piva": args.piva, "mail": args.mail}
+    info = genera_offerta(args.out, cliente, spec, args.data)
     print("✅ Offerta generata")
     for r in info["righe"]:
         print(f"  {r['voce'][:60]:<60} {r['qta']:>3}  {formatta_eur(r['importo']):>12}")
     print(f"  {'Totale annuo (IVA esclusa)':<60}      {formatta_eur(info['totale']):>12}")
-    print(f"  Grafiche: {', '.join(spec.get('grafiche') or ['infografica'])}")
+    print(f"  Grafica: {spec.get('grafica', 'tu-formi') or 'nessuna'}")
     print(f"  Data: {info['data']}   Output: {info['out_path']}")
 
 
