@@ -285,6 +285,9 @@ FONT = "Gill Sans MT"
 GIALLO, CREMA, ROSSO, GRIGIO = "F5B700", "F6F5EE", "B3261E", "6B6B6B"
 PROSSIMI_PASSI = [
     ("Firmate", "l'offerta e rimandatela a formasubito@overallgroup.info"),
+    ("Pagamento", "dell'importo di {totale} + IVA all'IBAN IT71 G083 4059 9600 0000 2176 704 "
+                  "(Cassa Padana BCC Società Cooperativa) intestato a OVERALL GROUP SRL, con causale "
+                  "\"Attivazione kit formasubito come da offerta del {data}\""),
     ("Consulenza", "in videocall: definiamo insieme il progetto formativo"),
 ]
 DESCRIZIONI = {
@@ -476,7 +479,7 @@ def _badge(p, numero):
     r._r.get_or_add_rPr().append(shd)
 
 
-def _passi(container_cell):
+def _passi(container_cell, info, data_str):
     """Tre schede crema con numero giallo, una sotto l'altra."""
     n = container_cell.add_table(rows=len(PROSSIMI_PASSI), cols=1)
     n.autofit = False
@@ -488,7 +491,7 @@ def _passi(container_cell):
         p = _p(c, nuovo=False)
         _badge(p, i + 1)
         _run(p, "  " + titolo.upper(), bold=True, size=10, colore=VERDE)
-        _run(_p(c, prima=2), testo, size=9)
+        _run(_p(c, prima=2), testo.format(totale=formatta_eur(info["totale"]), data=data_str), size=9)
     return n
 
 
@@ -536,7 +539,7 @@ def pagina_lettera(doc, cliente, info, spec, data_str):
         p.add_run().add_picture(str(ASSETS / "grafiche" / GRAFICHE[gid]["file"]), width=Cm(largh))
     _margini(dxg, 0, 0, 200, 0)
     dxg.paragraphs[0].paragraph_format.space_after = Pt(0)
-    _passi(dxg)
+    _passi(dxg, info, data_str)
     _run(_p(doc, prima=4), "Contenuti del servizio e condizioni complete alla pagina 2.", size=8, colore=GRIGIO)
 
 
