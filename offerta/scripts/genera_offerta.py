@@ -66,7 +66,7 @@ ORDINE_KIT = ["lavoratori", "preposti", "aggiornamenti"]
 # da confrontare con l'offerta (STEP della SKILL).
 GRAFICHE = {
     "infografica": {"file": "infografica.png", "titolo": "Vantaggi + Cosa comprende il KIT", "prezzi": None},
-    "tu-formi": {"file": "tu-formi.png", "titolo": "Tu formi. Al resto pensiamo noi", "prezzi": None},
+    "tu-formi": {"file": "tu-formi.png", "titolo": "Tu formi. Al resto pensiamo noi (sorgente in grafiche/sorgenti/)", "prezzi": None},
     "cosa-ricevi": {"file": "cosa-ricevi.png", "titolo": "Tutto in una cartella, pronto da usare", "prezzi": None},
     "scegli-kit": {"file": "scegli-kit.png", "titolo": "Scegli il tuo KIT",
                    "prezzi": "Lavoratori 249 €/anno fino a 3 mansioni poi 19 €/mansione; Preposti 149 €; Aggiornamenti 149 €"},
