@@ -585,7 +585,10 @@ def pagina_da_testo(doc, path, size=8):
         elif riga == "[FIRMA_CONSENSO]":
             _blocco_firme(doc, "Data e firma")
         else:
-            _par(doc, riga, size=size, prima=2)
+            p = _par(doc, riga, size=size, prima=2)
+            if riga.startswith("**Approvazione"):
+                p.paragraph_format.keep_together = True
+                p.paragraph_format.keep_with_next = True
     chiudi_tabella()
 
 

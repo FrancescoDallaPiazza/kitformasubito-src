@@ -10,7 +10,7 @@ La skill li scarica all'avvio (`git clone --depth 1` di questo repo) e usa:
   3. approvazione specifica, informativa privacy e consenso (`assets/testi/informativa.txt`).
   Input: dati cliente da riga di comando + `--spec offerta.json` (formato nel docstring).
   `python3 scripts/genera_offerta.py --test` esegue l'autoverifica dei calcoli.
-- `assets/carta_intestata.docx` — intestazione con loghi Overall e FORMASUBITO, piè di pagina e stili (Gill Sans MT).
+- `assets/carta_intestata.docx` — intestazione (loghi Overall e FORMASUBITO, dati societari, filetto verde), piè di pagina (barra verde, contatti, Pag. X/Y) e stili (Gill Sans MT).
 - `assets/testi/*.txt` — testi di pag. 2 e 3, modificabili senza toccare lo script:
   `## Titolo` = striscia verde; `**grassetto**`, `*corsivo*`; `|a|b|c|` = tabella;
   `[FIRMA]`, `[FIRMA_CLIENTE]`, `[FIRMA_CONSENSO]` = blocchi firma.
