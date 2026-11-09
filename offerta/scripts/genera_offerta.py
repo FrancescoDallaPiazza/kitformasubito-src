@@ -53,6 +53,7 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 # ============================================================
 MANSIONI_INCLUSE = 3
 EXTRA_PER_MANSIONE = 19.99
+ALIQUOTA_IVA = 22
 BUNDLE_SCONTO = 100.00
 CATALOGO = {
     "lavoratori": ("KIT Lavoratori – formazione iniziale generale + specifica (fino a 3 mansioni)", 249.00),
@@ -285,7 +286,7 @@ FONT = "Gill Sans MT"
 GIALLO, CREMA, ROSSO, GRIGIO = "F5B700", "F6F5EE", "B3261E", "6B6B6B"
 PROSSIMI_PASSI = [
     ("Firmate", "l'offerta e rimandatela a formasubito@overallgroup.info"),
-    ("Pagamento", "dell'importo di {totale} + IVA all'IBAN IT71 G083 4059 9600 0000 2176 704 "
+    ("Pagamento", "dell'importo di {ivato} ({totale} imponibile + {iva} IVA {aliquota}%) all'IBAN IT71 G083 4059 9600 0000 2176 704 "
                   "(Cassa Padana BCC Società Cooperativa) intestato a OVERALL GROUP SRL, con causale "
                   "\"Attivazione kit formasubito come da offerta del {data}\""),
     ("Consulenza", "in videocall: definiamo insieme il progetto formativo"),
@@ -483,6 +484,7 @@ def _passi(container_cell, info, data_str):
     """Tre schede crema con numero giallo, una sotto l'altra."""
     n = container_cell.add_table(rows=len(PROSSIMI_PASSI), cols=1)
     n.autofit = False
+    iva = round(info["totale"] * ALIQUOTA_IVA / 100, 2)
     for i, (titolo, testo) in enumerate(PROSSIMI_PASSI):
         c = n.cell(i, 0)
         c.width = Cm(6.4)
@@ -491,7 +493,9 @@ def _passi(container_cell, info, data_str):
         p = _p(c, nuovo=False)
         _badge(p, i + 1)
         _run(p, "  " + titolo.upper(), bold=True, size=10, colore=VERDE)
-        _run(_p(c, prima=2), testo.format(totale=formatta_eur(info["totale"]), data=data_str), size=9)
+        _run(_p(c, prima=2), testo.format(
+            totale=formatta_eur(info["totale"]), iva=formatta_eur(iva), ivato=formatta_eur(info["totale"] + iva),
+            aliquota=ALIQUOTA_IVA, data=data_str), size=9)
     return n
 
 
