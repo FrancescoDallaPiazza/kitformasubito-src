@@ -285,7 +285,6 @@ FONT = "Gill Sans MT"
 GIALLO, CREMA, ROSSO, GRIGIO = "F5B700", "F6F5EE", "B3261E", "6B6B6B"
 PROSSIMI_PASSI = [
     ("Firmate", "l'offerta e rimandatela a formasubito@overallgroup.info"),
-    ("Inviateci il DVR", "con l'elenco delle mansioni, senza dati personali dei lavoratori"),
     ("Consulenza", "in videocall: definiamo insieme il progetto formativo"),
 ]
 DESCRIZIONI = {
