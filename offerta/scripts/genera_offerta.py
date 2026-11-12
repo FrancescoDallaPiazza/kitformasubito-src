@@ -500,7 +500,8 @@ def _passi(container_cell, info, data_str):
 
 
 def pagina_lettera(doc, cliente, info, spec, data_str):
-    # data, riferimenti e destinatario
+    # data, riferimenti e destinatario, staccati dall'intestazione
+    _par(doc, prima=0, dopo=12)
     t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.8), Cm(8.2)))
     sx, dx = t.cell(0, 0), t.cell(0, 1)
     for i, (etichetta, valore, coda) in enumerate((
