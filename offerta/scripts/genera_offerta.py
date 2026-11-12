@@ -32,6 +32,7 @@ offerta.json:
 "su" ammette: lavoratori, mansioni_aggiuntive, preposti, aggiornamenti, totale.
 """
 
+import math
 import argparse
 import copy
 import json
@@ -286,9 +287,8 @@ FONT = "Gill Sans MT"
 GIALLO, CREMA, ROSSO, GRIGIO = "F5B700", "F6F5EE", "B3261E", "6B6B6B"
 PROSSIMI_PASSI = [
     ("Firmate", "l'offerta e rimandatela a formasubito@overallgroup.info"),
-    ("Pagamento", "dell'importo di {ivato} ({totale} imponibile + {iva} IVA {aliquota}%) all'IBAN IT71 G083 4059 9600 0000 2176 704 "
-                  "(Cassa Padana BCC Società Cooperativa) intestato a OVERALL GROUP SRL, con causale "
-                  "\"Attivazione kit formasubito come da offerta del {data}\""),
+    ("Pagamento", "bonifico di {ivato} (IVA {aliquota}% inclusa) a OVERALL GROUP SRL, IBAN IT71 G083 4059 9600 0000 2176 704, "
+                  "causale \"Attivazione KIT FORMASUBITO, offerta del {data}\""),
     ("Consulenza", "in videocall: definiamo insieme il progetto formativo"),
 ]
 DESCRIZIONI = {
@@ -438,14 +438,15 @@ def _righe_riepilogo(info):
     return out
 
 
-def _box_riepilogo(doc, info):
+def _box_riepilogo(doc, info, compatto=False):
+    k = 0.5 if compatto else 1
     righe = _righe_riepilogo(info)
     t = _tabella_senza_bordi(doc, len(righe) + 2, 2, (Cm(12.0), Cm(5.0)))
     grigio = ("D9D9D9", 4)
     # intestazione verde
     h0, h1 = t.cell(0, 0), t.cell(0, 1)
     for c in (h0, h1):
-        _set_cell_shading(c, VERDE); _margini(c, 120, 120); _bordi(c, sopra=(VERDE, 8), sx=(VERDE, 8) if c is h0 else None,
+        _set_cell_shading(c, VERDE); _margini(c, int(120 * k), int(120 * k)); _bordi(c, sopra=(VERDE, 8), sx=(VERDE, 8) if c is h0 else None,
                                                                     dx=(VERDE, 8) if c is h1 else None)
         c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     _run(_p(h0, nuovo=False), "LA VOSTRA PROPOSTA IN SINTESI", bold=True, size=12, colore="FFFFFF")
@@ -454,7 +455,7 @@ def _box_riepilogo(doc, info):
     for i, (nome, descr, importo, sconto) in enumerate(righe, start=1):
         c0, c1 = t.cell(i, 0), t.cell(i, 1)
         for c in (c0, c1):
-            _margini(c, 90, 90); c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            _margini(c, 30 if compatto else 90, 30 if compatto else 90); c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         _bordi(c0, sotto=grigio, sx=grigio); _bordi(c1, sotto=grigio, dx=grigio)
         colore = ROSSO if sconto else None
         _run(_p(c0, nuovo=False), nome, size=10, colore=colore)
@@ -465,7 +466,7 @@ def _box_riepilogo(doc, info):
     n = len(righe) + 1
     t0, t1 = t.cell(n, 0), t.cell(n, 1)
     for c in (t0, t1):
-        _set_cell_shading(c, CREMA); _margini(c, 140, 140); c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        _set_cell_shading(c, CREMA); _margini(c, int(140 * k), int(140 * k)); c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     _bordi(t0, sotto=grigio, sx=grigio); _bordi(t1, sotto=grigio, dx=grigio)
     _run(_p(t0, nuovo=False), "Totale annuo", bold=True, size=11)
     _run(_p(t1, nuovo=False, align=WD_ALIGN_PARAGRAPH.RIGHT), formatta_eur(info["totale"]), bold=True, size=18, colore=VERDE)
@@ -480,7 +481,7 @@ def _badge(p, numero):
     r._r.get_or_add_rPr().append(shd)
 
 
-def _passi(container_cell, info, data_str):
+def _passi(container_cell, info, data_str, compatto=False):
     """Tre schede crema con numero giallo, una sotto l'altra."""
     n = container_cell.add_table(rows=len(PROSSIMI_PASSI), cols=1)
     n.autofit = False
@@ -488,7 +489,7 @@ def _passi(container_cell, info, data_str):
     for i, (titolo, testo) in enumerate(PROSSIMI_PASSI):
         c = n.cell(i, 0)
         c.width = Cm(6.4)
-        _set_cell_shading(c, CREMA); _margini(c, 110, 110, 160, 160)
+        _set_cell_shading(c, CREMA); _margini(c, 50 if compatto else 110, 50 if compatto else 110, 160, 160)
         _bordi(c, sopra=("FFFFFF", 24) if i else None, sotto=("FFFFFF", 24) if i < len(PROSSIMI_PASSI) - 1 else None)
         p = _p(c, nuovo=False)
         _badge(p, i + 1)
@@ -499,7 +500,33 @@ def _passi(container_cell, info, data_str):
     return n
 
 
+def _larghezza_grafica(cliente, info, spec):
+    """Larghezza (cm) della grafica perché la pagina 1 resti su una facciata.
+
+    ponytail: stima a righe calibrata sul PDF di LibreOffice (pt per riga misurati);
+    con un riepilogo lungo la grafica si riduce fino all'altezza dei prossimi passi.
+    Se cambiano font, testi o spaziature della pagina 1, ricalibrare le costanti."""
+    L, H_PIENA, H_MIN, MARGINE = 9.8, 243.8, 180.0, 107.7     # cm, pt, pt, pt
+    righe = _righe_riepilogo(info)
+    extra = sum(31.3 if d else 21.6 for _, d, _, _ in righe) - 31.3
+    n_ind = len([r for r in cliente["indirizzo"].split("\n") if r.strip()]) + 1
+    extra += 12.1 * max(0, n_ind - 3)
+    extra += 14.5 * (math.ceil(len(cliente["ragione"]) / 28) - 1)
+    extra += 10.0 * (math.ceil(len(cliente["mail"]) / 45) - 1)
+    if spec.get("nota"):
+        extra += 12.7 + 9.6 * (math.ceil(len(spec["nota"]) / 140) - 1)
+    h = H_PIENA - max(0.0, extra - MARGINE)
+    compatto = h < H_MIN          # spazi ridotti in riepilogo, oggetto e passi (stessi testi)
+    if compatto:
+        h, h_min = min(H_PIENA, h + 6 * len(righe) + 26), H_MIN - 18
+        if h < h_min:
+            print(f"⚠️  Riepilogo molto lungo: la pagina 1 potrebbe non stare su una facciata (mancano ~{h_min - h:.0f} pt). Controlla il PDF.")
+            h = h_min
+    return round(L * h / H_PIENA, 2), compatto
+
+
 def pagina_lettera(doc, cliente, info, spec, data_str):
+    largh_grafica, compatto = _larghezza_grafica(cliente, info, spec)
     # data, riferimenti e destinatario, staccati dall'intestazione
     _par(doc, prima=0, dopo=12)
     t = _tabella_senza_bordi(doc, 1, 2, (Cm(8.8), Cm(8.2)))
@@ -518,14 +545,14 @@ def pagina_lettera(doc, cliente, info, spec, data_str):
     _run(_p(dx, prima=3), cliente["mail"], size=8.5, colore=GRIGIO)
 
     # oggetto e apertura
-    _run(_p(doc, prima=16), "Oggetto: offerta KIT FORMASUBITO – formazione obbligatoria D.Lgs. 81/08 erogata in azienda",
+    _run(_p(doc, prima=8 if compatto else 16), "Oggetto: offerta KIT FORMASUBITO – formazione obbligatoria D.Lgs. 81/08 erogata in azienda",
          bold=True, size=10.5)
-    p = _p(doc, prima=4, dopo=10, align=WD_ALIGN_PARAGRAPH.JUSTIFY)
+    p = _p(doc, prima=4, dopo=5 if compatto else 10, align=WD_ALIGN_PARAGRAPH.JUSTIFY)
     _run(p, "In seguito ai colloqui intercorsi, Vi proponiamo i KIT FORMASUBITO: il Datore di Lavoro eroga direttamente "
             "la formazione obbligatoria ai propri lavoratori e preposti, con progetto formativo e documenti già "
             "predisposti da noi sulle mansioni del Vostro DVR.", size=10)
 
-    _box_riepilogo(doc, info)
+    _box_riepilogo(doc, info, compatto)
     if spec.get("nota"):
         _run(_p(doc, prima=3), spec["nota"], size=8, colore=GRIGIO)
 
@@ -539,12 +566,12 @@ def pagina_lettera(doc, cliente, info, spec, data_str):
     if gid:
         _set_cell_shading(sxg, CREMA); _margini(sxg, 120, 120, 120, 120)
         sxg.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-        largh = 6.5 if gid == "infografica" else 9.8
+        largh = 6.5 if gid == "infografica" else largh_grafica
         p = _p(sxg, nuovo=False, align=WD_ALIGN_PARAGRAPH.CENTER)
         p.add_run().add_picture(str(ASSETS / "grafiche" / GRAFICHE[gid]["file"]), width=Cm(largh))
     _margini(dxg, 0, 0, 200, 0)
     dxg.paragraphs[0].paragraph_format.space_after = Pt(0)
-    _passi(dxg, info, data_str)
+    _passi(dxg, info, data_str, compatto)
     _run(_p(doc, prima=4), "Contenuti del servizio e condizioni complete alla pagina 2.", size=8, colore=GRIGIO)
 
 
