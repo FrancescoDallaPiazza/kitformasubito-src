@@ -34,6 +34,15 @@ function docenteDescr() {
   return `${CLIENTE.datoreLavoro} – Datore di Lavoro${CLIENTE.rspp ? ' (in possesso dei requisiti ex art. 34 D.Lgs. 81/08)' : ' e RSPP'}`;
 }
 // Solo nome/i del docente (per i campi "Relatore / Docente" del Registro).
+const ARGOMENTI_COMUNI_SPEC = [
+  'DPI: tipologie, scelta, uso e manutenzione',
+  'Segnaletica di sicurezza',
+  'Prevenzione incendi ed evacuazione',
+  'Procedure organizzative per il primo soccorso',
+  'Stress lavoro-correlato',
+  'Incidenti, mancati infortuni',
+];
+function paragrafoMansione(m) { return `4.2.${MANSIONI.indexOf(m) + 1}`; }
 function docenteNome() { return isFormExt() ? CLIENTE.formatoreEsterno.trim() : CLIENTE.datoreLavoro; }
 
 // Import aggiuntivi
@@ -516,38 +525,26 @@ async function genProgettoFormativo() {
 
       SUBSEC('4.2 – Formazione Specifica dei Rischi'),
       new Paragraph({ children: [] }),
-      // Per ogni livello di rischio distinto tra le mansioni
-      ...(() => {
-        const result = [];
-        livelli.forEach(livello => {
-          const mansioniLiv = MANSIONI.filter(m => m.livello === livello);
-          const oreSpec = mansioniLiv[0].oreSpec;
-          const rischiUnici = [...new Set(mansioniLiv.flatMap(m => m.rischi.map(r => r.nome)))];
-          // Riga mansione/i prima della durata (solo se ci sono più livelli distinti)
-          if (livelli.length > 1) {
-            const nomiMansioni = mansioniLiv.map(m => m.nome.toUpperCase()).join(' / ');
-            result.push(new Paragraph({
-              alignment: AlignmentType.JUSTIFIED,
-              spacing: { before: 6*20, after: 0 },
-              children: [new TextRun({ text: `Mansione: ${nomiMansioni}`, bold: true, font: FONT, size: 20, color: C.ROSSO })],
-            }));
-          }
-          result.push(DUR(`Durata: ${oreSpec} ore – Settore a rischio ${livello} (ATECO ${CLIENTE.atecoCodice})`));
-          result.push(new Paragraph({ children: [] }));
-          result.push(N('La formazione specifica è mirata ai rischi effettivamente presenti nel luogo di lavoro, identificati dalla valutazione dei rischi aziendale (DVR). Per ogni mansione sono trattati i rischi specifici della postazione lavorativa:', { sz: 10 }));
-          result.push(new Paragraph({ children: [] }));
-          result.push(MOD(`Modulo Specifico – Rischio ${livello} (${oreSpec} ore)`));
-          rischiUnici.forEach(r => result.push(LP(r)));
-          result.push(LP('DPI: tipologie, scelta, uso e manutenzione'));
-          result.push(LP('Segnaletica di sicurezza'));
-          result.push(LP('Prevenzione incendi ed evacuazione'));
-          result.push(LP('Procedure organizzative per il primo soccorso'));
-          result.push(LP('Stress lavoro-correlato'));
-          result.push(LP('Incidenti, mancati infortuni'));
-          result.push(new Paragraph({ children: [] }));
-        });
-        return result;
-      })(),
+      // Un paragrafo per ogni mansione (4.2.1, 4.2.2, ...): solo i rischi di quella mansione,
+      // cosi' registro presenze e scheda mansione rimandano a un elenco pertinente.
+      N('La formazione specifica è mirata ai rischi effettivamente presenti nel luogo di lavoro, identificati dalla valutazione dei rischi aziendale (DVR). Per ciascuna mansione sono trattati solo i rischi specifici della relativa postazione lavorativa, indicati nel paragrafo dedicato:', { sz: 10 }),
+      new Paragraph({ children: [] }),
+      ...MANSIONI.flatMap((m, i) => [
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { before: 6*20, after: 0 },
+          keepNext: true,
+          children: [new TextRun({ text: `${paragrafoMansione(m)} – Mansione: ${m.nome.toUpperCase()}`, bold: true, font: FONT, size: 20, color: C.ROSSO })],
+        }),
+        DUR(`Durata: ${m.oreSpec} ore – Settore a rischio ${m.livello} (ATECO ${CLIENTE.atecoCodice})`),
+        new Paragraph({ children: [] }),
+        MOD(`Modulo Specifico – Rischio ${m.livello} (${m.oreSpec} ore)`),
+        ...[...new Set([...m.rischi.map(r => r.nome), ...ARGOMENTI_COMUNI_SPEC]
+          .map(t => t.trim()))]
+          .filter((t, k, arr) => arr.findIndex(x => x.toLowerCase() === t.toLowerCase()) === k)
+          .map(t => LP(t)),
+        new Paragraph({ children: [] }),
+      ]),
     ] : []),
 
     // ── Sottocapitolo "Aggiornamento": numerazione dinamica ─────────────
@@ -805,7 +802,7 @@ async function genRegistroFormIniziale(mansione) {
       rows: [new TableRow({ children: [
         cellaAA(new Paragraph({ children: [
           new TextRun({ text: 'Argomenti trattati:  ', bold: true, font: FONT, size: 20 }),
-          new TextRun({ text: 'Vedasi progetto formativo', font: FONT, size: 20 }),
+          new TextRun({ text: MODALITA === 'aggiornamento' ? 'Vedasi progetto formativo' : `Vedasi progetto formativo, § 4.1 (formazione generale) e § ${paragrafoMansione(mansione)} (formazione specifica – ${mansione.nome})`, font: FONT, size: 20 }),
         ]}), { width: W }),
       ]})],
     }),
