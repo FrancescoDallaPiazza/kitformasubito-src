@@ -106,7 +106,7 @@ async function genColloquio(mansione) {
   function SEZ(n, txt) {
     return new Paragraph({
       border: { bottom: { style: BorderStyle.SINGLE, size: 8, space: 2, color: '2E75B6' } },
-      spacing: { before: 280, after: 120 },
+      keepNext: true, spacing: { before: 280, after: 120 },
       children: [new TextRun({ text: `${n}. ${txt}`, bold: true, font: FONT, size: 22, color: C.BLU_MED })],
     });
   }
@@ -119,7 +119,7 @@ async function genColloquio(mansione) {
   }
 
   // ── Paragrafo vuoto inter-sezione (after SEZ e after tabella) ──────────
-  const gapSez = new Paragraph({ spacing: { before: 60 }, children: [] });
+  const gapSez = new Paragraph({ keepNext: true, spacing: { before: 60 }, children: [] });  // legata al titolo: titolo e contenuto non si separano
   const gapTbl = new Paragraph({ spacing: { before: 120 }, children: [] });
 
   // ── Tabella KV con colori master: label=1F4E79, value=000000 ──────────
