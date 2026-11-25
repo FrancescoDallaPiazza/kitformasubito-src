@@ -79,32 +79,13 @@ function tabellaFirme(lab1, lab2) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COLLOQUIO INDIVIDUALE AGGIORNAMENTO
-// Header standard, footer "Pag. X a Y"
+// Header standard con logo (makeHeader), footer "Pag. X a Y"
 // Sezioni bold col=2E75B6 spB=14 spA=6, tabelle fill=D5E8F0 col0 169pt / 313pt col1
 // ─────────────────────────────────────────────────────────────────────────────
 async function genColloquio(mansione) {
 
-  // ── Header: tabella testo 2 col (5301+4337) – NO logo ──────────────────
-  const NO_HDR = {top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
-  const header = new Header({ children: [
-    new Table({
-      width:{size:9638,type:WidthType.DXA}, columnWidths:[5301,4337],
-      borders:{top:NO_HDR.top,bottom:NO_HDR.bottom,left:NO_HDR.left,right:NO_HDR.right,insideH:NO_HDR.top,insideV:NO_HDR.top},
-      rows:[new TableRow({children:[
-        new TableCell({width:{size:5301,type:WidthType.DXA},borders:NO_HDR,
-          margins:{top:80,bottom:80,left:120,right:120},
-          children:[new Paragraph({children:[new TextRun({text:CLIENTE.ragioneSociale,bold:true,font:FONT,size:22,color:C.BLU_DARK})]})],
-        }),
-        new TableCell({width:{size:4337,type:WidthType.DXA},borders:NO_HDR,
-          margins:{top:80,bottom:80,left:120,right:120},
-          children:[
-            new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Colloquio Individuale – Aggiornamento',bold:true,font:FONT,size:24,color:C.BLU_HEADER})]}),
-            new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:`ATECO: ${CLIENTE.atecoCodice} – ${CLIENTE.atecoDesc}`,font:FONT,size:17,color:C.GRIGIO})]}),
-          ],
-        }),
-      ]})]
-    }),
-  ]});
+  // ── Header standard con logo cliente (come Progetto Formativo e altri documenti) ──
+  const header = makeHeader(CLIENTE.ragioneSocialeBreve, 'Colloquio Individuale – Aggiornamento', CLIENTE.atecoCodice, CLIENTE.atecoDesc);
 
   // ── Footer: bordo blu top + "Pag. X a Y" ───────────────────────────────
   const footer = new Footer({ children: [new Paragraph({
